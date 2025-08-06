@@ -1,0 +1,8 @@
+[game]
+cache_dir  = "cache/games/basic/setTimeout"
+game_dir   = "games/basic/setTimeout"
+width = 640
+height = 480
+
+[scripts]
+entry = "main.js"
