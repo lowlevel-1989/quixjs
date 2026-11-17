@@ -68,7 +68,7 @@ core/main (bucle) --present--> backend/ (sdl: ventana, teclas, mandos | dummy: s
 | `achievements/` | logros para los ports, definidos en el toml del juego ([README](achievements/README.es.md)) |
 | `symbols/`    | `[symbols]`: nombres para el estado del juego, que leen los logros y escriben los trucos ([README](symbols/README.es.md)) |
 | `cheats/`     | trucos para los ports (`[[cheat]]`), encendidos en el lanzador; una partida con trucos no consigue logros ([README](cheats/README.es.md)) |
-| `thirdparty/` | codigo de otros proyectos: tomlc17 y stb (stb_vorbis, stb_easy_font), sin modificar; nestegg; y `webkit/` (JavaScriptCore, compilado aparte por `tools/build-jsc.sh`, [README](thirdparty/webkit/README.md)) |
+| `thirdparty/` | codigo de otros proyectos: tomlc17 y stb (stb_vorbis, stb_easy_font), sin modificar; nestegg; y `webkit/` (JavaScriptCore, compilado aparte por `tools/build-jsc.sh`, [README](thirdparty/webkit/README.es.md)) |
 | `thirdparty/nestegg/` | nestegg de Mozilla: lee archivos WebM; solo se compila con video (`VERSION` tiene su commit) |
 
 ## Archivos
