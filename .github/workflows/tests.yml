@@ -15,19 +15,30 @@ jobs:
           sudo apt-get install -y --no-install-recommends \
             build-essential libsdl2-dev libsdl2-image-dev libsdl2-ttf-dev fonts-dejavu-core \
             libvpx-dev libopus-dev \
-            clang lld cmake ninja-build ruby perl python3 libicu-dev pkg-config
-      # JavaScriptCore (WebKit) tarda en compilar: se guarda entre ejecuciones
+            clang lld cmake ninja-build ruby perl python3 libicu-dev pkg-config \
+            libegl1 libegl-mesa0 libgles2 libgl1-mesa-dri
+      # JavaScriptCore (WebKit) tarda en compilar: se guarda entre ejecuciones,
+      # en cuanto esta compilado (aunque despues fallen los tests)
       - name: JavaScriptCore cache
-        uses: actions/cache@v4
+        id: jsc-cache
+        uses: actions/cache/restore@v4
         with:
           path: obj/deps/jsc-build
           key: jsc-host-${{ runner.os }}-${{ hashFiles('tools/build-jsc.sh', 'runtime/thirdparty/webkit/**') }}
       - name: JavaScriptCore
         run: tools/build-jsc.sh host
+      - name: save JavaScriptCore cache
+        if: steps.jsc-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: obj/deps/jsc-build
+          key: ${{ steps.jsc-cache.outputs.cache-primary-key }}
       - name: build
         run: make -j"$(nproc)"
+      # sin pantalla: offscreen da OpenGL por EGL (Mesa, llvmpipe) para los
+      # tests de WebGL y del canvas en la GPU
       - name: tests
         env:
-          SDL_VIDEODRIVER: dummy
+          SDL_VIDEODRIVER: offscreen
           SDL_AUDIODRIVER: dummy
         run: VERBOSE=1 make test
