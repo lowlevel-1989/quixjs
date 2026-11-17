@@ -1,0 +1,36 @@
+[game]
+cache_dir = "cache/tests/core/achievements-menu"
+game_dir  = "games/tests/core/achievements-menu"
+width     = 64
+height    = 64
+
+[scripts]
+libs     = []
+includes = ["../../lib/assert.js"]
+entry    = "main.js"
+
+# rpgmaker-mv/achievements-menu: la opcion de los logros en el menu de RPG
+# Maker MV (aqui, unas clases de mentira)
+[hooks]
+"Scene_Menu.prototype.createCommandWindow" = "rpgmaker-mv/achievements-menu"
+
+[saves]
+achievements = ""
+
+[achievements_menu]
+icon = 5
+
+[symbols]
+boss = "path:game.boss"
+
+[[achievements]]
+id          = "boss"
+title       = "First Blood"
+description = "Defeat the first boss."
+type        = "progression"
+conditions  = ["boss == 1"]
+
+[[achievements]]
+id         = "never"
+title      = "Never"
+conditions = ["boss == 9"]

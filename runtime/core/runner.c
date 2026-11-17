@@ -1,5 +1,5 @@
 /*
- * QuixJS - A lightweight JS runtime using SDL2 and QuickJS
+ * QuixJS - A lightweight JS runtime using SDL2 and JavaScriptCore
  * Copyright (C) 2025  Vinicio Valbuena (lowlevel.1989)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -16,24 +16,26 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+// Ejecuta los scripts del juego. Ver runner.h.
+
 #include <stdio.h>
 #include "runner.h"
 
-int runner_run_bundle(JSContext *ctx, const BytecodeBundle *bundle) {
+int runner_run_bundle(JSContext *ctx, const ScriptBundle *bundle, void (*before)(JSContext *ctx, int index)) {
   for (int i = 0; i < bundle->count; i++) {
     printf("[%02d] %s\n", i, bundle->filenames[i]);
-    js_std_eval_binary(ctx, bundle->bytecodes[i], bundle->sizes[i], 0);
-
-    JSValue ex = JS_GetException(ctx);
-    if (JS_IsException(ex)) {
-      const char *err = JS_ToCString(ctx, ex);
-      fprintf(stderr, "Error executing bytecode %d: %s\n", i, err);
-      JS_FreeCString(ctx, err);
-      JS_FreeValue(ctx, ex);
+    if (!bundle->sources[i]) {
+      fprintf(stderr, "Error: %s was not loaded\n", bundle->filenames[i]);
       return -1;
     }
-    JS_FreeValue(ctx, ex);
+    if (before) before(ctx, i);
+    JSValue val = JS_Eval(ctx, bundle->sources[i], bundle->sizes[i], bundle->paths[i], JS_EVAL_TYPE_GLOBAL);
+    if (JS_IsException(val)) {
+      fprintf(stderr, "Error executing %s:\n", bundle->filenames[i]);
+      js_std_dump_error(ctx);
+      return -1;
+    }
+    JS_FreeValue(ctx, val);
   }
   return 0;
 }
-

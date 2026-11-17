@@ -1,8 +1,0 @@
-[game]
-cache_dir  = "cache/basic/hello"
-game_dir   = "games/basic/hello"
-width = 640
-height = 480
-
-[scripts]
-entry = "main.js"

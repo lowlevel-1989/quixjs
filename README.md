@@ -1,82 +1,57 @@
-# QuixJS
+# QuixJS 0.2.0
 
->  🚧 **Experimental Concept**  
->
-> QuixJS is currently in **early development** and should be considered an **experimental prototype**. The core idea is being explored and subject to major changes. It is **not yet ready for production use**.
+English | [Español](README.es.md)
 
----
+QuixJS runs JavaScript games (RPG Maker MV, PixiJS v4, vanilla JS) on Linux
+handhelds, without a browser and without X11. It uses JavaScriptCore, SDL2 and
+OpenGL ES 2, and the browser APIs the games need are written in C.
 
-**QuixJS** is a lightweight embedded runtime for executing JavaScript-based games (built with Vanilla JS, PixiJS, Phaser, and others) on handheld devices without requiring X11. It uses **QuickJS** as the scripting engine and **SDL2** for rendering, input, and audio—featuring native C reimplementations of critical parts of popular JS game engines for optimal performance.
+[!["Buy Me A Coffee"](docs/coffee.svg)](https://ko-fi.com/lowlevel1989)
 
-> ⚠️ This project is under active development. The goal is to deliver smooth 2D game experiences on low-powered devices with minimal overhead and no reliance on traditional graphical environments.
+If you want this runtime to keep getting updates and support, you can support
+the project by buying me a coffee.
 
----
+## Ports
 
-## Execution Flow
+A port is a game packaged for [PortMaster](https://portmaster.games), the
+tool that installs games on Linux handhelds. The game files are not included:
+the player copies them from their own copy.
 
-QuixJS is configured through a `config.toml` file, which defines the game directory, resolution, and main script to execute.
+| port | engine | how to install it |
+|------|--------|-------------------|
+| Fear & Hunger 1.4.1 | RPG Maker MV | [games/fearandhunger](games/fearandhunger/README.md) |
 
-Example `config.toml`:
+## Play a game on Linux
 
-```toml
-[game]
-cache_dir = "cache/hello"
-game_dir  = "games/hello"
-width     = 640
-height    = 480
-
-[scripts]
-entry = "main.js"
-libs  = ["libs/pixi.js"]
+```
+make
+./quixjs --gen-config path/to/game > mygame.toml   # describe the game
+./quixjs -c mygame.toml --launcher                  # play (with the menu first)
 ```
 
-At runtime, QuixJS follows this process:
+Each game is described by one toml file (`config.toml` by default; a port uses
+`port.toml`): its folder, its size, its scripts, its hooks (changes to
+functions of the game) and its achievements. The options and the toml:
+[docs/usage.md](docs/usage.md).
 
-1. **Cache check**: Determines if the JS code has already been compiled to bytecode and cached in `cache_dir`.
-2. **Compilation**: If not cached, the JS files are compiled to QuickJS bytecode for performance.
-3. **Execution**: Runs the compiled bytecode within a runtime environment that includes native C bindings and engine-specific reimplementations.
-4. **Rendering & input**: Uses SDL2 for 2D rendering, input handling, and audio output—eliminating the need for a browser or heavyweight APIs.
+Using a toml file to configure each game is inspired by bogodroid
+(https://github.com/binarycounter/bogodroid). Thanks binarycounter.
 
----
+## Documentation
 
-## 🔍 Key Features
+| | |
+|---|---|
+| [Build](docs/build.md) | dependencies, `make`, the PortMaster zip |
+| [Usage](docs/usage.md) | options, the toml of a game, ports, mods, controls, the `quix` object |
+| [Features](docs/features.md) | what QuixJS supports |
+| [Compatibility](docs/compatibility.md) | which browser APIs work and which do not |
+| [Tests](docs/tests.md) | the test games, `--script` and the debug console |
+| [JavaScript engine](docs/javascript-engine.md) | why JavaScriptCore |
+| [Code](runtime/README.md) | what each folder and file of the runtime does |
+| [Changes](CHANGELOG) | what changed in each version |
 
-- ⚡ Modern, lightweight JavaScript runtime powered by QuickJS
-- 🧩 Supports games written in Vanilla JS, PixiJS, Phaser, and other 2D engines
-- 🔧 Native C reimplementations of core game engine features (e.g., parts of PixiJS)
-- 🎨 Native 2D rendering via SDL2—**no X11 required**
-- 🎮 Built-in support for input handling and audio on handheld devices
-- 🔄 Smart caching system to avoid unnecessary recompilation
+## License
 
----
-
-## 📁 Typical Game Structure
-
-```bash
-games/hello/
-├── libs/             # External JS libraries (PixiJS, Phaser, etc.)
-│   └── pixi.js
-├── main.js           # Main entry point for the game
-├── assets/           # Game assets (images, sounds, etc.)
-├── config.toml       # Game-specific configuration file
-└── README.md
-```
-
----
-
-## 🚀 Usage & Options
-
-```bash
-Usage: quixjs [--config <path>]
-Options:
-  -c, --config <path>  Path to the config.toml file (default: config.toml)
-  -f, --force          Force recompilation, ignoring cached bytecode
-  -b, --backend <type> Select backend: sdl or dummy (default: sdl)
-  -h, --help           Show this help message
-```
-
-Example:
-
-```bash
-./quixjs --config games/hello/config.toml --force
-```
+GPL-3.0. JavaScriptCore (WebKit: BSD and LGPL-2.1), ICU (Unicode license),
+tomlc17 (MIT), stb_vorbis (MIT / public domain), nestegg (ISC style) and PixiJS
+(MIT) keep their own licenses.

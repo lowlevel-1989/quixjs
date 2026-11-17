@@ -1,5 +1,5 @@
 /*
- * QuixJS - A lightweight JS runtime using SDL2 and QuickJS
+ * QuixJS - A lightweight JS runtime using SDL2 and JavaScriptCore
  * Copyright (C) 2025  Vinicio Valbuena (lowlevel.1989)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,6 +17,8 @@
  */
 
 #pragma once
+
+// El backend sdl: ventana con SDL2 y OpenGL ES 2 (ver sdl/backend.c).
 
 #include "../backend.h"
 

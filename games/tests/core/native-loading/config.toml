@@ -1,0 +1,15 @@
+[game]
+cache_dir = "cache/tests/core/native-loading"
+game_dir  = "games/tests/core/native-loading"
+width     = 64
+height    = 64
+
+[scripts]
+libs     = []
+includes = ["../../lib/assert.js"]
+entry    = "main.js"
+
+# las imagenes y los sonidos cifrados de RPG Maker MV leidos en C
+[hooks]
+"Decrypter.decryptImg" = "rpgmaker-mv/decrypt-image-native"
+"WebAudio.prototype._load" = "rpgmaker-mv/load-audio-native"

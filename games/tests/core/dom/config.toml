@@ -1,0 +1,10 @@
+[game]
+cache_dir = "cache/tests/core/dom"
+game_dir  = "games/tests/core/dom"
+width     = 320
+height    = 240
+
+[scripts]
+libs     = []
+includes = ["../../lib/assert.js"]
+entry    = "main.js"

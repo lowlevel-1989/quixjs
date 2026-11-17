@@ -1,0 +1,10 @@
+[game]
+cache_dir = "cache/tests/webgl/basic"
+game_dir  = "games/tests/webgl/basic"
+width     = 64
+height    = 64
+
+[scripts]
+libs     = []
+includes = ["../../lib/assert.js"]
+entry    = "main.js"

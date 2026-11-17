@@ -1,0 +1,8 @@
+[game]
+cache_dir = "cache/tests/bench/canvas-lights"
+game_dir  = "games/tests/bench/canvas-lights"
+width     = 866
+height    = 630
+
+[scripts]
+entry = "main.js"

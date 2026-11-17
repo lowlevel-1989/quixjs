@@ -1,0 +1,10 @@
+[game]
+cache_dir = "cache/tests/audio/webaudio"
+game_dir  = "games/tests/audio/webaudio"
+width     = 320
+height    = 240
+
+[scripts]
+libs     = []
+includes = ["../../lib/assert.js"]
+entry    = "main.js"

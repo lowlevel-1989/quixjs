@@ -1,5 +1,5 @@
 /*
- * QuixJS - A lightweight JS runtime using SDL2 and QuickJS
+ * QuixJS - A lightweight JS runtime using SDL2 and JavaScriptCore
  * Copyright (C) 2025  Vinicio Valbuena (lowlevel.1989)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -16,8 +16,10 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+// El objeto global window: window = globalThis, document, navigator, location
+// y el tamano de la ventana (innerWidth, innerHeight).
+
 #include <string.h>
-#include "quickjs-libc.h"
 #include "window.h"
 #include "document.h"
 #include "navigator.h"
@@ -29,14 +31,10 @@ void js_api_add_window(JSContext *ctx) {
   // Hacer que `window` sea igual a `globalThis`
   JS_SetPropertyStr(ctx, global, "window", JS_DupValue(ctx, global));
 
-  // Dummy addEventListener global
-  JSValue addEventListenerFunc = JS_NewCFunction(ctx, js_dummy_addEventListener, "addEventListener", 2);
-  JS_SetPropertyStr(ctx, global, "addEventListener", JS_DupValue(ctx, addEventListenerFunc));
-
   // document
   JSValue document = js_create_document(ctx);
   JS_SetPropertyStr(ctx, global, "document", document);
-                                                                //
+
   AppContext *app = JS_GetContextOpaque(ctx);
 
   JS_SetPropertyStr(ctx, global, "innerWidth",  JS_NewInt32(ctx, app->cfg->game.width));
@@ -50,11 +48,19 @@ void js_api_add_window(JSContext *ctx) {
 
   // location
   JSValue location = JS_NewObject(ctx);
-  JS_SetPropertyStr(ctx, location, "href", JS_NewString(ctx, "http://localhost/"));
-  JS_SetPropertyStr(ctx, global, "location", JS_DupValue(ctx, location));
-  JS_SetPropertyStr(ctx, global, "window.location", location);  // opcional
+  JS_SetPropertyStr(ctx, location, "href",     JS_NewString(ctx, "http://localhost/"));
+  JS_SetPropertyStr(ctx, location, "protocol", JS_NewString(ctx, "http:"));
+  JS_SetPropertyStr(ctx, location, "host",     JS_NewString(ctx, "localhost"));
+  JS_SetPropertyStr(ctx, location, "hostname", JS_NewString(ctx, "localhost"));
+  JS_SetPropertyStr(ctx, location, "port",     JS_NewString(ctx, ""));
+  JS_SetPropertyStr(ctx, location, "pathname", JS_NewString(ctx, "/"));
+  JS_SetPropertyStr(ctx, location, "search",   JS_NewString(ctx, ""));
+  JS_SetPropertyStr(ctx, location, "hash",     JS_NewString(ctx, ""));
+  JS_SetPropertyStr(ctx, location, "origin",   JS_NewString(ctx, "http://localhost"));
+  JSValue doc = JS_GetPropertyStr(ctx, global, "document");
+  JS_SetPropertyStr(ctx, doc, "location", JS_DupValue(ctx, location));
+  JS_FreeValue(ctx, doc);
+  JS_SetPropertyStr(ctx, global, "location", location);
 
-  JS_FreeValue(ctx, addEventListenerFunc);
   JS_FreeValue(ctx, global);
 }
-

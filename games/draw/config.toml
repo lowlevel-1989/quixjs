@@ -1,8 +1,0 @@
-[game]
-cache_dir  = "cache/games/draw"
-game_dir   = "games/draw"
-width = 640
-height = 480
-
-[scripts]
-entry = "test.js"

@@ -1,0 +1,16 @@
+[game]
+cache_dir = "cache/tests/canvas/gpu"
+game_dir  = "games/tests/canvas/gpu"
+width     = 100
+height    = 100
+
+[scripts]
+libs     = []
+includes = ["../../lib/assert.js"]
+entry    = "main.js"
+
+# los canvas que crea makeLightCanvas dibujan en la GPU
+[hooks]
+"makeLightCanvas" = "gpu-canvas"
+"Counter.prototype.tick" = "once-per-frame"
+"Effects.flash" = "skip"

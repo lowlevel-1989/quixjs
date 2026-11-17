@@ -1,0 +1,10 @@
+[game]
+cache_dir = "cache/tests/pixi_v4/tiling"
+game_dir  = "games/tests/pixi_v4/tiling"
+width     = 200
+height    = 200
+
+[scripts]
+libs     = ["../../lib/pixi_v4/pixi.js"]
+includes = ["../../lib/assert.js"]
+entry    = "main.js"

@@ -1,5 +1,5 @@
 /*
- * QuixJS - A lightweight JS runtime using SDL2 and QuickJS
+ * QuixJS - A lightweight JS runtime using SDL2 and JavaScriptCore
  * Copyright (C) 2025  Vinicio Valbuena (lowlevel.1989)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -18,9 +18,9 @@
 
 #pragma once
 
-#include "quickjs.h"
-#include "quickjs-libc.h"
+#include "js/js.h"
 #include "compiler.h"
 
-int runner_run_bundle(JSContext *ctx, const BytecodeBundle *bundle);
-
+// Ejecuta los scripts en orden. before (puede ser NULL) se llama antes de
+// cada script con su indice.
+int runner_run_bundle(JSContext *ctx, const ScriptBundle *bundle, void (*before)(JSContext *ctx, int index));

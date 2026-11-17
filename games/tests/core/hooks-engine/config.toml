@@ -1,0 +1,17 @@
+[game]
+cache_dir = "cache/tests/core/hooks-engine"
+game_dir  = "games/tests/core/hooks-engine"
+width     = 64
+height    = 64
+
+[scripts]
+libs     = []
+includes = ["../../lib/assert.js"]
+entry    = "main.js"
+
+# los hooks de RPG Maker MV (runtime/engines/rpgmaker-mv/hooks.toml); el juego
+# manda: uno apagado y otro cambiado
+[hooks]
+engine = "rpgmaker-mv"
+"Tilemap.prototype._sortChildren" = "off"
+"Game_Party.prototype.leader" = "skip"

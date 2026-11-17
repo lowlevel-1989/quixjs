@@ -1,0 +1,58 @@
+# hooks.toml: los hooks de RPG Maker MV que usa cualquier juego del motor con
+#   [hooks]
+#   engine = "rpgmaker-mv"
+# en su toml (config.toml o port.toml). Casi todos comprueban al empezar que
+# la funcion es la de RPG Maker MV (o la del plugin que tratan); si no, dejan
+# la original. Los del final de la lista todavia no lo comprueban.
+# El juego manda: en su [hooks] puede poner otro en la misma ruta, o "off".
+# Lo que hace cada uno, en su archivo (runtime/engines/rpgmaker-mv/<hook>.js).
+# Hay hooks en esta carpeta que no estan aqui (refresh-if-changed,
+# terrax-lights-only): un juego que los quiera los pone en su [hooks].
+[hooks]
+# datos, imagenes, sonidos y partidas: en C, sin crear objetos de JS de mas
+"DataManager.loadDataFile" = "rpgmaker-mv/lazy-data"
+"Decrypter.decryptImg" = "rpgmaker-mv/decrypt-image-native"
+"WebAudio.prototype._load" = "rpgmaker-mv/load-audio-native"
+"LZString.decompressFromBase64" = "rpgmaker-mv/lz-string-native"
+"Bitmap.prototype.adjustTone" = "rpgmaker-mv/adjust-tone"
+# el recolector de memoria: cuando no se nota
+"Scene_Map.prototype.create" = "rpgmaker-mv/gc-on-transition"
+"Scene_Battle.prototype.create" = "rpgmaker-mv/gc-on-transition"
+"Scene_Map.prototype.update" = "rpgmaker-mv/gc-when-still"
+# el ritmo a 30 fps (TDDP_FluidTimestep o el de RPG Maker)
+"SceneManager.updateMain" = "rpgmaker-mv/fluid-timestep-cap"
+# eventos, interprete y personajes
+"Game_Interpreter.requestImages" = "rpgmaker-mv/request-images-once"
+"Game_Interpreter.prototype.update" = "rpgmaker-mv/interpreter-fast"
+"Game_Map.prototype.isAnyEventStarting" = "rpgmaker-mv/any-event-starting"
+"Game_CommonEvent.prototype.update" = "rpgmaker-mv/pure-common-events"
+"Game_Actor.prototype.hasSkill" = "rpgmaker-mv/has-skill-fast"
+"Game_BattlerBase.prototype.traits" = "rpgmaker-mv/traits-cache"
+"Game_Follower.prototype.actor" = "rpgmaker-mv/party-member-fast"
+"Game_Party.prototype.leader" = "rpgmaker-mv/party-member-fast"
+# dibujo
+"Sprite.prototype.update" = "rpgmaker-mv/sprite-update-loop"
+"Tilemap.prototype._sortChildren" = "rpgmaker-mv/sort-if-needed"
+"Sprite.prototype._executeTint" = "rpgmaker-mv/tint-native"
+# los logros del port dentro del juego (una opcion del menu)
+"Scene_Menu.prototype.createCommandWindow" = "rpgmaker-mv/achievements-menu"
+# plugins muy usados
+"Scene_Map.prototype.updateButtonEvents" = "rpgmaker-mv/button-events-keys"
+"Window_EnemyVisualSelect.prototype.updateBattlerName" = "rpgmaker-mv/yep-enemy-name-refresh"
+"Game_Switches.prototype.value" = "rpgmaker-mv/olivia-meta-fast"
+"Game_Variables.prototype.value" = "rpgmaker-mv/olivia-meta-fast"
+"Game_Switches.prototype.setValue" = "rpgmaker-mv/olivia-meta-fast"
+"Game_Variables.prototype.setValue" = "rpgmaker-mv/olivia-meta-fast"
+# Estos aun no comprueban que la funcion es la de RPG Maker MV (pendiente):
+# con un plugin que la cambie, el juego puede ponerlos a "off" en su [hooks]
+"Game_Interpreter.prototype.skipBranch" = "rpgmaker-mv/skip-branch-table"
+"Game_Event.prototype.update" = "rpgmaker-mv/event-idle-fast"
+"Game_Map.prototype.events" = "rpgmaker-mv/events-cached"
+# el mapa se refresca solo si los interruptores y variables cambian de verdad
+"Game_Map.prototype.refresh" = "rpgmaker-mv/refresh-on-net-change"
+"Sprite_Character.prototype.update" = "rpgmaker-mv/skip-hidden-sprites"
+"Tilemap.prototype.update" = "rpgmaker-mv/tilemap-sprites-once-per-frame"
+"WindowLayer.prototype.renderWebGL" = "rpgmaker-mv/windowlayer-skip-empty"
+# PENDIENTE: en la GPU Mali deja lineas finas entre columnas de tiles en
+# algunas capas (en PC no)
+"Spriteset_Base.prototype.updateToneChanger" = "rpgmaker-mv/tone-filter-when-needed"

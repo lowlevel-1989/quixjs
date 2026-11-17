@@ -1,5 +1,5 @@
 /*
- * QuixJS - A lightweight JS runtime using SDL2 and QuickJS
+ * QuixJS - A lightweight JS runtime using SDL2 and JavaScriptCore
  * Copyright (C) 2025  Vinicio Valbuena (lowlevel.1989)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -18,8 +18,7 @@
 
 #pragma once
 
-#include "quickjs.h"
-#include "quickjs-libc.h"
-#include "backend/backend.h"
+#include "js/js.h"
 
+// setTimeout, setInterval, requestAnimationFrame y performance.now()
 void js_api_add_timer(JSContext *ctx);

@@ -1,0 +1,23 @@
+# compilacion
+/quixjs
+*.o
+# la cache de Python de los generadores de JavaScriptCore
+__pycache__/
+
+# bytecode compilado y logs de los tests
+cache/
+
+# juegos de terceros para probar en local: nunca van al repositorio
+tmp/
+
+# editores
+.idea/
+.vscode/
+*.swp
+*~
+
+# dependencias y objetos de make PLATFORM=portmaster, y los .zip de los ports
+obj/
+*.zip
+# make release
+release/

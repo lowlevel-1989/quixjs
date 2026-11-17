@@ -1,0 +1,72 @@
+0.2.0
+- changed: el motor de JS pasa de QuickJS a JavaScriptCore (WebKit, con JIT),
+  compilado como libreria estatica (tools/build-jsc.sh; make lo compila si
+  falta) y usado desde runtime/js. Sin JIT, Fear & Hunger no llegaba a 30 fps
+  en las portatiles (docs/javascript-engine.md). Ya no hay cache de bytecode:
+  los scripts se leen y se comprueban al arrancar
+- added: un solo toml describe cada juego (configurar con un toml esta
+  inspirado en bogodroid, https://github.com/binarycounter/bogodroid):
+  [engine] (fps, vsync,
+  present_ahead, webgl, js_memory, low_memory_mb, y [engine.pc] /
+  [engine.handheld] por plataforma), [game] (title, id, mods), [scripts],
+  [fonts], [saves], [launcher], [controls], [hooks], los logros y los trucos.
+  --gen-config <carpeta> lo escribe mirando el juego (package.json de nw.js,
+  index.html, su CSS, RPG Maker MV/MZ, pixi.js)
+- added: canvas 2d por software: rectangulos, paths, arcos, curvas, stroke,
+  clip, transformaciones, globalAlpha, modos de composicion, drawImage,
+  ImageData, gradientes y patrones; texto con SDL_ttf (fillText, measureText,
+  FontFace, @font-face)
+- added: canvas 2d en la GPU (hook gpu-canvas), para las mascaras de luces
+- added: WebGL 1 sobre OpenGL ES 2: PixiJS v4 usa su renderer WebGL, y un
+  canvas WebGL va de la GPU a la pantalla sin leerlo. La imagen se escala con
+  barras negras. Con Mesa, una imagen de adelanto (present_ahead) que otro
+  hilo presenta en su refresco; con libmali, se espera a la GPU antes de
+  presentar (EGL_KHR_fence_sync)
+- added: audio WebAudio sobre un mezclador propio (ogg vorbis con
+  stb_vorbis) y video WebM en <video> (VP8/VP9 y Opus, en su propio hilo)
+- added: Image, Blob, URL.createObjectURL, XMLHttpRequest de archivos
+  locales, DOM minimo, EventTarget y eventos, setTimeout, setInterval,
+  requestAnimationFrame (el bucle duerme hasta el siguiente frame o timer)
+- added: teclado y mandos (Gamepad API con el mapeo standard); una pulsacion
+  mas corta que una imagen el juego la ve igual. Select + Start sale, tambien
+  con el juego colgado
+- added: modo nw.js ([engine] nwjs): require('fs'), path, process... y las
+  partidas de RPG Maker MV en disco
+- added: hooks ([hooks]): cambian una funcion del juego sin tocar sus
+  archivos ("gpu-canvas", "skip", "once-per-frame" y los hooks de motor).
+  engine = "rpgmaker-mv" pone los de RPG Maker MV (runtime/engines/
+  rpgmaker-mv/hooks.toml): datos, imagenes, sonidos y partidas en C, el
+  recolector cuando no se nota, el interprete de eventos, el recoloreado de
+  los sprites en C, y arreglos de plugins muy usados (YEP, Olivia, TDDP)
+- added: --launcher: un menu antes del juego (Play, Achievements, Transfer
+  Save, Controls, Options, Cheats, Exit), heredado de tamatama; lo que se
+  cambia se guarda en quixjs-settings.toml
+- added: Transfer Save: pasa las partidas y los logros a otro dispositivo de
+  la misma red, sin abrir puertos, con backup y Restore Backup (de tamatama)
+- added: logros ([symbols] y [[achievements]]): aviso en pantalla, guardados
+  con las partidas y, en RPG Maker MV, una opcion Achievements en el menu del
+  juego ([achievements_menu])
+- added: trucos ([[cheat]]), que se activan en el lanzador; la partida jugada
+  con uno no consigue logros
+- added: mods: carpetas mods/<nombre>/ con archivos que se usan en vez de
+  los del juego (datos, imagenes, sonidos y scripts), sin tocarlo. Se activan
+  en [game] mods o en la opcion Mods del lanzador. El port de Fear & Hunger
+  trae el mod no-widescreen (quita la pantalla ancha de un mod que la pone)
+- added: para desarrollar: --debug y tools/console.py, --script, --profile,
+  --fps, --frame-rate, --fixed-step, --frames, --screenshot, --test, --hold,
+  --fullscreen, --resizable, --no-webgl y --version
+- added: make release (tools/release.sh): quixjs solo para x86_64, aarch64 y
+  armhf, el port para PortMaster (aarch64 y armhf) y el port para el PC, en
+  release/
+- added: 46 juegos de test (games/tests), make test, tests/transfer.sh y CI
+- added: PortMaster: make PLATFORM=portmaster construye el zip de un port
+  para aarch64 y armhf (Debian buster, glibc 2.28) con lo que necesita en
+  libs/; el lanzador .sh, port.json y gameinfo.xml salen de su port.toml
+- added: el primer port, Fear & Hunger 1.4.1 (games/fearandhunger): 30 fps en
+  una RG CubeXX y una Powkiddy RGB30, 18 logros y 7 trucos; el juego no va
+  dentro
+- removed: QuickJS y las demos del prototipo (games/basic, games/draw,
+  games/image, games/p8, games/pixi_v4)
+- docs: README corto en ingles y espanol; el resto en docs/ (compilar, uso,
+  que soporta, compatibilidad, tests, motor de JavaScript) y un README por
+  carpeta del codigo

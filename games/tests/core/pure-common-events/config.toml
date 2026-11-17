@@ -1,0 +1,15 @@
+[game]
+cache_dir = "cache/tests/core/pure-common-events"
+game_dir  = "games/tests/core/pure-common-events"
+width     = 64
+height    = 64
+
+[scripts]
+libs     = []
+includes = ["../../lib/assert.js"]
+entry    = "main.js"
+
+# rpgmaker-mv/pure-common-events: un evento comun paralelo puro no se repite
+# si lo que mira y cambia sigue igual que tras su ultima ejecucion
+[hooks]
+"Game_CommonEvent.prototype.update" = "rpgmaker-mv/pure-common-events"

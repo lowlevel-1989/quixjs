@@ -1,0 +1,1 @@
+window.loaded.push('b');

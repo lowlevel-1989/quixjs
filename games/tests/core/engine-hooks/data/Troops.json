@@ -1,0 +1,9 @@
+[
+null,
+{"id":1,"members":[{"enemyId":1,"x":10,"y":20,"hidden":false}],"name":"Wolf ] } \" [","pages":[{"conditions":{"turnA":0,"switchValid":false},"list":[{"code":101,"indent":0,"parameters":["", 0, 0, 2]},{"code":401,"indent":0,"parameters":["pages\": \"{ no }\\n é 中 😀"]},{"code":0,"indent":0,"parameters":[]}],"span":0}]},
+{ "pages" : [ {"list":[]} ] , "id" : 2, "name":"key first" , "members":[] },
+{"id":3,"name":"key last","members":[],"pages":[]},
+{"id":4,"name":"no key","members":[]},
+{"id":5,"name":"\"pages\"","pagesX":1,"members":[],"pages":[{"list":[{"code":0}]}],"after":[1,2.5e3,-0.5,true,null]},
+{}
+]

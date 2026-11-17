@@ -1,0 +1,14 @@
+# Mods: [game] mods son los activos (mods/<nombre>/ junto a este config.toml,
+# con las rutas de dentro de [game] game_dir). Si dos traen el mismo archivo,
+# gana el ultimo; "off" no esta activo.
+[game]
+cache_dir = "cache/tests/core/mods"
+game_dir  = "games/tests/core/mods/game"
+width     = 320
+height    = 240
+mods      = ["uno", "dos"]
+
+[scripts]
+libs     = []
+includes = ["../../../lib/assert.js", "lib.js"]
+entry    = "main.js"

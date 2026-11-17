@@ -1,5 +1,5 @@
 /*
- * QuixJS - A lightweight JS runtime using SDL2 and QuickJS
+ * QuixJS - A lightweight JS runtime using SDL2 and JavaScriptCore
  * Copyright (C) 2025  Vinicio Valbuena (lowlevel.1989)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -18,13 +18,37 @@
 
 #pragma once
 
-#include <stdint.h>
-#include "quickjs-libc.h"
-#include "backend/backend.h"
+// Reloj, timers (setTimeout / setInterval) y requestAnimationFrame.
+//
+// El reloj puede ser real (milisegundos desde que arranca el runtime) o fijo:
+// en modo fijo el tiempo solo avanza cuando el bucle principal lo pide (un
+// frame = 1000/60 ms), asi los tests dan siempre el mismo resultado y corren
+// tan rapido como se pueda.
 
-int timer_process(JSContext *ctx, Backend *backend);
-int timer_set(JSContext *ctx, JSValueConst func, int64_t delay);
+#include <stdint.h>
+#include "js/js.h"
+
+#define FRAME_MS (1000.0 / 60.0)
+
+void   clock_init(int fixed_step);
+int    clock_is_fixed(void);
+double clock_now_ms(void);           // performance.now()
+void   clock_advance_to(double ms);  // solo en modo fijo
+
+// Devuelven el id (>0) o -1 si no hay memoria. args se copia.
+int  timer_set(JSContext *ctx, JSValueConst func, double delay, int repeat,
+               int argc, JSValueConst *argv);
 void timer_clear(JSContext *ctx, int id);
-int timer_count();
+int  timer_request_animation_frame(JSContext *ctx, JSValueConst func);
+void timer_cancel_animation_frame(JSContext *ctx, int id);
+
+int    timer_count(void);             // setTimeout/setInterval pendientes
+int    timer_frame_count(void);       // callbacks de rAF pendientes
+double timer_next_deadline(void);     // -1 si no hay timers
+
+// Ejecuta los timers vencidos. Devuelve -1 si un callback lanza una excepcion.
+int timer_run_due(JSContext *ctx);
+// Ejecuta los rAF registrados antes de este frame.
+int timer_run_frame(JSContext *ctx, double now);
+
 void timer_free(JSContext *ctx);
-int timer_request_animation_frame(JSContext *ctx, JSValueConst func);

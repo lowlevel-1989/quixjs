@@ -1,0 +1,15 @@
+[game]
+cache_dir = "cache/tests/core/tint-native"
+game_dir  = "games/tests/core/tint-native"
+width     = 64
+height    = 64
+
+[scripts]
+libs     = []
+includes = ["../../lib/assert.js"]
+entry    = "main.js"
+
+# rpgmaker-mv/tint-native: el recoloreado de los sprites en C, con el mismo
+# resultado que la original de RPG Maker MV en el canvas 2d de quixjs
+[hooks]
+"Sprite.prototype._executeTint" = "rpgmaker-mv/tint-native"

@@ -1,0 +1,10 @@
+[game]
+cache_dir = "cache/tests/media/video"
+game_dir  = "games/tests/media/video"
+width     = 64
+height    = 48
+
+[scripts]
+libs     = []
+includes = ["../../lib/assert.js"]
+entry    = "main.js"

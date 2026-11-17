@@ -1,0 +1,33 @@
+name: tests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  games:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: system deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential libsdl2-dev libsdl2-image-dev libsdl2-ttf-dev fonts-dejavu-core \
+            libvpx-dev libopus-dev \
+            clang lld cmake ninja-build ruby perl python3 libicu-dev pkg-config
+      # JavaScriptCore (WebKit) tarda en compilar: se guarda entre ejecuciones
+      - name: JavaScriptCore cache
+        uses: actions/cache@v4
+        with:
+          path: obj/deps/jsc-build
+          key: jsc-host-${{ runner.os }}-${{ hashFiles('tools/build-jsc.sh', 'runtime/thirdparty/webkit/**') }}
+      - name: JavaScriptCore
+        run: tools/build-jsc.sh host
+      - name: build
+        run: make -j"$(nproc)"
+      - name: tests
+        env:
+          SDL_VIDEODRIVER: dummy
+          SDL_AUDIODRIVER: dummy
+        run: VERBOSE=1 make test

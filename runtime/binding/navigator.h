@@ -1,5 +1,5 @@
 /*
- * QuixJS - A lightweight JS runtime using SDL2 and QuickJS
+ * QuixJS - A lightweight JS runtime using SDL2 and JavaScriptCore
  * Copyright (C) 2025  Vinicio Valbuena (lowlevel.1989)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -18,6 +18,8 @@
 
 #pragma once
 
-#include "quickjs.h"
+// navigator (ver navigator.c).
+
+#include "js/js.h"
 
 JSValue js_create_navigator(JSContext *ctx);

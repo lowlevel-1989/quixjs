@@ -1,0 +1,42 @@
+[game]
+cache_dir = "cache/tests/core/engine-hooks"
+game_dir  = "games/tests/core/engine-hooks"
+width     = 64
+height    = 64
+
+[scripts]
+libs     = []
+includes = ["../../lib/assert.js"]
+entry    = "main.js"
+
+# un hook de engines/ (engines/rpgmaker-mv/request-images-once.js)
+[hooks]
+"Game_Interpreter.requestImages" = "rpgmaker-mv/request-images-once"
+"Game_Interpreter.prototype.skipBranch" = "rpgmaker-mv/skip-branch-table"
+"Bitmap.prototype.adjustTone" = "rpgmaker-mv/adjust-tone"
+"Game_Switches.prototype.setValue" = "rpgmaker-mv/refresh-if-changed"
+"Game_Variables.prototype.setValue" = "rpgmaker-mv/refresh-if-changed"
+"Game_SelfSwitches.prototype.setValue" = "rpgmaker-mv/refresh-if-changed"
+"Game_Map.prototype.refresh" = "rpgmaker-mv/refresh-on-net-change"
+"Game_Actor.prototype.hasSkill" = "rpgmaker-mv/has-skill-fast"
+"Game_BattlerBase.prototype.traits" = "rpgmaker-mv/traits-cache"
+"Tilemap.prototype._sortChildren" = "rpgmaker-mv/sort-if-needed"
+"Game_Map.prototype.isAnyEventStarting" = "rpgmaker-mv/any-event-starting"
+"SceneManager.updateMain" = "rpgmaker-mv/fluid-timestep-cap"
+"LZString.decompressFromBase64" = "rpgmaker-mv/lz-string-native"
+"Game_Interpreter.prototype.update" = "rpgmaker-mv/interpreter-fast"
+"Spriteset_Map.prototype.update" = "rpgmaker-mv/terrax-lights-only"
+"Game_Switches.prototype.value" = "rpgmaker-mv/olivia-meta-fast"
+"Sprite_Character.prototype.update" = "rpgmaker-mv/skip-hidden-sprites"
+"Tilemap.prototype.update" = "rpgmaker-mv/tilemap-sprites-once-per-frame"
+"WindowLayer.prototype.renderWebGL" = "rpgmaker-mv/windowlayer-skip-empty"
+"Game_Event.prototype.update" = "rpgmaker-mv/event-idle-fast"
+"Spriteset_Base.prototype.updateToneChanger" = "rpgmaker-mv/tone-filter-when-needed"
+"Game_Map.prototype.events" = "rpgmaker-mv/events-cached"
+"Sprite.prototype.update" = "rpgmaker-mv/sprite-update-loop"
+"Scene_Map.prototype.create" = "rpgmaker-mv/gc-on-transition"
+"DataManager.loadDataFile" = "rpgmaker-mv/lazy-data"
+"Scene_Map.prototype.update" = "rpgmaker-mv/gc-when-still"
+"Game_Follower.prototype.actor" = "rpgmaker-mv/party-member-fast"
+"Game_Party.prototype.leader" = "rpgmaker-mv/party-member-fast"
+"Scene_Map.prototype.updateButtonEvents" = "rpgmaker-mv/button-events-keys"

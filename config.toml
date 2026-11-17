@@ -1,8 +1,11 @@
+# ./quixjs sin -c usa este config.toml: un test de PIXI v4 con ventana
 [game]
-cache_dir  = "cache/hello"
-game_dir   = "games/hello"
-width = 640
-height = 480
+cache_dir = "cache/tests/pixi_v4/sprite"
+game_dir  = "games/tests/pixi_v4/sprite"
+width     = 200
+height    = 200
 
 [scripts]
-entry = "main.js"
+libs     = ["../../lib/pixi_v4/pixi.js"]
+includes = ["../../lib/assert.js"]
+entry    = "main.js"

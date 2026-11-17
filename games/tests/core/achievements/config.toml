@@ -1,0 +1,75 @@
+[game]
+cache_dir = "cache/tests/core/achievements"
+game_dir  = "games/tests/core/achievements"
+width     = 320
+height    = 240
+
+[scripts]
+libs     = []
+includes = ["../../lib/assert.js"]
+entry    = "main.js"
+
+# sin fichero: cada vez empiezan sin conseguir
+[saves]
+achievements = ""
+
+[symbols]
+boss   = "path:game.boss.dead"
+preset = "path:game.preset"
+hero   = "path:game.hero"
+ending = "var:88"
+lever  = "switch:3"
+later  = "path:game.later.value"
+
+[[achievements]]
+id         = "boss_1"
+title      = "First Blood"
+conditions = [
+  "boss == 1",
+  "prev(boss) == 0",
+]
+
+[[achievements]]
+id         = "preset"
+title      = "Already true at start"
+conditions = ["preset == 1", "prev(preset) == 0"]
+
+[[achievements]]
+id         = "ending"
+title      = "An ending"
+conditions = ["ending >= 2"]
+
+[[achievements]]
+id         = "lever"
+title      = "Lever"
+conditions = ["lever"]
+
+[[achievements]]
+id         = "hero"
+title      = "Named"
+conditions = ['hero == "Bea"']
+
+[[achievements]]
+id         = "missing"
+title      = "Not created yet"
+conditions = ["later != 5"]
+
+[[achievements]]
+id         = "either"
+title      = "One of two"
+conditions = ["boss == 5 || ending == 2", "hero == \"Bea\" || hero == \"Eva\""]
+
+[[achievements]]
+id         = "neither"
+title      = "None of two"
+conditions = ["boss == 5 || ending == 3"]
+
+[[achievements]]
+id         = "empty"
+title      = "Without conditions"
+conditions = []
+
+[[achievements]]
+id         = "never"
+title      = "Never"
+conditions = ["boss == 1", "ending == 99"]

@@ -1,5 +1,5 @@
 /*
- * QuixJS - A lightweight JS runtime using SDL2 and QuickJS
+ * QuixJS - A lightweight JS runtime using SDL2 and JavaScriptCore
  * Copyright (C) 2025  Vinicio Valbuena (lowlevel.1989)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -18,9 +18,21 @@
 
 #pragma once
 
-#include "quickjs.h"
+// document y los elementos del DOM minimo (ver document.c).
+
+#include "js/js.h"
+#include "canvas.h"
 
 JSValue js_create_document(JSContext *ctx);
-JSValue js_dummy_addEventListener(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv);
+JSValue js_create_element(JSContext *ctx, const char *tag);
+
+// Prototipo comun de los elementos (appendChild, setAttribute, eventos...)
+JSValue js_element_proto(JSContext *ctx);
+// Propiedades de instancia (tagName, style, childNodes...)
+void element_setup(JSContext *ctx, JSValueConst elem, const char *tag);
+
 void register_element_with_id(JSContext *ctx, JSValue obj, const char *id);
 void free_element_registry(JSContext *ctx);
+
+// Canvas visibles anadidos al documento, en orden (el primero va debajo).
+int document_screen_canvases(JSContext *ctx, CanvasData **out, int max);
