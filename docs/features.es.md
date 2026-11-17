@@ -61,7 +61,6 @@ esta en [compatibilidad](compatibility.es.md).
 - 46 juegos de test en `games/tests`, la mayoria se pueden abrir tambien en un
   navegador
 - PortMaster: `make PLATFORM=portmaster` construye un port para portatiles aarch64
-  (y armhf, aun sin probar en un dispositivo)
 
 Todavia no: raton y pantalla tactil, guardar localStorage en disco,
 antialiasing en canvas 2d, `toDataURL`. Estado de cada API:

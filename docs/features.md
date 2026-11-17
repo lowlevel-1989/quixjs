@@ -60,7 +60,6 @@ What quixjs can do today, in short. The state of each browser API is in
 - headless mode (`dummy`) with a fixed clock and screenshots, for tests
 - 46 test games in `games/tests`, most of them also runnable in a browser
 - PortMaster: `make PLATFORM=portmaster` builds a port for aarch64 handhelds
-  (and armhf, not tested on a device yet)
 
 Not yet: mouse and touch, saving localStorage to disk, antialiasing in
 canvas 2d, `toDataURL`. Status of each API:

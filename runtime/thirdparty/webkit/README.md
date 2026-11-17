@@ -15,6 +15,7 @@ only removed or added.
 | file | change |
 |------|--------|
 | `CMakeLists.txt`, `cmake/WebKitFS.cmake` | the paths of this folder (without `Source/`) |
+| `cmake/WebKitMacros.cmake` | the operands of an `if` in quotes: with JavaScriptCore static, an empty variable left it without operands and CMake 4.4 rejects it |
 | `cmake/OptionsJSCOnly.cmake` | without WebAssembly (nor its BBQ and OMG JITs), without the WebKit API tests and without capstone |
 | `JavaScriptCore/CMakeLists.txt` | without capstone |
 | `JavaScriptCore/Sources.txt` | without the WebAssembly `.cpp` files; with `API/QuixAllocProfile.cpp` and `API/QuixNativeFunction.cpp` |

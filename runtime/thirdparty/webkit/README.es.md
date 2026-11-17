@@ -15,6 +15,7 @@ quitan o se añaden líneas.
 | archivo | cambio |
 |---------|--------|
 | `CMakeLists.txt`, `cmake/WebKitFS.cmake` | las rutas de esta carpeta (sin `Source/`) |
+| `cmake/WebKitMacros.cmake` | los operandos de un `if` entre comillas: con JavaScriptCore estático, una variable vacía lo dejaba sin operandos y CMake 4.4 lo rechaza |
 | `cmake/OptionsJSCOnly.cmake` | sin WebAssembly (ni sus JIT BBQ y OMG), sin los tests de la API de WebKit y sin capstone |
 | `JavaScriptCore/CMakeLists.txt` | sin capstone |
 | `JavaScriptCore/Sources.txt` | sin los `.cpp` de WebAssembly; con `API/QuixAllocProfile.cpp` y `API/QuixNativeFunction.cpp` |

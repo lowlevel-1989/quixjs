@@ -43,8 +43,8 @@ mods      = []                  # mods activos (mods/<nombre>/ junto al port.tom
                                 # mismas rutas que dentro de game_dir); si dos traen el
                                 # mismo archivo, gana el ultimo de la lista
 developer = "Miro Haverinen"
-publisher = "Miro Haverinen"    # publisher y players: van en gameinfo.xml (EmulationStation)
-players   = 1
+publisher = "Miro Haverinen"    # publisher y releasedate: van en gameinfo.xml (EmulationStation)
+releasedate = "20181211T000000" # el 11 de diciembre de 2018, en itch.io
 genres    = ["rpg"]                 # los de PortMaster: action, adventure, arcade, casino/card,
                                 # fps, platformer, puzzle, racing, rhythm, rpg, simulation,
                                 # sports, strategy, visual novel, other (otro se descarta)

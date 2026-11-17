@@ -15,7 +15,7 @@
 #      (tools/portmaster.py saca de el el .sh, port.json y gameinfo.xml) y su
 #      README.md. El juego NO va dentro: el usuario copia su copia en
 #      gamedata/ y el script .sh ejecuta quixjs -c port.toml, que lo lee de ahi.
-# Uso: make PLATFORM=portmaster [PORT=fearandhunger] [PM_ARCHES="aarch64 armhf"]
+# Uso: make PLATFORM=portmaster [PORT=fearandhunger] [PM_ARCHES="aarch64"]
 PORT        ?= fearandhunger
 PM          := obj/portmaster
 PM_DEPS     := obj/deps
@@ -38,7 +38,9 @@ PM_VERSION  := $(shell sed -n 's/^\#define QUIX_VERSION "\(.*\)"/\1/p' runtime/b
 PM_ZIP      := $(PORT).zip
 PM_PORTDIR  := games/$(PORT)
 
-PM_ARCHES ?= aarch64 armhf
+# solo aarch64: armhf se puede compilar con PM_ARCHES="aarch64 armhf", pero no
+# va en el port (no se ha probado en una consola)
+PM_ARCHES ?= aarch64
 
 # Por arquitectura: el sysroot de Debian, el triplete y las opciones de clang
 DEB_aarch64     := arm64
@@ -114,7 +116,7 @@ PM_STAGE := $(PM)/zip
 $(PM_ZIP): $(PM_BINS) portmaster/portmaster.sh tools/portmaster.py $(shell find $(PM_PORTDIR) -type f 2>/dev/null)
 	rm -rf $(PM_STAGE) && mkdir -p $(PM_STAGE)
 	# el script .sh, port.json y gameinfo.xml salen del port.toml del port
-	python3 tools/portmaster.py $(PM_PORTDIR)/port.toml $(PM_STAGE)
+	PM_ARCHES="$(PM_ARCHES)" python3 tools/portmaster.py $(PM_PORTDIR)/port.toml $(PM_STAGE)
 	cp $(PM_PORTDIR)/README.md $(PM_STAGE)/$(PORT)/
 	if [ -f $(PM_PORTDIR)/README.es.md ]; then cp $(PM_PORTDIR)/README.es.md $(PM_STAGE)/$(PORT)/; fi
 	# los mods que trae el port (mods/<nombre>/, se activan en la opcion Mods)

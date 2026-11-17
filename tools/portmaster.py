@@ -76,7 +76,8 @@ def main():
             "store": [{"name": store["name"], "gameurl": store["url"]}] if store else [],
             "availability": p.get("availability", "full"),
             "reqs": [],
-            "arch": ["aarch64", "armhf"],
+            # las arquitecturas que lleva el zip (PM_ARCHES de portmaster.mk)
+            "arch": os.environ.get("PM_ARCHES", "aarch64").split(),
             "min_glibc": "2.28",
         },
     }
@@ -92,7 +93,7 @@ def main():
         f"    <desc>{escape(p.get('desc', ''))}</desc>\n"
         f"    <developer>{escape(p.get('developer', ''))}</developer>\n"
         + (f"    <publisher>{escape(p['publisher'])}</publisher>\n" if p.get("publisher") else "")
-        + (f"    <players>{escape(str(p['players']))}</players>\n" if p.get("players") else "")
+        + (f"    <releasedate>{escape(p['releasedate'])}</releasedate>\n" if p.get("releasedate") else "")
         +
         f"    <genre>{escape(genre.upper() if len(genre) <= 3 else genre.capitalize())}</genre>\n"
         + (f"    <image>./{escape(port)}/{shot}</image>\n" if shot else "")

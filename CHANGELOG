@@ -1,3 +1,17 @@
+0.2.1
+- fixed: JavaScriptCore no se configuraba con CMake 4.4 (el de GitHub
+  Actions): un if de cmake/WebKitMacros.cmake con una variable vacia; ahora
+  con los operandos entre comillas
+- changed: el port para PortMaster solo lleva aarch64 (armhf no se habia
+  probado en ninguna consola); en otra arquitectura avisa en pantalla
+- changed: el script del port lanza gptokeyb sin configuracion: solo para
+  que Select + Start cierre el juego aunque se cuelgue (el mando lo sigue
+  leyendo quixjs)
+- changed: gameinfo.xml lleva releasedate (el del port, de [game]) y ya no
+  players; los comentarios del script del port, en una linea
+- docs: runtime/thirdparty/webkit/README lista todos los cambios de quixjs
+  en WebKit
+
 0.2.0
 - changed: el motor de JS pasa de QuickJS a JavaScriptCore (WebKit, con JIT),
   compilado como libreria estatica (tools/build-jsc.sh; make lo compila si

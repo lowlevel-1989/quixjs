@@ -4,8 +4,7 @@
 #
 #   quixjs-VERSION-linux-x86_64.tar.gz    quixjs solo, para el PC
 #   quixjs-VERSION-linux-aarch64.tar.gz   quixjs solo, para portatiles de 64 bits
-#   quixjs-VERSION-linux-armhf.tar.gz     quixjs solo, para portatiles de 32 bits
-#   PORT-VERSION-portmaster.zip           el port para PortMaster (aarch64 y armhf)
+#   PORT-VERSION-portmaster.zip           el port para PortMaster (aarch64)
 #   PORT-VERSION-linux-x86_64.tar.gz      el port para el PC
 #   SHA256SUMS                            las sumas de todo, para las notas
 #
@@ -62,7 +61,7 @@ rm -rf "$d"
 
 # quixjs para las portatiles: el de PortMaster (Debian buster, glibc 2.28),
 # con sus librerias en libs/ y la fuente del menu
-for a in aarch64 armhf; do
+for a in aarch64; do
   d="$OUT/quixjs-$V-linux-$a"
   mkdir -p "$d"
   cp "$PM/quixjs.$a" "$d/quixjs"

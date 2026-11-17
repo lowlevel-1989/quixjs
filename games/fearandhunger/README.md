@@ -92,6 +92,6 @@ cd quixjs
 make PLATFORM=portmaster PORT=fearandhunger
 ```
 
-It builds `fearandhunger.zip` for aarch64 and armhf with clang, against
+It builds `fearandhunger.zip` for aarch64 with clang, against
 Debian buster (glibc 2.28), and downloads what it needs the first time.
 `port.json` and `gameinfo.xml` are made from `port.toml` then.

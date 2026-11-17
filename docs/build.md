@@ -35,9 +35,9 @@ make release
 ```
 
 It builds what is missing and leaves in `release/` the files of a GitHub
-release: quixjs alone for x86_64, aarch64 and armhf
-(`quixjs-VERSION-linux-ARCH.tar.gz`), the port for PortMaster with both ARM
-binaries (`PORT-VERSION-portmaster.zip`, installed with its autoinstall) and the port
+release: quixjs alone for x86_64 and aarch64
+(`quixjs-VERSION-linux-ARCH.tar.gz`), the port for PortMaster
+(`PORT-VERSION-portmaster.zip`, installed with its autoinstall) and the port
 for the PC (`PORT-VERSION-linux-x86_64.tar.gz`). `PORT=fearandhunger` by default.
 
 ## PortMaster
@@ -47,15 +47,15 @@ make PLATFORM=portmaster                     # PORT=fearandhunger by default
 make PLATFORM=portmaster PORT=fearandhunger
 ```
 
-It builds `<PORT>.zip` (here `fearandhunger.zip`) for aarch64 and armhf with
+It builds `<PORT>.zip` (here `fearandhunger.zip`) for aarch64 with
 clang and lld. It links against Debian buster (glibc 2.28, SDL 2.0.9), old
 enough for the systems of the handhelds; it downloads it into `obj/deps` the
 first time. The zip has:
 
 - the `.sh` script that PortMaster shows and runs to start the port;
-- `quixjs.aarch64` and `quixjs.armhf`;
+- `quixjs.aarch64`;
 - SDL2_image, SDL2_ttf, libvpx and libopus with what they need, in
-  `libs.aarch64/` and `libs.armhf/` (the port always has video);
+  `libs.aarch64/` (the port always has video);
 - the DejaVu Sans Bold font for the `--launcher` menu, and the licenses.
 
 The game does not go inside: the user copies it into `gamedata/`, and the
