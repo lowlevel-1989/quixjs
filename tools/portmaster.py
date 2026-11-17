@@ -40,6 +40,7 @@ def main():
     with open(os.path.join(root, "portmaster", "portmaster.sh")) as f:
         game_dir = data.get("game", {}).get("game_dir", "gamedata")
         sh = (f.read().replace("@PORT@", port).replace("@TITLE@", title)
+              .replace("@PORT_VERSION@", p.get("version", "?"))
               .replace("@GAME_DIR_PARENT@", os.path.dirname(game_dir) or game_dir)
               .replace("@GAME_DIR@", game_dir))
     with open(os.path.join(out, script), "w") as f:
@@ -52,6 +53,14 @@ def main():
     for name in ("screenshot.jpg", "screenshot.png"):
         if os.path.exists(os.path.join(os.path.dirname(toml_path), name)):
             shot = name
+            shutil.copy(os.path.join(os.path.dirname(toml_path), name), os.path.join(out, port, name))
+            break
+
+    # la portada (cover.png o .jpg junto al port.toml): la de PortMaster
+    covers = []
+    for name in ("cover.png", "cover.jpg"):
+        if os.path.exists(os.path.join(os.path.dirname(toml_path), name)):
+            covers.append(name)
             shutil.copy(os.path.join(os.path.dirname(toml_path), name), os.path.join(out, port, name))
             break
 
@@ -69,7 +78,7 @@ def main():
             "inst": p.get("inst", ""),
             "inst_md": None,
             "genres": p.get("genres", []),
-            "image": {"screenshot": shot, "covers": [], "thumbnail": None, "video": None} if shot else {},
+            "image": {"screenshot": shot, "covers": covers, "thumbnail": None, "video": None} if shot else {},
             "rtr": False,
             "exp": p.get("experimental", False),
             "runtime": [],

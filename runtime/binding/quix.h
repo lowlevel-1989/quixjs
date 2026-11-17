@@ -33,6 +33,6 @@
 
 #include "js/js.h"
 
-#define QUIX_VERSION "0.2.1"
+#define QUIX_VERSION "0.2.2"
 
 void js_api_add_quix(JSContext *ctx);

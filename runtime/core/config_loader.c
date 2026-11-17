@@ -142,6 +142,8 @@ int config_load(Config *out, const char *filename) {
       strncpy(out->game.game_dir, game_dir.u.s, sizeof(out->game.game_dir));
     }
 
+    toml_datum_t gversion = toml_get(game, "version");
+    if (gversion.type == TOML_STRING) snprintf(out->game.version, sizeof(out->game.version), "%s", gversion.u.s);
     toml_datum_t cache_dir = toml_get(game, "cache_dir");
     if (cache_dir.type == TOML_STRING) {
       strncpy(out->game.cache_dir, cache_dir.u.s, sizeof(out->game.cache_dir));

@@ -33,7 +33,7 @@ if [ "$DEVICE_ARCH" != "$ARCH" ]; then
 fi
 QUIXJS="./quixjs.$ARCH"
 
-echo "quixjs $(cat VERSION 2>/dev/null): quixjs.$ARCH ($CFW_NAME)"
+echo "@TITLE@ port @PORT_VERSION@, quixjs $(cat VERSION 2>/dev/null): quixjs.$ARCH ($CFW_NAME)"
 $ESUDO chmod +x "$GAMEDIR/quixjs.$ARCH"
 
 # la fuente del lanzador y las librerias que no todos los CFW traen

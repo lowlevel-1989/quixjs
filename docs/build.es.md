@@ -56,8 +56,8 @@ primera vez. El zip lleva:
 
 - el script `.sh` que PortMaster muestra y ejecuta para arrancar el port;
 - `quixjs.aarch64`;
-- SDL2_image, SDL2_ttf, libvpx y libopus con lo que necesitan, en
-  `libs.aarch64/` (el port siempre lleva video);
+- SDL2_ttf, libvpx y libopus en `libs.aarch64/` (el port siempre lleva
+  video); SDL2, SDL2_image, freetype y libpng son las del dispositivo;
 - la fuente DejaVu Sans Bold para el menu de `--launcher`, y las licencias.
 
 El juego no va dentro: el usuario lo copia en `gamedata/`, y el script `.sh`
@@ -67,7 +67,7 @@ ejecuta `quixjs -c port.toml`, que lee de ahi el juego.
 |------------------------|----------|
 | `portmaster/`          | lo de PortMaster: `portmaster.mk` (la construccion de `PLATFORM=portmaster`, la incluye el `Makefile`) y `portmaster.sh` (plantilla del script `.sh` del port) |
 | `tools/portmaster.py`  | genera el `.sh`, `port.json` y `gameinfo.xml` desde `games/<port>/port.toml` al construir el zip (no estan en el repositorio) |
-| `games/<port>/`        | el port: `port.toml`, su `README.md` y `README.es.md` (como instalarlo) y `screenshot.jpg` (la imagen en PortMaster y EmulationStation) |
+| `games/<port>/`        | el port: `port.toml`, su `README.md` y `README.es.md` (como instalarlo), `screenshot.jpg` (la imagen en EmulationStation) y `cover.png` (la portada en PortMaster) |
 
 ## Carpetas
 

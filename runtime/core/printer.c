@@ -33,6 +33,7 @@ void print_config(const Config *cfg) {
 
 
   printf("[game]\n");
+  if (cfg->game.version[0]) printf("version = %s\n", cfg->game.version);
   printf("game_dir = %s\n", cfg->game.game_dir);
   printf("cache_dir = %s\n", cfg->game.cache_dir);
   printf("width = %d\n", cfg->game.width);

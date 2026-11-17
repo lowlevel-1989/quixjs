@@ -76,9 +76,9 @@ quixjs $V for Linux $a (handhelds)
   ./quixjs --gen-config path/to/game > game.toml
   ./quixjs --launcher -c game.toml
 
-Built against Debian buster (glibc 2.28, SDL 2.0.9). libs/ has SDL2_image,
-SDL2_ttf, libvpx, libopus and what they need; SDL2 and GLES are the ones of
-the device.
+Built against Debian buster (glibc 2.28, SDL 2.0.9). libs/ has SDL2_ttf,
+libvpx and libopus; SDL2, SDL2_image, freetype, libpng and GLES are the ones
+of the device.
 
 https://github.com/lowlevel-1989/quixjs
 EOF

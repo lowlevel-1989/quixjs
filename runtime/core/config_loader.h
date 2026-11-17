@@ -52,6 +52,7 @@ typedef struct {
 typedef struct {
   char game_dir[MAX_PATH_LEN];
   char cache_dir[MAX_PATH_LEN];   // sin uso (era la cache de bytecode de QuickJS)
+  char version[32];               // la version del port o del juego ([game] version), informativa
   int width;
   int height;
 } GameConfig;

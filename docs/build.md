@@ -54,8 +54,8 @@ first time. The zip has:
 
 - the `.sh` script that PortMaster shows and runs to start the port;
 - `quixjs.aarch64`;
-- SDL2_image, SDL2_ttf, libvpx and libopus with what they need, in
-  `libs.aarch64/` (the port always has video);
+- SDL2_ttf, libvpx and libopus in `libs.aarch64/` (the port always has
+  video); SDL2, SDL2_image, freetype and libpng are the ones of the device;
 - the DejaVu Sans Bold font for the `--launcher` menu, and the licenses.
 
 The game does not go inside: the user copies it into `gamedata/`, and the
@@ -65,7 +65,7 @@ The game does not go inside: the user copies it into `gamedata/`, and the
 |------------------------|--------------|
 | `portmaster/`          | PortMaster: `portmaster.mk` (the `PLATFORM=portmaster` build, included by the `Makefile`) and `portmaster.sh` (template of the `.sh` script of the port) |
 | `tools/portmaster.py`  | makes the `.sh`, `port.json` and `gameinfo.xml` from `games/<port>/port.toml` when the zip is built (they are not in the repository) |
-| `games/<port>/`        | the port: `port.toml`, its `README.md` and `README.es.md` (how to install it) and `screenshot.jpg` (the image in PortMaster and EmulationStation) |
+| `games/<port>/`        | the port: `port.toml`, its `README.md` and `README.es.md` (how to install it), `screenshot.jpg` (the image in EmulationStation) and `cover.png` (the cover in PortMaster) |
 
 ## Folders
 

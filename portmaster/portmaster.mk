@@ -28,12 +28,12 @@ PM_PACKAGES := libc6 libc6-dev linux-libc-dev libgcc1 libgcc-8-dev \
                libtiff5 libwebp6 libjbig0 libzstd1 liblzma5 zlib1g fonts-dejavu-core \
                libgles2-mesa-dev mesa-common-dev libegl1-mesa-dev \
                libvpx5 libvpx-dev libopus0 libopus-dev
-PM_BUNDLE   := libvpx.so.5 libopus.so.0 \
-               libSDL2_image-2.0.so.0 libSDL2_ttf-2.0.so.0 libfreetype.so.6 libpng16.so.16 \
-               libjpeg.so.62 libtiff.so.5 libwebp.so.6 libjbig.so.0 libzstd.so.1
+# las que no traen todos los CFW: el video (libvpx, libopus) y SDL2_ttf. SDL2,
+# SDL2_image, freetype y libpng son las del sistema (casi todos los CFW las
+# traen, y el comprobador de PortMaster pide no llevarlas)
+PM_BUNDLE   := libvpx.so.5 libopus.so.0 libSDL2_ttf-2.0.so.0
 # paquete de Debian de cada libreria que se lleva (para su licencia)
-PM_BUNDLE_PKGS := libvpx5 libopus0 libsdl2-image-2.0-0 libsdl2-ttf-2.0-0 libfreetype6 libpng16-16 libjpeg62-turbo \
-                  libtiff5 libwebp6 libjbig0 libzstd1 fonts-dejavu-core
+PM_BUNDLE_PKGS := libvpx5 libopus0 libsdl2-ttf-2.0-0 fonts-dejavu-core
 PM_VERSION  := $(shell sed -n 's/^\#define QUIX_VERSION "\(.*\)"/\1/p' runtime/binding/quix.h)
 PM_ZIP      := $(PORT).zip
 PM_PORTDIR  := games/$(PORT)
@@ -113,7 +113,7 @@ $(foreach a,$(PM_ARCHES),$(eval $(call PM_ARCH_RULES,$(a))))
 
 # 4. El .zip
 PM_STAGE := $(PM)/zip
-$(PM_ZIP): $(PM_BINS) portmaster/portmaster.sh tools/portmaster.py $(shell find $(PM_PORTDIR) -type f 2>/dev/null)
+$(PM_ZIP): $(PM_BINS) portmaster/portmaster.mk portmaster/portmaster.sh tools/portmaster.py $(shell find $(PM_PORTDIR) -type f 2>/dev/null)
 	rm -rf $(PM_STAGE) && mkdir -p $(PM_STAGE)
 	# el script .sh, port.json y gameinfo.xml salen del port.toml del port
 	PM_ARCHES="$(PM_ARCHES)" python3 tools/portmaster.py $(PM_PORTDIR)/port.toml $(PM_STAGE)

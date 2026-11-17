@@ -403,7 +403,7 @@ int launcher_run(Backend *backend, const Config *cfg, const char *config_path, S
   s.logo_scale = 6;   // el menu principal, como el de tamatama
   s.item_scale = 3;   // pocas opciones: mas grandes
   s.logo_y = 40;
-  s.sub = "quixjs";
+  s.sub = "quixjs " QUIX_VERSION;   // la firma, con la version
   s.sub_y = 100;
   s.list_top = 152;   // con la flecha de arriba debajo de la firma
   // como en tamatama: las opciones del juego se deslizan en su hueco (rows a

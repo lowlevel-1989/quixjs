@@ -97,6 +97,7 @@ fps = 60
 
 [game]
 title     = "My Game"        # the title of the menu (default: [engine] name)
+version   = "1.0.0"          # the version of the game or the port (informative)
 id        = "my-game"        # Transfer Save only between the same game (default: the title)
 game_dir  = "games/mygame"   # base folder: scripts, images, json...
 cache_dir = "cache/mygame"   # not used (there is no bytecode cache with JavaScriptCore)
@@ -197,7 +198,8 @@ describes the game: `quixjs -c port.toml`. It is made with `quixjs
 --gen-config` on the game and checked by hand; the game goes in `gamedata/`
 (the copy of the user). What a port usually adds:
 
-- in `[game]`: `title`, `id` (Transfer Save only between the same game),
+- in `[game]`: `title`, `version` (the version of the port: raise it with
+  every change of the port), `id` (Transfer Save only between the same game),
   `mods`, and `developer`, `genres` and `desc` (for PortMaster).
 - `[engine.pc]` and `[engine.handheld]`: what changes of `[engine]` (`fps`,
   `vsync`, `present_ahead`, `webgl`, `js_memory`, `low_memory_mb`) on that

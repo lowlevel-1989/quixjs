@@ -34,6 +34,7 @@ fps = 60
 
 [game]
 title     = "Fear & Hunger"     # el del menu y el de PortMaster
+version   = "1.0.0"             # la del port: subirla con cada cambio del port
 id        = "fear_and_hunger"   # el id del juego: Transfer Save solo pasa partidas del mismo
 game_dir  = "gamedata/www"      # la carpeta www/ del juego, copiada en gamedata/
 cache_dir = "cache/gamedata"

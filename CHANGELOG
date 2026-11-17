@@ -1,3 +1,14 @@
+0.2.2
+- changed: el port solo lleva libvpx, libopus y SDL2_ttf en libs/: SDL2,
+  SDL2_image, freetype y libpng son las del sistema (casi todos los CFW las
+  traen; el comprobador de PortMaster pide no llevarlas). El zip pasa de 17,6
+  a 16 MB
+- added: el lanzador ensena la version de quixjs junto a su firma
+- added: [game] version, la version del port (sale en el log y en el script
+  del port); Fear & Hunger empieza en 1.0.0
+- added: el port lleva cover.png (la portada de PortMaster), la misma imagen
+  que la captura
+
 0.2.1
 - fixed: JavaScriptCore no se configuraba con CMake 4.4 (el de GitHub
   Actions): un if de cmake/WebKitMacros.cmake con una variable vacia; ahora
