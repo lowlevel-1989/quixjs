@@ -125,6 +125,69 @@ function run() {
     T.equal(gl.isFramebuffer(fb), false, 'deleted');
   });
 
+  // un canvas que cambia y se vuelve a subir (texSubImage2D), con y sin
+  // UNPACK_FLIP_Y: la textura queda como el canvas
+  T.test('texture re-upload', function () {
+    var p = program('attribute vec2 a_pos; varying vec2 v_uv; void main() { v_uv = a_pos * 0.5 + 0.5; gl_Position = vec4(a_pos, 0.0, 1.0); }',
+      'precision mediump float; varying vec2 v_uv; uniform sampler2D u_tex; void main() { gl_FragColor = texture2D(u_tex, v_uv); }');
+    gl.useProgram(p);
+    var buf = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1]), gl.STATIC_DRAW);
+    var loc = gl.getAttribLocation(p, 'a_pos');
+    gl.enableVertexAttribArray(loc);
+    gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+    var src = document.createElement('canvas');
+    src.width = 64;
+    src.height = 64;
+    var c = src.getContext('2d');
+    var tex = gl.createTexture();
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, tex);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+    gl.uniform1i(gl.getUniformLocation(p, 'u_tex'), 0);
+    var show = function () {
+      gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+      gl.viewport(0, 0, 64, 64);
+      gl.drawArrays(gl.TRIANGLES, 0, 6);
+    };
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
+    c.fillStyle = '#f00';
+    c.fillRect(0, 0, 64, 64);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, src);
+    show();
+    T.deepEqual(pixel(5, 44), [255, 0, 0, 255], 'first upload');
+    // sin voltear, la fila y del canvas es la fila y de la textura
+    c.fillStyle = '#0f0';
+    c.fillRect(0, 40, 64, 8);
+    gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, gl.RGBA, gl.UNSIGNED_BYTE, src);
+    show();
+    T.deepEqual(pixel(5, 44), [0, 255, 0, 255], 'changed rows');
+    T.deepEqual(pixel(5, 10), [255, 0, 0, 255], 'other rows');
+    gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, gl.RGBA, gl.UNSIGNED_BYTE, src);
+    show();
+    T.deepEqual(pixel(5, 44), [0, 255, 0, 255], 'same canvas again');
+    // volteada
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+    c.fillStyle = '#00f';
+    c.fillRect(0, 0, 64, 4);
+    gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, gl.RGBA, gl.UNSIGNED_BYTE, src);
+    show();
+    T.deepEqual(pixel(5, 61), [0, 0, 255, 255], 'flipped: top rows at the top');
+    T.deepEqual(pixel(5, 20), [0, 255, 0, 255], 'flipped: green band');
+    c.fillStyle = '#fff';
+    c.fillRect(0, 10, 64, 2);
+    gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, gl.RGBA, gl.UNSIGNED_BYTE, src);
+    show();
+    T.deepEqual(pixel(5, 52), [255, 255, 255, 255], 'flipped: changed rows');
+    T.deepEqual(pixel(5, 61), [0, 0, 255, 255], 'flipped: other rows');
+    T.deepEqual(pixel(5, 30), [255, 0, 0, 255], 'flipped: red kept');
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
+    gl.deleteTexture(tex);
+    T.equal(gl.getError(), gl.NO_ERROR, 'no error');
+  });
+
   var img = new Image();
   img.onload = function () {
     T.test('texture from an image', function () {

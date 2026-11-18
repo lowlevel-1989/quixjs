@@ -76,7 +76,7 @@ Todos los canvas WebGL comparten un contexto GL: en la practica un juego usa uno
 
 El mezclador (`runtime/audio`) decodifica el ogg mientras suena, asi una cancion no
 ocupa su tamano en PCM. Sin dispositivo de audio (backend dummy) las voces avanzan
-con el reloj, asi `onended` y los bucles funcionan igual.
+con el reloj, asi `onended` y los loops funcionan igual.
 
 ## DOM y window
 

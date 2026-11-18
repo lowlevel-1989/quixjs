@@ -1,5 +1,5 @@
 /*
- * QuixJS - A lightweight JS runtime using SDL2 and JavaScriptCore
+ * quixjs - A lightweight JS runtime using SDL2 and JavaScriptCore
  * Copyright (C) 2025  Vinicio Valbuena (lowlevel.1989)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -36,7 +36,7 @@ int parse_args(int argc, char **argv, Args *args) {
   args->test = 0;
   args->screenshot = NULL;
   args->hold_ms = 0;
-  args->init_dir = NULL;
+  args->gen_config_dir = NULL;
   args->fullscreen = 0;
   args->resizable = 0;
   args->script = NULL;
@@ -75,6 +75,8 @@ int parse_args(int argc, char **argv, Args *args) {
       args->fixed_step = 1;
     } else if (strcmp(a, "--screenshot") == 0 && has_value) {
       args->screenshot = argv[++i];
+    } else if (strcmp(a, "--expose-gc") == 0) {
+      args->expose_gc = 1;
     } else if (strcmp(a, "--no-webgl") == 0) {
       args->no_webgl = 1;
     } else if (strcmp(a, "--fps") == 0) {
@@ -98,7 +100,7 @@ int parse_args(int argc, char **argv, Args *args) {
     } else if (strcmp(a, "--fullscreen") == 0) {
       args->fullscreen = 1;
     } else if (strcmp(a, "--gen-config") == 0 && has_value) {
-      args->init_dir = argv[++i];
+      args->gen_config_dir = argv[++i];
     } else if (strcmp(a, "--hold") == 0 && has_value) {
       args->hold_ms = atoi(argv[++i]);
     } else if (strcmp(a, "--profile") == 0) {
@@ -129,7 +131,7 @@ void print_help() {
   printf("Usage: quixjs [options]\n");
   printf("Options:\n");
   printf("  -c, --config <path>    Path to config.toml file (default: config.toml)\n");
-  printf("      --gen-config <dir> Print a config.toml for the game in <dir> and exit\n");
+  printf("      --gen-config <dir|.html> Print a config.toml for the game and exit\n");
   printf("  -b, --backend <type>   Select backend: sdl or dummy (default: sdl)\n");
   printf("      --fullscreen       Fullscreen, keeping the aspect ratio (black bars)\n");
   printf("      --resizable        Resizable from the start (a tiling WM tiles it)\n");
@@ -143,6 +145,7 @@ void print_help() {
   printf("      --profile[=file]   Sampling profiler: report in file (quixjs-profile.txt) every 10 s and on exit\n");
   printf("      --launcher         Menu before the game: play, achievements, transfer save, options\n");
   printf("      --no-webgl         No WebGL: games use their canvas renderer\n");
+  printf("      --expose-gc        A global gc() that collects now, as in V8 (benchmarks)\n");
   printf("      --hold <ms>        With a window: keep it open <ms> after the end\n");
   printf("      --test             Test mode: dummy backend, fixed clock, max 600 frames,\n");
   printf("                         the game must call quix.exit() (with -b sdl: window\n");

@@ -12,7 +12,7 @@ audio en `audio/` y la ventana y la entrada en `backend/`.
 |----------------------|-------------------|
 | `window.c`           | `window` (el mismo objeto que `globalThis`), `innerWidth` / `innerHeight` del toml del juego, `location` (`http://localhost/`) |
 | `document.c`         | DOM mínimo: elementos, appendChild, getElementById, getElementsByTagName; los canvas añadidos al documento son los que salen en pantalla |
-| `events.c`           | EventTarget, Event, KeyboardEvent, MouseEvent, CustomEvent; eventos despachados en la siguiente vuelta del bucle |
+| `events.c`           | EventTarget, Event, KeyboardEvent, MouseEvent, CustomEvent; eventos despachados en la siguiente vuelta del loop |
 | `timer.c`            | setTimeout, setInterval, requestAnimationFrame, `performance.now()` (sobre `core/timer.c`) |
 | `canvas.c`           | HTMLCanvasElement: su framebuffer RGBA, width, height, getContext (un tipo de contexto por canvas); un canvas creado dentro de un hook `gpu-canvas` dibuja en la GPU (`gfx/gpu2d.c`) |
 | `canvas/2d/`         | CanvasRenderingContext2D, un archivo por tema ([README](canvas/2d/README.es.md)) |

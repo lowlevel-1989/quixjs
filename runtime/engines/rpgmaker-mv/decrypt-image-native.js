@@ -4,7 +4,7 @@
 // RPG Maker las lee con XHR, copia el archivo entero para quitarle la
 // cabecera (slice), lo descifra en JS y hace un Blob para la imagen: varios
 // buffers del tamano del archivo en el JS por cada imagen, que disparaban
-// recolecciones de memoria a mitad de una imagen. Con el hook, la imagen
+// GC a mitad de una imagen. Con el hook, la imagen
 // recibe la ruta cifrada y quixjs la lee, la descifra (la clave de
 // $dataSystem: __quixEngine["rpgmaker-mv"].setDecryptKey) y la decodifica en
 // segundo plano: los bytes no pasan por el JS. Sin la nativa o sin la clave,

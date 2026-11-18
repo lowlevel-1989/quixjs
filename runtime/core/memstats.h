@@ -1,5 +1,5 @@
 /*
- * QuixJS - A lightweight JS runtime using SDL2 and JavaScriptCore
+ * quixjs - A lightweight JS runtime using SDL2 and JavaScriptCore
  * Copyright (C) 2025  Vinicio Valbuena (lowlevel.1989)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -30,7 +30,7 @@ typedef struct {
   size_t texture_bytes;
   long   texture_count;
   long   decode_count;     // imagenes decodificadas (PNG, JPG...) desde el arranque
-  double decode_ms;        // y el tiempo que llevo, en el hilo principal
+  double decode_ms;        // y el tiempo que llevo, en el thread principal
 } MemStats;
 
 extern MemStats quix_mem;

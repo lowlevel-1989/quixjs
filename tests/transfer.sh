@@ -1,6 +1,6 @@
 #!/bin/sh
 # Transfer Save entre dos quixjs en este equipo (sin ventana): uno en Receive
-# Save y otro en Send Save, manejados con --script desde el lanzador. Solo
+# Save y otro en Send Save, manejados con --script desde el launcher. Solo
 # hablan por 127.0.0.1 (QUIXJS_TRANSFER_HOSTS), sin salir a la red.
 #
 #   tests/transfer.sh        termina con 0 si las partidas llegan bien

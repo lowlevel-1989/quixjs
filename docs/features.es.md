@@ -15,7 +15,7 @@ esta en [compatibilidad](compatibility.es.md).
   patrones
 - texto con SDL_ttf: fillText, strokeText, measureText, `@font-face`, `FontFace` y
   `[fonts]` en el toml del juego
-- audio: WebAudio (AudioContext, decodeAudioData, nodos de ganancia y paneo, bucles,
+- audio: WebAudio (AudioContext, decodeAudioData, nodos de ganancia y paneo, loops,
   rampas) sobre un mezclador propio (`runtime/audio`); ogg vorbis decodificado con
   stb_vorbis mientras suena. `new Audio()` existe pero solo responde a
   `canPlayType` (no suena)
@@ -41,7 +41,7 @@ esta en [compatibilidad](compatibility.es.md).
 - teclado (KeyboardEvent con key, code y keyCode) y mandos (Gamepad API, mapeo
   standard); Select + Start sale. Una pulsacion mas corta que una imagen el juego
   la ve igual
-- `--launcher`: un menu antes del juego (el lanzador) con el titulo del juego y
+- `--launcher`: un menu antes del juego (el launcher) con el titulo del juego y
   una pequena firma "quixjs": Play, Achievements, Mods, Options y Cheats, y
   debajo, siempre a la vista, Transfer Save, Controls y Exit (cada opcion
   solo si el juego la usa). Viene de
@@ -52,7 +52,7 @@ esta en [compatibilidad](compatibility.es.md).
 - logros, definidos en el toml del juego, con un aviso al conseguir uno y, en
   RPG Maker MV, una opcion Achievements en el propio menu del juego
   ([runtime/achievements](../runtime/achievements/README.es.md))
-- trucos (`[[cheat]]`), que se activan en el lanzador; la partida jugada con uno
+- trucos (`[[cheat]]`), que se activan en el launcher; la partida jugada con uno
   no consigue logros ([runtime/cheats](../runtime/cheats/README.es.md))
 - `--debug` y `tools/console.py`: una consola de debug para pulsar teclas, hacer
   capturas, ejecutar JS y pausar el juego (heredada de tamatama)

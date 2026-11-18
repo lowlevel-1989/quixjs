@@ -1,5 +1,5 @@
 /*
- * QuixJS - A lightweight JS runtime using SDL2 and JavaScriptCore
+ * quixjs - A lightweight JS runtime using SDL2 and JavaScriptCore
  * Copyright (C) 2025  Vinicio Valbuena (lowlevel.1989)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -496,7 +496,30 @@ static JSValue js_document_true(JSContext *ctx, JSValueConst this_val, int argc,
   return JS_TRUE;
 }
 
+// document.title: el del juego ([game] title) hasta que el juego pone otro;
+// ponerlo cambia el titulo de la ventana ("quixjs | <titulo>")
+static char doc_title[256];
+static int doc_title_set = 0;
+
+static JSValue js_document_get_title(JSContext *ctx, JSValueConst this_val) {
+  AppContext *app = JS_GetContextOpaque(ctx);
+  if (!doc_title_set && app && app->cfg) return JS_NewString(ctx, app->cfg->launcher.title);
+  return JS_NewString(ctx, doc_title);
+}
+
+static JSValue js_document_set_title(JSContext *ctx, JSValueConst this_val, JSValueConst val) {
+  const char *s = JS_ToCString(ctx, val);
+  if (!s) return JS_EXCEPTION;
+  snprintf(doc_title, sizeof doc_title, "%s", s);
+  doc_title_set = 1;
+  JS_FreeCString(ctx, s);
+  AppContext *app = JS_GetContextOpaque(ctx);
+  if (app && app->backend) backend_set_title(app->backend, doc_title);
+  return JS_UNDEFINED;
+}
+
 static const JSCFunctionListEntry js_document_funcs[] = {
+  JS_CGETSET_DEF("title", js_document_get_title, js_document_set_title),
   JS_CFUNC_DEF("createElement",        1, js_createElement),
   JS_CFUNC_DEF("createTextNode",       1, js_createTextNode),
   JS_CFUNC_DEF("getElementById",       1, js_getElementById),
@@ -560,7 +583,6 @@ JSValue js_create_document(JSContext *ctx) {
   JS_SetPropertyStr(ctx, document, "readyState", JS_NewString(ctx, "loading"));
   JS_SetPropertyStr(ctx, document, "visibilityState", JS_NewString(ctx, "visible"));
   JS_SetPropertyStr(ctx, document, "hidden", JS_FALSE);
-  JS_SetPropertyStr(ctx, document, "title", JS_NewString(ctx, ""));
   JS_SetPropertyStr(ctx, document, "cookie", JS_NewString(ctx, ""));
   JS_SetPropertyStr(ctx, document, "currentScript", JS_NULL);
 

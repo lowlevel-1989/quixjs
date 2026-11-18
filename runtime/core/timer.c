@@ -1,5 +1,5 @@
 /*
- * QuixJS - A lightweight JS runtime using SDL2 and JavaScriptCore
+ * quixjs - A lightweight JS runtime using SDL2 and JavaScriptCore
  * Copyright (C) 2025  Vinicio Valbuena (lowlevel.1989)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -98,7 +98,7 @@ int timer_set(JSContext *ctx, JSValueConst func, double delay, int repeat,
   Timer *t = &timers[timers_len];
   t->id = next_id++;
   t->deadline = clock_now_ms() + delay;
-  // setInterval(fn, 0) no puede bloquear el bucle: minimo 1 ms como mucho navegador
+  // setInterval(fn, 0) no puede bloquear el loop: minimo 1 ms como mucho navegador
   t->interval = repeat ? (delay < 1 ? 1 : delay) : 0;
   t->func = JS_DupValue(ctx, func);
   t->argc = 0;
@@ -214,7 +214,7 @@ int timer_run_due(JSContext *ctx) {
         return -1;
       }
       JS_FreeValue(ctx, ret);
-      // si el intervalo sigue vivo y ya vencio otra vez, que espere al siguiente bucle
+      // si el intervalo sigue vivo y ya vencio otra vez, que espere al siguiente loop
       for (int i = 0; i < timers_len; i++) {
         if (timers[i].id == t.id && timers[i].deadline <= now) timers[i].deadline = now + t.interval;
       }

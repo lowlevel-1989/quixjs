@@ -83,7 +83,7 @@ leer. No forma parte de `make test` (necesita UDP en 127.0.0.1). El protocolo: [
 | `canvas/text`    | measureText, fillText, textAlign, textBaseline, strokeText, fuentes |
 | `canvas/gpu`     | los hooks `gpu-canvas`, `once-per-frame` y `skip`: una mascara de luces dibujada en la GPU y por software, la copia a una textura WebGL, la vuelta a la CPU, cambiar el tamano |
 | `webgl/basic`    | WebGL 1 sin librerias: contexto, shaders, buffers, texturas, framebuffers, readPixels, consultas |
-| `audio/webaudio` | WebAudio: decodeAudioData (ogg vorbis), fuentes, ganancia, paneo, rampas de volumen, bucles, onended |
+| `audio/webaudio` | WebAudio: decodeAudioData (ogg vorbis), fuentes, ganancia, paneo, rampas de volumen, loops, onended |
 | `media/video`    | `<video>`: canPlayType, un WebM (`clip.webm`, hecho con ffmpeg desde `testsrc` y un tono `sine`) reproducido hasta el final, un archivo que no existe saltado; sin video comprueba que se salta |
 | `pixi_v4/boot`   | Application, CanvasRenderer, ticker, backgroundColor |
 | `pixi_v4/sprite` | texturas, posicion, escala, anchor, rotacion, alpha, visible |
@@ -205,10 +205,11 @@ Terminal 2:  python3 tools/console.py
 | `ach`                | los logros del port y los valores de sus simbolos |
 | `ach reset`          | olvida los logros conseguidos |
 | `fps [N]`            | el tope de fps; `fps N` lo cambia ya (de 10 a 60) |
-| `prof start` / `prof stop` | profiler de muestreo: donde se va el tiempo (`prof [N]` ensena los N primeros) |
+| `prof start` / `prof stop` | sampling profiler: donde se va el tiempo (`prof [N]` ensena los N primeros) |
 | `prof save [ARCHIVO]` | escribe el informe en ARCHIVO (`quixjs-profile.txt`) |
-| `gc`                 | pasa el recolector: cuanto tarda y cuanto libera |
-| `mem`                | tamano del monton de JS y numero de objetos |
+| `gc`                 | pasa el GC: cuanto tarda y cuanto libera |
+| `mem`                | tamano del heap de JS y numero de objetos |
+| `mem release`        | suelta los pixeles de la CPU de las imagenes que ya estan en la GPU, como hace quixjs con poca RAM |
 | `pacing`             | intervalos entre imagenes presentadas de verdad, desde el ultimo `pacing` |
 | `quit`               | sale de quixjs |
 

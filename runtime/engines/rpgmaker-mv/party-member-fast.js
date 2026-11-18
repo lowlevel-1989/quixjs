@@ -5,7 +5,7 @@
 // battleMembers() crea tres arrays (map, slice y filter) y dos funciones para
 // devolver uno. Los seguidores lo piden varias veces por actualizacion: en
 // Fear & Hunger era ~15% de la memoria que se crea caminando (basura que el
-// recolector tiene que limpiar: los tirones).
+// GC tiene que limpiar: los tirones).
 //
 // Con el hook se recorre la lista de ids del grupo y se devuelve el mismo
 // miembro sin crear nada. Solo si battleMembers() y allMembers() son los de

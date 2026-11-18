@@ -1,5 +1,5 @@
 /*
- * QuixJS - A lightweight JS runtime using SDL2 and JavaScriptCore
+ * quixjs - A lightweight JS runtime using SDL2 and JavaScriptCore
  * Copyright (C) 2025  Vinicio Valbuena (lowlevel.1989)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -89,7 +89,7 @@ static void *watch(void *arg) {
         if (ev.code == BTN_START) start_down = ev.value != 0;
       }
     }
-    // los dos pulsados y el bucle principal parado: no va a enterarse
+    // los dos pulsados y el loop principal parado: no va a enterarse
     if (select_down && start_down && last_alive > 0 && now_ms() - last_alive > STALL_MS) {
       fprintf(stderr, "Select + Start with the game not responding: exit\n");
       _exit(0);

@@ -1,5 +1,5 @@
 /*
- * QuixJS - A lightweight JS runtime using SDL2 and JavaScriptCore
+ * quixjs - A lightweight JS runtime using SDL2 and JavaScriptCore
  * Copyright (C) 2025  Vinicio Valbuena (lowlevel.1989)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -19,7 +19,7 @@
 #pragma once
 
 // Objeto global "quix": utilidades del runtime para tests y juegos.
-//   quix.exit(code)          termina el bucle con ese codigo de salida
+//   quix.exit(code)          termina el loop con ese codigo de salida
 //   quix.pressKey(code, t)   mete una tecla en la cola de entrada
 //                            (t: "down", "up" o "press" = down + up)
 //   quix.frame               frames mostrados
@@ -33,6 +33,8 @@
 
 #include "js/js.h"
 
-#define QUIX_VERSION "0.2.2"
+// la version de quixjs: QUIX_VERSION, del archivo VERSION de la raiz
+// (el Makefile genera obj/gen/version.h)
+#include "version.h"
 
 void js_api_add_quix(JSContext *ctx);

@@ -21,3 +21,5 @@ obj/
 *.zip
 # make release
 release/
+# make bench (tools/h5bench.sh)
+results/

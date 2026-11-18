@@ -1,5 +1,5 @@
 /*
- * QuixJS - A lightweight JS runtime using SDL2 and JavaScriptCore
+ * quixjs - A lightweight JS runtime using SDL2 and JavaScriptCore
  * Copyright (C) 2025  Vinicio Valbuena (lowlevel.1989)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -21,7 +21,7 @@
 // Reloj, timers (setTimeout / setInterval) y requestAnimationFrame.
 //
 // El reloj puede ser real (milisegundos desde que arranca el runtime) o fijo:
-// en modo fijo el tiempo solo avanza cuando el bucle principal lo pide (un
+// en modo fijo el tiempo solo avanza cuando el loop principal lo pide (un
 // frame = 1000/60 ms), asi los tests dan siempre el mismo resultado y corren
 // tan rapido como se pueda.
 

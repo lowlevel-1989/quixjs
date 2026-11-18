@@ -1,5 +1,5 @@
 /*
- * QuixJS - A lightweight JS runtime using SDL2 and JavaScriptCore
+ * quixjs - A lightweight JS runtime using SDL2 and JavaScriptCore
  * Copyright (C) 2025  Vinicio Valbuena (lowlevel.1989)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,7 +17,7 @@
  */
 
 // El backend sdl: la ventana (SDL2), mostrar cada imagen con OpenGL ES 2
-// (las capas de los canvas, el contador de --fps y los avisos), el hilo que
+// (las capas de los canvas, el contador de --fps y los avisos), el thread que
 // presenta ([engine] present_ahead), el teclado y los mandos.
 
 #include "mapper.h"
@@ -27,8 +27,10 @@
 #include <time.h>
 #include <string.h>
 #include "core/keymap.h"
+#include "core/trace.h"
 #include "gfx/font.h"
 #include "gfx/gl.h"
+#include "gfx/driver.h"
 #include "backend.h"
 #include "backend/toast.h"
 #include "platform/platform.h"
@@ -47,17 +49,26 @@ typedef struct {
 #define PRESENT_MAX_LAYERS 8
 #define SHOWN_MAX 64
 
-// Una imagen para el hilo que presenta
+// Una imagen para el thread que presenta (o, sin el, para gpu_present)
 typedef struct {
   PresentLayer layers[PRESENT_MAX_LAYERS];
   int          n, ww, wh;
   double       at;          // cuando mostrarla (CLOCK_MONOTONIC, ms; 0: ya)
   void        *fence;       // gl_fence de lo dibujado
+  double       handed;      // cuando se entrego (para la traza "gpu frame")
   char         overlay[32];
   Toast        toast;
 } PresentJob;
 
+// Sin el thread: la imagen que el driver presenta (gfx/driver.h, gpu_present)
 typedef struct {
+  GpuFrame    base;         // primero: el driver solo ve esto
+  PresentJob  job;
+  Backend    *backend;
+  struct SDLPlatformData *data;
+} SdlFrame;
+
+typedef struct SDLPlatformData {
   SDL_Window*         window;
   SDL_GLContext       gl;          // contexto para presentar (el de WebGL comparte texturas con el)
   GLuint              program;     // shader que copia una textura a la ventana
@@ -66,6 +77,7 @@ typedef struct {
   int                 screen_w;
   int                 screen_h;
   TextTex             overlay;     // backend->overlay (--fps)
+  TextTex             loading;     // backend->loading: el aviso de carga
   struct {                         // backend->toast: la tarjeta de un logro
     GLuint   tex;
     unsigned serial;               // el aviso que tiene dibujado
@@ -90,14 +102,26 @@ typedef struct {
   // salir funciona aunque el juego vaya tan lento que se procesen tarde
   Uint8               held[GAMEPAD_MAX][SDL_CONTROLLER_BUTTON_MAX];
   int                 should_close;
-  // el hilo que presenta ([engine] present_ahead)
+  // el thread que presenta ([engine] present_ahead)
   SDL_Thread         *thr;
   SDL_mutex          *mx;
   SDL_cond           *cv;
   int                 thr_tried, thr_ok, thr_quit;
+  // el compositor frena el thread (thread_throttled)
+  double              thr_vper;     // ms entre refrescos de la pantalla
+  int                 thr_slow;     // cambios de imagen seguidos que tardaron de mas
+  int                 thr_throttled;
   PresentJob          job;          // la imagen entregada
+  // sin thread: las imagenes para gpu_present (el driver puede guardar la
+  // anterior: se alternan dos) y la marca de la GPU de la ultima que se
+  // mostro (su textura vuelve al juego)
+  SdlFrame            frames[2];
+  int                 frame_i;
+  void               *shown_fence;
+  PresentJob          shown_job;    // sin thread: la ultima mostrada (sdl_repaint)
+  int                 have_shown;
   int                 job_pending;  // entregada y sin recoger
-  int                 job_busy;     // el hilo la esta mostrando
+  int                 job_busy;     // el thread la esta mostrando
   unsigned            job_done;
   double              shown[SHOWN_MAX];   // cuando se mostraron (las ve sdl_presented)
   int                 shown_n;
@@ -196,7 +220,7 @@ static void sdl_init(Backend* backend, int width, int height) {
   }
 
   printf("Video driver: %s\n", SDL_GetCurrentVideoDriver());
-  // las asignaciones del mando hechas en el lanzador (Controls)
+  // las asignaciones del mando hechas en el launcher (Controls)
   mapper_load(backend->controller_map);
 
   SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
@@ -210,7 +234,7 @@ static void sdl_init(Backend* backend, int width, int height) {
   while ((width * scale < 240 || height * scale < 240) && scale < 16) scale++;
 
   data->window = SDL_CreateWindow(
-      "QuixJS Runtime",
+      backend->title[0] ? backend->title : "quixjs",
       SDL_WINDOWPOS_CENTERED,
       SDL_WINDOWPOS_CENTERED,
       width * scale,
@@ -323,6 +347,11 @@ static void sdl_set_fullscreen(Backend* backend, int on) {
   SDLPlatformData* data = (SDLPlatformData*)backend->platform_data;
   if (!data->window) return;
   if (SDL_SetWindowFullscreen(data->window, on ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0) == 0) backend->fullscreen = on != 0;
+}
+
+static void sdl_set_title(Backend* backend) {
+  SDLPlatformData* data = (SDLPlatformData*)backend->platform_data;
+  if (data && data->window) SDL_SetWindowTitle(data->window, backend->title);
 }
 
 static double sdl_refresh_rate(Backend* backend) {
@@ -500,16 +529,38 @@ static void sdl_draw_toast(Backend* backend, SDLPlatformData* data, int ww, int 
   data->blit_alpha = 1.0f;
 }
 
-// backend->overlay arriba a la derecha (--fps) y el aviso de un logro, a la
-// resolucion de la ventana: se ven igual en ventanas pequenas y no tocan el
-// canvas del juego
+// El aviso de carga (backend->loading): "Loading" y unos puntos que avanzan
+// con el reloj, para que se vea que el juego sigue (con el juego parado, lo
+// repinta el thread que presenta). La letra, a la altura de la ventana.
+static int loading_tex(Backend* backend, SDLPlatformData* data, int wh) {
+  if (!backend_loading_visible(backend)) return 0;
+  int px = wh / 24 < 12 ? 12 : wh / 24;
+  static const char *steps[4] = { "Loading   ", "Loading.  ", "Loading.. ", "Loading..." };
+  if (data->loading.px != px) {
+    data->loading.text[0] = 0;   // otro tamano: se rehace
+    data->loading.px = px;
+  }
+  char css[48];
+  snprintf(css, sizeof css, "bold %dpx monospace", px);
+  return text_tex(&data->loading, steps[SDL_GetTicks() / 400 % 4], css, 255, 255, 255, px / 2, px / 4);
+}
+
+// backend->overlay arriba a la derecha (--fps), el aviso de un logro y el de
+// carga (abajo a la derecha), a la resolucion de la ventana: se ven igual en
+// ventanas pequenas y no tocan el canvas del juego
 static void sdl_draw_overlay(Backend* backend, SDLPlatformData* data, int ww, int wh) {
   int fps = backend->overlay[0] && text_tex(&data->overlay, backend->overlay, "bold 16px monospace", 255, 255, 0, 4, 1);
-  if (!fps && !backend->toast.serial) return;
+  int loading = loading_tex(backend, data, wh);
+  if (!fps && !backend->toast.serial && !loading) return;
   qgl.Enable(GL_BLEND);
   qgl.BlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   qgl.Viewport(0, 0, ww, wh);
   if (fps) sdl_blit(data, data->overlay.tex, ww - data->overlay.w - 4, 4, data->overlay.w, data->overlay.h, ww, wh, 0);
+  if (loading) {
+    int m = wh / 40;
+    sdl_blit(data, data->loading.tex, ww - data->loading.w - m, wh - data->loading.h - m, data->loading.w,
+             data->loading.h, ww, wh, 0);
+  }
   sdl_draw_toast(backend, data, ww, wh);
   qgl.Disable(GL_BLEND);
 }
@@ -517,7 +568,9 @@ static void sdl_draw_overlay(Backend* backend, SDLPlatformData* data, int ww, in
 // Muestra lo dibujado y apunta cuando (para el comando pacing de la consola
 // de debug)
 static void swap_window(SDLPlatformData* data) {
+  TRACE_START(ts_);
   SDL_GL_SwapWindow(data->window);
+  TRACE_END(ts_, 0.0, "swap");
   struct timespec ts;
   clock_gettime(CLOCK_MONOTONIC, &ts);
   double now = ts.tv_sec * 1000.0 + ts.tv_nsec / 1e6;
@@ -526,7 +579,7 @@ static void swap_window(SDLPlatformData* data) {
 
 // Varias capas: cada canvas 2d se sube solo si cambio; los WebGL van directos.
 // Todas se escalan al rectangulo de la primera (el canvas del juego). Con el
-// contexto que presenta ya actual (en este hilo o en el que presenta).
+// contexto que presenta ya actual (en este thread o en el que presenta).
 static void draw_layers(Backend* backend, SDLPlatformData* data, const PresentLayer *layers, int n, int ww, int wh, int swap) {
   qgl.BindFramebuffer(GL_FRAMEBUFFER, 0);
   qgl.Viewport(0, 0, ww, wh);
@@ -590,12 +643,12 @@ static void draw_layers(Backend* backend, SDLPlatformData* data, const PresentLa
   if (swap) swap_window(data);
 }
 
-// ------------------------------------------------ el hilo que presenta
+// ------------------------------------------------ el thread que presenta
 //
 // [engine] present_ahead: con WebGL, la ventana y el contexto que presenta
-// pasan a otro hilo. El juego entrega cada imagen (la textura de su canvas,
+// pasan a otro thread. El juego entrega cada imagen (la textura de su canvas,
 // que deja de usar: webgl_canvas_handoff) con el momento en que mostrarla, y
-// sigue con la siguiente sin esperar. Este hilo espera ese momento, a que la
+// sigue con la siguiente sin esperar. Este thread espera ese momento, a que la
 // GPU la termine (gl_fence) y la muestra. Si una imagen del juego tarda mas
 // de lo normal, la anterior ya esta lista: no se nota. Las capas 2d (pixeles
 // en memoria del juego) se entregan esperando a que se hayan mostrado.
@@ -605,6 +658,17 @@ static double mono_ms(void) {
   clock_gettime(CLOCK_MONOTONIC, &ts);
   return ts.tv_sec * 1000.0 + ts.tv_nsec / 1e6;
 }
+
+// Con sway, en la RGB30, la primera vez que se abre el juego tras encender la
+// consola el cambio de imagen del thread tarda ~50 ms (tres refrescos) en
+// cada imagen: el juego se queda a 20 fps (los siguientes arranques, a 30).
+// Tras THROTTLED_SWAPS asi seguidos (~2 s) el thread se para y se presenta
+// sin el (gpu_present: el driver decide como).
+#define THROTTLED_SWAPS 60
+
+// Con el aviso de carga, si el juego no entrega imagen en LOADING_REPAINT_MS
+// (esta parado cargando), el thread vuelve a mostrar la ultima con el aviso
+#define LOADING_REPAINT_MS 250
 
 static int present_thread(void *arg) {
   Backend *backend = arg;
@@ -619,12 +683,55 @@ static int present_thread(void *arg) {
   if (!ok) return 0;
   SDL_GL_SetSwapInterval(backend->no_vsync ? 0 : 1);
 
+  // la ultima imagen mostrada: sus texturas no vuelven al juego hasta que
+  // entregue la siguiente (y para eso espera a job_busy)
+  PresentJob last;
+  int have_last = 0;
+  double last_shown = 0;
+
   for (;;) {
     SDL_LockMutex(data->mx);
-    while (!data->job_pending && !data->thr_quit) SDL_CondWait(data->cv, data->mx);
+    int repaint = 0;
+    while (!data->job_pending && !data->thr_quit) {
+      if (!backend->loading || !have_last) {
+        SDL_CondWait(data->cv, data->mx);
+        continue;
+      }
+      double wait = last_shown + LOADING_REPAINT_MS - mono_ms();
+      if (wait <= 0) {
+        // con retardo, el aviso puede no verse aun: se vuelve a mirar luego
+        if (backend_loading_visible(backend)) {
+          repaint = 1;
+          break;
+        }
+        last_shown = mono_ms();
+        continue;
+      }
+      SDL_CondWaitTimeout(data->cv, data->mx, (Uint32)wait + 1);
+    }
     if (data->thr_quit && !data->job_pending) {
       SDL_UnlockMutex(data->mx);
       break;
+    }
+    if (repaint) {
+      // el juego esta parado cargando: la ultima imagen otra vez, con el
+      // aviso (sus capas 2d, sin subirlas de nuevo: el juego puede estar
+      // cambiando sus pixeles)
+      data->job_busy = 1;
+      SDL_UnlockMutex(data->mx);
+      for (int i = 0; i < last.n; i++) last.layers[i].dirty = 0;
+      memcpy(shadow.overlay, last.overlay, sizeof shadow.overlay);
+      shadow.toast = last.toast;
+      shadow.loading = backend_loading_visible(backend);
+      draw_layers(&shadow, data, last.layers, last.n, last.ww, last.wh, 0);
+      qgl.Flush();
+      SDL_LockMutex(data->mx);
+      data->job_busy = 0;
+      SDL_CondBroadcast(data->cv);
+      SDL_UnlockMutex(data->mx);
+      SDL_GL_SwapWindow(data->window);
+      last_shown = mono_ms();
+      continue;
     }
     PresentJob job = data->job;   // copia: el juego ya puede preparar la siguiente
     data->job_pending = 0;
@@ -641,10 +748,22 @@ static int present_thread(void *arg) {
         while (clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &ts, NULL) == EINTR) {}
       }
     }
-    gl_fence_wait(job.fence);
+    // a que la GPU termine la imagen, como diga el driver (thread_wait). Con
+    // la traza, la CPU: cuanto le quedaba al llegar su momento, y cuanto
+    // tardo desde que el juego la entrego
+#if QUIX_TRACE
+    TRACE_START(tg);
+    gl_fence_wait_cpu(job.fence);
+    TRACE_END(tg, 0.0, "gpu frame: %.2f ms after handed, waited", quix_trace_ms() - job.handed);
+#else
+    gpu_driver()->thread_wait(job.fence);
+#endif
     memcpy(shadow.overlay, job.overlay, sizeof shadow.overlay);
     shadow.toast = job.toast;
+    shadow.loading = backend_loading_visible(backend);
     draw_layers(&shadow, data, job.layers, job.n, job.ww, job.wh, 0);
+    last = job;
+    have_last = 1;
     // copiada: sus texturas ya se pueden volver a usar (lo que haga el juego
     // con ellas va detras en la GPU) y el juego no espera al cambio de
     // imagen, que puede tardar hasta un refresco
@@ -653,7 +772,19 @@ static int present_thread(void *arg) {
     data->job_busy = 0;
     SDL_CondBroadcast(data->cv);
     SDL_UnlockMutex(data->mx);
+    double t_swap = mono_ms();
     swap_window(data);
+    last_shown = mono_ms();
+    // el cambio de imagen, que espera al compositor, tarda mas de un refresco
+    // y medio una y otra vez: ver thread_throttled
+    if (data->thr_vper > 0 && !backend->no_vsync) {
+      data->thr_slow = mono_ms() - t_swap > 1.5 * data->thr_vper ? data->thr_slow + 1 : 0;
+      if (data->thr_slow >= THROTTLED_SWAPS) {
+        SDL_LockMutex(data->mx);
+        data->thr_throttled = 1;
+        SDL_UnlockMutex(data->mx);
+      }
+    }
 
     SDL_LockMutex(data->mx);
     data->job_done++;
@@ -670,19 +801,18 @@ static void thread_start(Backend *backend, SDLPlatformData *data) {
   data->thr_tried = 1;
   if (!backend->present_ahead || !gl_available()) return;
   // solo sirve con los refrescos de la pantalla (la imagen de adelanto apunta
-  // a uno); y solo con Mesa (panfrost, lima, el PC): con libmali (RGB30) el
-  // hilo presentaba a 20 fps en vez de 30 y sin imagen
+  // a uno); y solo con los drivers que lo permiten (gfx/drivers/)
   double vlast, vper;
   if (platform_vblank(&vlast, &vper) != 0) {
     printf("[present] one frame ahead: not used (no screen refreshes)\n");
     return;
   }
-  SDL_GL_MakeCurrent(data->window, data->gl);
-  const char *version = (const char *)qgl.GetString(GL_VERSION);
-  if (!version || !strstr(version, "Mesa")) {
-    printf("[present] one frame ahead: not used (only with Mesa drivers)\n");
+  data->thr_vper = vper;
+  if (!gpu_driver()->thread_wait) {
+    printf("[present] one frame ahead: not used with the %s driver\n", gpu_driver()->name);
     return;
   }
+  SDL_GL_MakeCurrent(data->window, data->gl);
   if (gl_offthread_begin() != 0) {
     printf("[present] one frame ahead: not available (needs EGL surfaceless)\n");
     return;
@@ -719,7 +849,7 @@ static void thread_stop(Backend *backend, SDLPlatformData *data) {
   gl_offthread_end();
 }
 
-// espera a que el hilo haya mostrado todo lo entregado (con el cerrojo)
+// espera a que el thread haya mostrado todo lo entregado (con el cerrojo)
 static void wait_idle_locked(SDLPlatformData *data) {
   while (data->job_pending || data->job_busy) SDL_CondWait(data->cv, data->mx);
 }
@@ -747,6 +877,56 @@ static int sdl_presented(Backend* backend, double *ms, int max) {
   return n;
 }
 
+// Lo que el backend hace con una imagen (gfx/driver.h, Presenter)
+
+// la CPU espera a que la GPU termine lo dibujado en el canvas WebGL (otro
+// contexto) antes de leerlo: con libmali no basta con mandarlo (gl_fence),
+// ni con que la GPU espere la marca
+static void frame_wait(GpuFrame *g) {
+  SdlFrame *f = (SdlFrame *)g;
+  TRACE_START(tw);
+  gl_fence_wait_cpu(f->job.fence);
+  TRACE_END(tw, 0.0, "gpu wait (cpu)");
+  f->job.fence = NULL;
+}
+
+static void frame_show(GpuFrame *g) {
+  SdlFrame *f = (SdlFrame *)g;
+  draw_layers(f->backend, f->data, f->job.layers, f->job.n, f->job.ww, f->job.wh, 1);
+  f->data->shown_fence = gl_fence();
+  f->data->shown_job = f->job;
+  f->data->have_shown = 1;
+}
+
+// Sin el thread, con el juego parado a mitad de un trabajo largo
+// (backend_loading_poke): la ultima imagen otra vez, con el aviso de carga.
+// Con el contexto que presenta (las texturas que muestra no las toca el
+// juego hasta la siguiente entrega) y luego el que estaba: el del juego no
+// cambia. Sus capas 2d, sin subirlas: el juego puede estar cambiandolas.
+static void sdl_repaint(Backend* backend) {
+  SDLPlatformData* data = (SDLPlatformData*)backend->platform_data;
+  if (!data || !data->gl || data->thr || !data->have_shown) return;
+  SDL_Window *prev_win = SDL_GL_GetCurrentWindow();
+  SDL_GLContext prev_ctx = SDL_GL_GetCurrentContext();
+  SDL_GL_MakeCurrent(data->window, data->gl);
+  gl_fence_wait_cpu(data->shown_fence);   // lo anterior con esas texturas, ya hecho
+  PresentJob j = data->shown_job;
+  for (int i = 0; i < j.n; i++) j.layers[i].dirty = 0;
+  int ww, wh;
+  SDL_GL_GetDrawableSize(data->window, &ww, &wh);
+  draw_layers(backend, data, j.layers, j.n, ww, wh, 1);
+  data->shown_fence = gl_fence();
+  if (prev_ctx) SDL_GL_MakeCurrent(prev_win, prev_ctx);
+}
+
+static void frame_drop(GpuFrame *g) {
+  SdlFrame *f = (SdlFrame *)g;
+  gl_fence_wait_cpu(f->job.fence);   // la marca se suelta
+  f->job.fence = NULL;
+}
+
+static const Presenter sdl_presenter = { frame_wait, frame_show, frame_drop };
+
 static void sdl_present_layers(Backend* backend, const PresentLayer *layers, int n) {
   SDLPlatformData* data = (SDLPlatformData*)backend->platform_data;
   if (!data->gl) return;
@@ -755,6 +935,14 @@ static void sdl_present_layers(Backend* backend, const PresentLayer *layers, int
   SDL_GL_GetDrawableSize(data->window, &ww, &wh);
 
   if (!data->thr_tried && backend->present_ahead && gl_available()) thread_start(backend, data);
+  if (data->thr && data->thr_throttled) {
+    // el compositor frena el thread: se sigue sin el
+    SDL_LockMutex(data->mx);
+    wait_idle_locked(data);
+    SDL_UnlockMutex(data->mx);
+    thread_stop(backend, data);
+    printf("[present] one frame ahead: stopped (each frame took more than %.0f ms to show)\n", 1.5 * data->thr_vper);
+  }
   if (data->thr) {
     // las capas 2d son pixeles del juego: se espera a que se suban
     int async = backend->present_async;
@@ -769,6 +957,7 @@ static void sdl_present_layers(Backend* backend, const PresentLayer *layers, int
     j->wh = wh;
     j->at = backend->present_at;
     j->fence = fence;
+    j->handed = mono_ms();
     memcpy(j->overlay, backend->overlay, sizeof j->overlay);
     j->toast = backend->toast;
     data->job_pending = 1;
@@ -776,13 +965,25 @@ static void sdl_present_layers(Backend* backend, const PresentLayer *layers, int
     if (!async) wait_idle_locked(data);
     SDL_UnlockMutex(data->mx);
   } else {
-    // lo dibujado en el canvas WebGL (otro contexto) terminado antes de
-    // leerlo: con libmali no basta con mandarlo (gl_fence), ni con que la
-    // GPU espere la marca: espera este hilo (gl_fence_wait_cpu)
-    void *fence = gl_available() ? gl_fence() : NULL;
+    SdlFrame *f = &data->frames[data->frame_i];
+    data->frame_i ^= 1;
+    memcpy(f->job.layers, layers, sizeof(PresentLayer) * n);
+    f->job.n = n;
+    f->job.ww = ww;
+    f->job.wh = wh;
+    f->backend = backend;
+    f->data = data;
+    // se puede mostrar mas tarde si todas sus capas son texturas entregadas
+    f->base.later = backend->present_async;
+    for (int i = 0; i < n; i++) if (!layers[i].gl_tex) f->base.later = 0;
+    // lo dibujado en el canvas WebGL (otro contexto), a la GPU
+    f->job.fence = gl_available() ? gl_fence() : NULL;
     SDL_GL_MakeCurrent(data->window, data->gl);
-    gl_fence_wait_cpu(fence);
-    draw_layers(backend, data, layers, n, ww, wh, 1);
+    // la textura que se mostro la ultima vez vuelve al juego: su dibujo en
+    // pantalla, terminado (es de hace una imagen: no se espera)
+    gl_fence_wait_cpu(data->shown_fence);
+    data->shown_fence = NULL;
+    gpu_present(&sdl_presenter, &f->base);   // cuando se ve: lo decide el driver
   }
 
   if (data->frames_until_resizable > 0 && --data->frames_until_resizable == 0) {
@@ -886,6 +1087,7 @@ static void sdl_cleanup(Backend* backend) {
     if (data->gl) {
       SDL_GL_MakeCurrent(data->window, data->gl);
       if (data->overlay.tex) qgl.DeleteTextures(1, &data->overlay.tex);
+      if (data->loading.tex) qgl.DeleteTextures(1, &data->loading.tex);
       if (data->toast.tex) qgl.DeleteTextures(1, &data->toast.tex);
       if (data->screen_tex) qgl.DeleteTextures(1, &data->screen_tex);
       if (data->program) qgl.DeleteProgram(data->program);
@@ -916,9 +1118,11 @@ static const BackendInterface sdl_backend_interface = {
   .capture_input  = sdl_capture_input,
   .save_controller = sdl_save_controller,
   .set_fullscreen = sdl_set_fullscreen,
+  .set_title = sdl_set_title,
   .refresh_rate = sdl_refresh_rate,
   .present_wait   = sdl_present_wait,
   .presented      = sdl_presented,
+  .repaint        = sdl_repaint,
   .name           = "sdl",
 };
 

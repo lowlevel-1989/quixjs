@@ -16,7 +16,8 @@ and a game or a port turns on the ones it wants in its `[hooks]` table.
 ## A hook
 
 A `.js` file in `runtime/engines/<engine>/` is a function that gets the game's
-original function and returns the one that replaces it. It is embedded in
+original function (and, second, the path: `"DataManager.loadGame"`, in case
+the same file serves several) and returns the one that replaces it. It is embedded in
 the binary at build time (`tools/embed_engines.py`) and named
 `<engine>/<file>`:
 

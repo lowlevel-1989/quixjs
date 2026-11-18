@@ -1,5 +1,5 @@
 /*
- * QuixJS - A lightweight JS runtime using SDL2 and JavaScriptCore
+ * quixjs - A lightweight JS runtime using SDL2 and JavaScriptCore
  * Copyright (C) 2025  Vinicio Valbuena (lowlevel.1989)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -16,7 +16,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-// El hilo de trabajo. Ver worker.h.
+// El thread de trabajo. Ver worker.h.
 
 #include <pthread.h>
 #include <stdlib.h>
@@ -33,7 +33,7 @@ static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t  cond = PTHREAD_COND_INITIALIZER;
 static Job *todo_head, *todo_tail, *done_head, *done_tail;
 static int  started = 0;
-static int  pending = 0;   // solo el hilo principal
+static int  pending = 0;   // solo el thread principal
 
 static void *run(void *unused) {
   (void)unused;

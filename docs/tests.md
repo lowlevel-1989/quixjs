@@ -209,6 +209,7 @@ Terminal 2:  python3 tools/console.py
 | `prof save [FILE]`   | write the report to FILE (`quixjs-profile.txt`) |
 | `gc`                 | run the garbage collector: how long it takes and what it frees |
 | `mem`                | size of the JS heap and number of objects |
+| `mem release`        | free the CPU pixels of images already on the GPU, as quixjs does with low RAM |
 | `pacing`             | intervals between frames really presented, since the last `pacing` |
 | `quit`               | exit quixjs |
 

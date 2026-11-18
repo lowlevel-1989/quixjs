@@ -1,5 +1,5 @@
 /*
- * QuixJS - A lightweight JS runtime using SDL2 and JavaScriptCore
+ * quixjs - A lightweight JS runtime using SDL2 and JavaScriptCore
  * Copyright (C) 2025  Vinicio Valbuena (lowlevel.1989)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -18,7 +18,7 @@
 
 #pragma once
 
-// --launcher: el lanzador, el menu que sale antes de cargar el juego.
+// --launcher: el launcher, el menu que sale antes de cargar el juego.
 // Heredado de tamatama (https://github.com/lowlevel-1989/tamatama,
 // src/shared/menu.c). Arriba el titulo del juego ([game] title; sin el, el
 // [engine] name) y debajo una firma pequena, quixjs. Opciones:

@@ -3,7 +3,7 @@
 [English](README.md) | Español
 
 Trucos para los ports, definidos en el `port.toml` del port (`[[cheat]]`) y
-encendidos o apagados en la opción Cheats del lanzador (`--launcher`). Un
+encendidos o apagados en la opción Cheats del launcher (`--launcher`). Un
 truco encendido fija símbolos de `[symbols]` ([symbols](../symbols/README.es.md))
 mientras corre el juego, y los vuelve a fijar si el juego los cambia.
 

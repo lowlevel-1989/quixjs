@@ -6,10 +6,10 @@ de PortMaster). Lo usa make PLATFORM=portmaster.
   python3 tools/portmaster.py games/fearandhunger/port.toml <carpeta>
 
 Escribe en <carpeta>:
-  <script>             el lanzador, desde portmaster/portmaster.sh ([portmaster] script)
+  <script>             el launcher, desde portmaster/portmaster.sh ([portmaster] script)
   <port>/port.json     lo que lee PortMaster para listar e instalar el port
   <port>/gameinfo.xml  lo que lee EmulationStation para enseñarlo
-  <port>/port.toml     el mismo port.toml: el lanzador ejecuta quixjs -c port.toml
+  <port>/port.toml     el mismo port.toml: el launcher ejecuta quixjs -c port.toml
 
 PortMaster pide JSON y XML; en el repositorio solo está el .toml.
 """

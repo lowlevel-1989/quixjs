@@ -82,7 +82,7 @@ The main files. The README of each folder has the rest.
 | `core/config_loader.c`      | reads the toml of the game |
 | `core/compiler.c`           | reads the scripts and checks their syntax |
 | `core/runner.c`             | runs each script in order |
-| `core/init.c`               | `--gen-config`: a `config.toml` from the folder of a game |
+| `core/gen_config.c`         | `--gen-config`: a `config.toml` from the folder of a game or one of its `.html` |
 | `core/profiler.c`           | `--profile`: the sampling profiler of JavaScriptCore |
 | `core/watchdog.c`           | emergency exit: Select + Start quits when the game is stuck |
 | `core/worker.c`             | a worker thread for loading in the background (images, sounds) |

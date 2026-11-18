@@ -4,15 +4,15 @@
 // memoria toda la partida. En Troops.json estan los combates con todo su
 // guion (las "pages"): en Fear & Hunger son 12 MB de texto que se vuelven
 // ~55 MB y mas de un millon de objetos de JavaScript. No cambian nunca, pero
-// el recolector los recorre enteros en cada recoleccion completa: en una
+// el GC los recorre enteros en cada GC completo: en una
 // portatil cada una se lleva una o dos imagenes (la caida al caminar).
 //
 // Con el hook, de cada combate se crea todo menos sus pages, y de cada evento
 // comun todo menos su list (sus ordenes): se quedan como texto (para el
-// recolector un texto es un solo objeto). Al pedirlas se convierten y se
+// GC un texto es un solo objeto). Al pedirlas se convierten y se
 // quedan hasta el siguiente cambio de escena: gc-on-transition (al crear el
 // mapa o el combate, con la pantalla en negro) llama a
-// __quixLazyData.trim(), que las devuelve a texto antes de recolectar. Lo
+// __quixLazyData.trim(), que las devuelve a texto antes de pasar el GC. Lo
 // que el mapa nuevo use (los eventos comunes en paralelo, el combate) se
 // convierte otra vez al pedirlo. El juego ve los mismos datos; si cambia una
 // de esas claves, se queda con lo suyo. El texto lo corta splitJsonArray

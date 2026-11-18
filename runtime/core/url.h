@@ -1,5 +1,5 @@
 /*
- * QuixJS - A lightweight JS runtime using SDL2 and JavaScriptCore
+ * quixjs - A lightweight JS runtime using SDL2 and JavaScriptCore
  * Copyright (C) 2025  Vinicio Valbuena (lowlevel.1989)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -45,8 +45,8 @@ uint8_t *url_read_file(const char *path, size_t *len);
 
 // Una transformacion para los archivos con una extension (".rpgmvp"): por
 // ejemplo descifrarlos. Cambia data en su sitio y puede acortarlo (*len).
-// 0 si va bien. Se registra en el hilo principal antes de usarla; despues se
-// puede leer desde el hilo de trabajo (worker.h)
+// 0 si va bien. Se registra en el thread principal antes de usarla; despues se
+// puede leer desde el thread de trabajo (worker.h)
 typedef int (*UrlTransform)(uint8_t *data, size_t *len);
 void url_add_transform(const char *ext, UrlTransform fn);
 // 1 si path tiene una transformacion registrada

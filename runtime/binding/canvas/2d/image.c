@@ -1,5 +1,5 @@
 /*
- * QuixJS - A lightweight JS runtime using SDL2 and JavaScriptCore
+ * quixjs - A lightweight JS runtime using SDL2 and JavaScriptCore
  * Copyright (C) 2025  Vinicio Valbuena (lowlevel.1989)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -21,6 +21,7 @@
 #include <math.h>
 #include <string.h>
 #include "context2d.h"
+#include "backend/backend.h"
 
 static JSValue imagedata_proto = { 0 };
 static int     imagedata_ready = 0;
@@ -122,6 +123,7 @@ static int read_numbers(JSContext *ctx, JSValueConst *argv, double *out, int n) 
 }
 
 JSValue js_ctx2d_drawImage(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+  backend_loading_poke();   // un trabajo largo: el aviso de carga, si toca
   Context2D *c = context2d_get(ctx, this_val);
   if (!c) return JS_EXCEPTION;
   if (argc != 3 && argc != 5 && argc != 9) {

@@ -4,7 +4,7 @@
 // En cada actualizacion del mapa recorre la lista de teclas del plugin
 // (Yanfly.Param.BCEList, unas 80) con for...in, y cada for...in crea un
 // enumerador nuevo con sus claves. En Fear & Hunger era ~8% de la memoria que
-// se crea caminando (basura para el recolector: los tirones).
+// se crea caminando (basura para el GC: los tirones).
 //
 // Con el hook las claves se sacan una vez (y otra si la lista es otra) y se
 // recorren igual, en el mismo orden, preguntando lo mismo. Solo si la

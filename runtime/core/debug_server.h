@@ -1,5 +1,5 @@
 /*
- * QuixJS - A lightweight JS runtime using SDL2 and JavaScriptCore
+ * quixjs - A lightweight JS runtime using SDL2 and JavaScriptCore
  * Copyright (C) 2025  Vinicio Valbuena (lowlevel.1989)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -45,7 +45,7 @@ typedef struct {
 int  debug_init(const char *path);
 // Atiende los comandos pendientes. Devuelve 1 si piden salir.
 int  debug_poll(DebugEnv *env);
-int  debug_paused(void);           // el bucle no avanza el juego
+int  debug_paused(void);           // el loop no avanza el juego
 // El momento (ms) en que termino de presentarse una imagen: el comando pacing
 // reparte los intervalos (el ritmo real en pantalla, no el del reloj del juego)
 void debug_note_present(double ms);

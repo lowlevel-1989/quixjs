@@ -1,8 +1,8 @@
-# QuixJS 0.2.2
+# quixjs 0.3.0
 
 English | [Español](README.es.md)
 
-QuixJS runs JavaScript games (RPG Maker MV, PixiJS v4, vanilla JS) on Linux
+quixjs runs JavaScript games (RPG Maker MV, PixiJS v4, vanilla JS) on Linux
 handhelds, without a browser and without X11. It uses JavaScriptCore, SDL2 and
 OpenGL ES 2, and the browser APIs the games need are written in C.
 
@@ -43,12 +43,21 @@ Using a toml file to configure each game is inspired by bogodroid
 |---|---|
 | [Build](docs/build.md) | dependencies, `make`, the PortMaster zip |
 | [Usage](docs/usage.md) | options, the toml of a game, ports, mods, controls, the `quix` object |
-| [Features](docs/features.md) | what QuixJS supports |
+| [Features](docs/features.md) | what quixjs supports |
 | [Compatibility](docs/compatibility.md) | which browser APIs work and which do not |
 | [Tests](docs/tests.md) | the test games, `--script` and the debug console |
 | [JavaScript engine](docs/javascript-engine.md) | why JavaScriptCore |
+| [Benchmark](docs/benchmark.md) | h5bench (`make bench`) and how to profile a game |
 | [Code](runtime/README.md) | what each folder and file of the runtime does |
 | [Changes](CHANGELOG) | what changed in each version |
+
+## Thanks
+
+- [binarycounter](https://github.com/binarycounter): describing each game with
+  a toml file comes from [bogodroid](https://github.com/binarycounter/bogodroid)
+- [Knifethrower](https://github.com/Knifethrower): for sharing
+  [h5bench](https://github.com/Knifethrower/h5bench), the benchmark of HTML5
+  runtimes
 
 ## License
 

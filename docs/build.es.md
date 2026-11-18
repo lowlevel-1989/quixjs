@@ -31,6 +31,10 @@ libvpx y libopus; `make VIDEO=0` compila sin el.
 
 ## Release
 
+La version de quixjs esta en el archivo `VERSION` (los `make` y la release la
+toman de ahi). Para una version nueva se cambia ese archivo, el titulo de
+`README.md` y `README.es.md`, y se anade su bloque al `CHANGELOG`.
+
 ```
 make release
 ```

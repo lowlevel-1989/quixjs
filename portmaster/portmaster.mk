@@ -34,7 +34,7 @@ PM_PACKAGES := libc6 libc6-dev linux-libc-dev libgcc1 libgcc-8-dev \
 PM_BUNDLE   := libvpx.so.5 libopus.so.0 libSDL2_ttf-2.0.so.0
 # paquete de Debian de cada libreria que se lleva (para su licencia)
 PM_BUNDLE_PKGS := libvpx5 libopus0 libsdl2-ttf-2.0-0 fonts-dejavu-core
-PM_VERSION  := $(shell sed -n 's/^\#define QUIX_VERSION "\(.*\)"/\1/p' runtime/binding/quix.h)
+PM_VERSION  := $(shell tr -d ' \n' < VERSION)
 PM_ZIP      := $(PORT).zip
 PM_PORTDIR  := games/$(PORT)
 
@@ -134,7 +134,7 @@ $(PM_ZIP): $(PM_BINS) portmaster/portmaster.mk portmaster/portmaster.sh tools/po
 	  done; \
 	  cp $(PM_DEPS)/jsc-$$a/licenses/* $(PM_STAGE)/$(PORT)/licenses/; \
 	done
-	# la fuente de las pantallas de quixjs (el lanzador, los avisos): no todos los CFW traen una
+	# la fuente de las pantallas de quixjs (el launcher, los avisos): no todos los CFW traen una
 	mkdir -p $(PM_STAGE)/$(PORT)/fonts
 	cp $(SYSROOT_aarch64)/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf $(PM_STAGE)/$(PORT)/fonts/
 	cp LICENSE $(PM_STAGE)/$(PORT)/licenses/quixjs.txt

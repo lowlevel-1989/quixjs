@@ -1,9 +1,45 @@
+0.3.0
+- added: --gen-config acepta un .html concreto; sus <script> en linea van en [scripts]
+- added: titulo de ventana "quixjs | <[game] title>" (o el document.title)
+- added: make bench (h5bench de Knifethrower) y docs/benchmark.md
+- added: process.memoryUsage(), process.resourceUsage(), quix.memoryUsage() y --expose-gc
+- added: make TRACE=1, medidas [trace] en los puntos criticos
+- added: [slow frame js] en el log con --profile; umbral con QUIXJS_SLOW_FRAME_MS
+- added: el log escribe [perf] cada minuto y al salir (fps, frames lentos, driver)
+- added: gfx/drivers: panfrost, mali, mali-g31 y default, con la misma interfaz
+- added: quix.gpuDriver() dice el driver en JS
+- added: driver mali-g31 (R36S y clones) sin thread de present_ahead: ~17 a ~27 fps
+- added: cache de shaders en <cache_dir>/shaders (GL_OES_get_program_binary)
+- added: aviso "Loading..." al cargar partida, y en mapa o batalla si tarda mas de 1 s
+- added: quix.loading(on[, ms]) y hook loading-notice
+- added: hook blur-native: el desenfoque del fondo del menu y las batallas en C
+- added: hook snap-half (opcional): la foto del fondo a media resolucion
+- added: hook yep-enemy-select-refresh: no borra cada imagen la ventana de cada enemigo
+- added: hook refresh-if-same-drawing: no redibuja ventanas que dibujan lo mismo
+- added: hooks scene-release y battle-release: sueltan la escena y la batalla al acabar
+- changed: libmali usa el thread de present_ahead; sin el, la imagen anterior
+- changed: WebGL premultiplica en un buffer reutilizado, con NEON en aarch64
+- changed: gc-on-transition hace un GC parcial despues de crear la escena
+- changed: con poca RAM, primero se sueltan los pixeles de imagenes ya en la GPU
+- changed: gc-when-still sale del preset (sigue como hook opcional)
+- changed: la funcion de un hook de motor recibe tambien su ruta
+- changed: el script del port pone HOTKEY=guide si el CFW no la define
+- changed: la version sale del archivo VERSION
+- changed: el port de Fear & Hunger pasa a 1.0.1
+- fixed: el thread de present_ahead se quedaba a 20 fps con sway tras encender
+- fixed: el GC de emergencia se repetia cada 5 s aunque no liberase nada
+- fixed: una batalla terminada se quedaba en memoria (~60 MB) hasta la siguiente
+- fixed: los pixeles de canvas e imagenes no contaban para el GC
+- fixed: window.close() no hacia nada; en modo nw.js cierra quixjs
+- fixed: 'lighter' sobre un destino opaco oscurecia (truncaba en vez de redondear)
+- docs: seccion Thanks en el README; "quixjs" en minuscula y terminos en ingles
+
 0.2.2
 - changed: el port solo lleva libvpx, libopus y SDL2_ttf en libs/: SDL2,
   SDL2_image, freetype y libpng son las del sistema (casi todos los CFW las
   traen; el comprobador de PortMaster pide no llevarlas). El zip pasa de 17,6
   a 16 MB
-- added: el lanzador ensena la version de quixjs junto a su firma
+- added: el launcher ensena la version de quixjs junto a su firma
 - added: [game] version, la version del port (sale en el log y en el script
   del port); Fear & Hunger empieza en 1.0.0
 - added: el port lleva cover.png (la portada de PortMaster), la misma imagen
@@ -45,13 +81,13 @@
 - added: WebGL 1 sobre OpenGL ES 2: PixiJS v4 usa su renderer WebGL, y un
   canvas WebGL va de la GPU a la pantalla sin leerlo. La imagen se escala con
   barras negras. Con Mesa, una imagen de adelanto (present_ahead) que otro
-  hilo presenta en su refresco; con libmali, se espera a la GPU antes de
+  thread presenta en su refresco; con libmali, se espera a la GPU antes de
   presentar (EGL_KHR_fence_sync)
 - added: audio WebAudio sobre un mezclador propio (ogg vorbis con
-  stb_vorbis) y video WebM en <video> (VP8/VP9 y Opus, en su propio hilo)
+  stb_vorbis) y video WebM en <video> (VP8/VP9 y Opus, en su propio thread)
 - added: Image, Blob, URL.createObjectURL, XMLHttpRequest de archivos
   locales, DOM minimo, EventTarget y eventos, setTimeout, setInterval,
-  requestAnimationFrame (el bucle duerme hasta el siguiente frame o timer)
+  requestAnimationFrame (el loop duerme hasta el siguiente frame o timer)
 - added: teclado y mandos (Gamepad API con el mapeo standard); una pulsacion
   mas corta que una imagen el juego la ve igual. Select + Start sale, tambien
   con el juego colgado
@@ -61,7 +97,7 @@
   archivos ("gpu-canvas", "skip", "once-per-frame" y los hooks de motor).
   engine = "rpgmaker-mv" pone los de RPG Maker MV (runtime/engines/
   rpgmaker-mv/hooks.toml): datos, imagenes, sonidos y partidas en C, el
-  recolector cuando no se nota, el interprete de eventos, el recoloreado de
+  GC cuando no se nota, el interprete de eventos, el recoloreado de
   los sprites en C, y arreglos de plugins muy usados (YEP, Olivia, TDDP)
 - added: --launcher: un menu antes del juego (Play, Achievements, Transfer
   Save, Controls, Options, Cheats, Exit), heredado de tamatama; lo que se
@@ -71,11 +107,11 @@
 - added: logros ([symbols] y [[achievements]]): aviso en pantalla, guardados
   con las partidas y, en RPG Maker MV, una opcion Achievements en el menu del
   juego ([achievements_menu])
-- added: trucos ([[cheat]]), que se activan en el lanzador; la partida jugada
+- added: trucos ([[cheat]]), que se activan en el launcher; la partida jugada
   con uno no consigue logros
 - added: mods: carpetas mods/<nombre>/ con archivos que se usan en vez de
   los del juego (datos, imagenes, sonidos y scripts), sin tocarlo. Se activan
-  en [game] mods o en la opcion Mods del lanzador. El port de Fear & Hunger
+  en [game] mods o en la opcion Mods del launcher. El port de Fear & Hunger
   trae el mod no-widescreen (quita la pantalla ancha de un mod que la pone)
 - added: para desarrollar: --debug y tools/console.py, --script, --profile,
   --fps, --frame-rate, --fixed-step, --frames, --screenshot, --test, --hold,
@@ -86,7 +122,7 @@
 - added: 46 juegos de test (games/tests), make test, tests/transfer.sh y CI
 - added: PortMaster: make PLATFORM=portmaster construye el zip de un port
   para aarch64 y armhf (Debian buster, glibc 2.28) con lo que necesita en
-  libs/; el lanzador .sh, port.json y gameinfo.xml salen de su port.toml
+  libs/; el launcher .sh, port.json y gameinfo.xml salen de su port.toml
 - added: el primer port, Fear & Hunger 1.4.1 (games/fearandhunger): 30 fps en
   una RG CubeXX y una Powkiddy RGB30, 18 logros y 7 trucos; el juego no va
   dentro

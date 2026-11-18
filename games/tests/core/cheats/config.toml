@@ -22,7 +22,7 @@ id         = "rich"
 title      = "Rich"
 conditions = ["gold >= 100"]
 
-# activo en quixjs-settings.toml (como si se hubiera activado en el lanzador)
+# activo en quixjs-settings.toml (como si se hubiera activado en el launcher)
 [[cheat]]
 id   = "no_encounters"
 name = "No random encounters"

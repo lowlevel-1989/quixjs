@@ -1,5 +1,5 @@
 /*
- * QuixJS - A lightweight JS runtime using SDL2 and JavaScriptCore
+ * quixjs - A lightweight JS runtime using SDL2 and JavaScriptCore
  * Copyright (C) 2025  Vinicio Valbuena (lowlevel.1989)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -26,6 +26,7 @@
 
 static const JSCFunctionListEntry funcs[] = {
   JS_CFUNC_DEF("adjustTone", 4, rpgmaker_mv_adjust_tone),
+  JS_CFUNC_DEF("blur", 2, rpgmaker_mv_blur),
   JS_CFUNC_DEF("lzDecompressBase64", 1, rpgmaker_mv_lz_decompress_base64),
   JS_CFUNC_DEF("setDecryptKey", 1, rpgmaker_mv_set_decrypt_key),
   JS_CFUNC_DEF("splitJsonArray", 2, rpgmaker_mv_split_json_array),

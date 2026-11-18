@@ -129,7 +129,7 @@ function (original) {
         return r.slice();
       };
       // la misma lista sin copiar, para quien solo la lee (has-skill-fast):
-      // la copia de cada llamada era basura para el recolector
+      // la copia de cada llamada era basura para el GC
       Object.defineProperty(B, '__quixTraitsSetShared', {
         value: function (code) {
           var c = tableOf(this);

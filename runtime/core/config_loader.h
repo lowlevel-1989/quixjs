@@ -1,5 +1,5 @@
 /*
- * QuixJS - A lightweight JS runtime using SDL2 and JavaScriptCore
+ * quixjs - A lightweight JS runtime using SDL2 and JavaScriptCore
  * Copyright (C) 2025  Vinicio Valbuena (lowlevel.1989)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -37,9 +37,9 @@ typedef struct {
   bool webgl;         // getContext("webgl") (por defecto true)
   int  fps;           // imagenes por segundo de requestAnimationFrame (por defecto 60)
   bool vsync;         // esperar al refresco de la pantalla al presentar (por defecto true)
-  bool present_ahead; // una imagen de adelanto: la muestra otro hilo (por defecto true)
+  bool present_ahead; // una imagen de adelanto: la muestra otro thread (por defecto true)
   int  js_memory;     // MB de RAM que JavaScriptCore cree tener (0: la del aparato)
-  int  low_memory_mb; // por debajo de esta RAM libre del sistema, recoleccion completa (0: no)
+  int  low_memory_mb; // por debajo de esta RAM libre del sistema, GC completo (0: no)
 } EngineConfig;
 
 // [fonts] Familia = "ruta.ttf" (relativa a game_dir): como un @font-face del
@@ -57,11 +57,13 @@ typedef struct {
   int height;
 } GameConfig;
 
+// Cada script es una ruta (desde game_dir) o una data: URL con el codigo (un
+// <script> escrito dentro del HTML): sin limite de largo, en memoria propia
 typedef struct {
-  char entry[MAX_PATH_LEN];
-  char libs[MAX_SCRIPT_FILES][MAX_PATH_LEN];
+  char *entry;
+  char *libs[MAX_SCRIPT_FILES];
   int  libs_count;
-  char includes[MAX_SCRIPT_FILES][MAX_PATH_LEN];
+  char *includes[MAX_SCRIPT_FILES];
   int  includes_count;
 } ScriptConfig;
 
@@ -74,7 +76,7 @@ typedef struct {
 } LauncherConfig;
 
 // [controls]: lo que espera el juego del mando. gamepad = true: el juego lee
-// el mando (la Gamepad API); el lanzador (Controls) deja asignar todos sus
+// el mando (la Gamepad API); el launcher (Controls) deja asignar todos sus
 // botones y las dos palancas, y se guarda en controller.map junto al toml del juego
 typedef struct {
   int gamepad;

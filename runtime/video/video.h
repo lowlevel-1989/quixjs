@@ -1,5 +1,5 @@
 /*
- * QuixJS - A lightweight JS runtime using SDL2 and JavaScriptCore
+ * quixjs - A lightweight JS runtime using SDL2 and JavaScriptCore
  * Copyright (C) 2025  Vinicio Valbuena (lowlevel.1989)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -27,8 +27,8 @@
 //   libvpx   decodifica VP8 / VP9
 //   libopus  decodifica Opus (el audio de los WebM de RPG Maker)
 // El audio va al mezclador como un flujo (mixer_stream_*) y la imagen sigue
-// su reloj. Se decodifica en un hilo propio, que deja unas pocas imagenes
-// listas por delante; el hilo principal muestra la que toca.
+// su reloj. Se decodifica en un thread propio, que deja unas pocas imagenes
+// listas por delante; el thread principal muestra la que toca.
 //
 // Sin libvpx y libopus al compilar (make VIDEO=0) no hay video: video_open
 // devuelve NULL y el <video> dice que no lo puede reproducir.

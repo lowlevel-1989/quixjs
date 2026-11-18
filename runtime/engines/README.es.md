@@ -16,7 +16,8 @@ un port activa los que quiere en su tabla `[hooks]`.
 ## Un hook
 
 Un archivo `.js` en `runtime/engines/<motor>/` es una función que recibe la función
-original del juego y devuelve la que la sustituye. Se mete en el binario al
+original del juego (y, de segundo, la ruta: `"DataManager.loadGame"`, por si
+el mismo archivo sirve para varias) y devuelve la que la sustituye. Se mete en el binario al
 compilar (`tools/embed_engines.py`) y se llama `<motor>/<archivo>`:
 
 ```

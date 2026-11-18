@@ -1,5 +1,5 @@
 /*
- * QuixJS - A lightweight JS runtime using SDL2 and JavaScriptCore
+ * quixjs - A lightweight JS runtime using SDL2 and JavaScriptCore
  * Copyright (C) 2025  Vinicio Valbuena (lowlevel.1989)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -19,7 +19,7 @@
 // Las imagenes y los sonidos cifrados de RPG Maker MV (.rpgmvp, .rpgmvo,
 // .rpgmvm), descifrados en C al leerlos (core/url.h, url_add_transform): asi
 // el JS no crea un buffer de varios MB por archivo (la respuesta del XHR, la
-// copia de slice y el Blob), que disparaban recolecciones a mitad de imagen.
+// copia de slice y el Blob), que disparaban GC a mitad de imagen.
 // Lo mismo que el Decrypter de RPG Maker: quitar la cabecera de 16 bytes y
 // hacer XOR de los 16 primeros con la clave ($dataSystem.encryptionKey).
 

@@ -1,5 +1,5 @@
 /*
- * QuixJS - A lightweight JS runtime using SDL2 and JavaScriptCore
+ * quixjs - A lightweight JS runtime using SDL2 and JavaScriptCore
  * Copyright (C) 2025  Vinicio Valbuena (lowlevel.1989)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -69,10 +69,10 @@ static JSValue js_audio_decode(JSContext *ctx, JSValueConst this_val, int argc, 
 
 // ---------- cargar un sonido desde su archivo, en segundo plano ----------
 //
-// loadFile(url, cb): el hilo de trabajo lee el archivo (descifrandolo si su
+// loadFile(url, cb): el thread de trabajo lee el archivo (descifrandolo si su
 // extension tiene transformacion: core/url.h) y abre el ogg; despues, en el
-// hilo principal, cb(clip | null). Asi los bytes no pasan por el JS (un
-// buffer de varios MB por sonido, que disparaba recolecciones).
+// thread principal, cb(clip | null). Asi los bytes no pasan por el JS (un
+// buffer de varios MB por sonido, que disparaba GC).
 
 typedef struct {
   char      *path;
@@ -114,7 +114,7 @@ static JSValue js_audio_load_file(JSContext *ctx, JSValueConst this_val, int arg
   j->path = strdup(path);
   j->cb = JS_DupValue(ctx, argv[1]);
   if (worker_submit(load_work, load_done, j) != 0) {
-    load_work(j);   // sin hilo: al momento
+    load_work(j);   // sin thread: al momento
     load_done(ctx, j);
   }
   return JS_TRUE;
@@ -314,7 +314,7 @@ static const char webaudio_src[] =
 "  };\n"
 "  // quixjs: un sonido desde su archivo, sin pasar los bytes por el JS (se\n"
 "  // lee, se descifra si hace falta y se abre en segundo plano). cb(buffer, loopStart,\n"
-"  // loopLength) con el bucle de los comentarios del ogg en frames, o cb(null). false\n"
+"  // loopLength) con el loop de los comentarios del ogg en frames, o cb(null). false\n"
 "  // si la url no es un archivo\n"
 "  AudioContext.prototype.quixLoadFile = function (url, cb) {\n"
 "    return A.loadFile(String(url), function (clip) {\n"

@@ -20,8 +20,8 @@ nwjs    = true   # package.json de nw.js: require('fs'), process...
 # En una portatil asi va estable y gasta menos bateria.
 # El juego no va mas lento: RPG Maker sigue calculando 60 pasos por segundo.
 fps     = 30
-# js_memory = 128: JavaScriptCore cree tener 128 MB de RAM, asi recolecta
-# antes y su monton no crece de mas. Con 256 llegaba a ~300 MB de monton y
+# js_memory = 128: JavaScriptCore cree tener 128 MB de RAM, asi pasa el GC
+# antes y su heap no crece de mas. Con 256 llegaba a ~300 MB de heap y
 # ~200 MB de datos aparte en una partida larga: la RG CubeXX se quedaba sin
 # RAM (tirones de mas de 1 s y al final bloqueada). Con los hooks que quitan
 # la basura (events-cached, interpreter-fast...) 128 ya no da tirones.
@@ -34,7 +34,7 @@ fps = 60
 
 [game]
 title     = "Fear & Hunger"     # el del menu y el de PortMaster
-version   = "1.0.0"             # la del port: subirla con cada cambio del port
+version   = "1.0.1"             # la del port: subirla con cada cambio del port
 id        = "fear_and_hunger"   # el id del juego: Transfer Save solo pasa partidas del mismo
 game_dir  = "gamedata/www"      # la carpeta www/ del juego, copiada en gamedata/
 cache_dir = "cache/gamedata"
@@ -95,7 +95,7 @@ availability = "paid"
 
 # ---------- hooks ----------
 # Los de RPG Maker MV (runtime/engines/rpgmaker-mv/hooks.toml): los datos,
-# las imagenes y los sonidos en C, el recolector cuando no se nota, el
+# las imagenes y los sonidos en C, el GC cuando no se nota, el
 # interprete de eventos, los plugins muy usados... Casi todos comprueban que
 # la funcion es la de RPG Maker MV o la del plugin; si no, dejan la original.
 [hooks]
@@ -119,7 +119,7 @@ engine = "rpgmaker-mv"
 #   - jefes: el grupo de enemigos ($gameTroop) y la vida de su cuerpo o cabeza
 # Para comprobarlos jugando: quixjs --debug y el comando ach de tools/console.py.
 
-# El mando: RPG Maker MV lo lee el mismo (Gamepad API). En el lanzador,
+# El mando: RPG Maker MV lo lee el mismo (Gamepad API). En el launcher,
 # Controls deja asignar todos los botones y las palancas (controller.map).
 [controls]
 gamepad = true
@@ -302,7 +302,7 @@ description = "Defeat Valteil."
 type        = "secondary"
 conditions  = ["valteil"]
 
-# Trucos: se activan en el lanzador (Cheats). La partida en la que se juega
+# Trucos: se activan en el launcher (Cheats). La partida en la que se juega
 # con un truco activo queda sin logros, aunque luego se apague el truco; las
 # demas partidas los siguen consiguiendo (ver runtime/cheats/cheats.h).
 

@@ -1,5 +1,5 @@
 /*
- * QuixJS - A lightweight JS runtime using SDL2 and JavaScriptCore
+ * quixjs - A lightweight JS runtime using SDL2 and JavaScriptCore
  * Copyright (C) 2025  Vinicio Valbuena (lowlevel.1989)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -19,7 +19,7 @@
 #pragma once
 
 // Profiler de muestreo (el de JavaScriptCore): cada 10 ms mira que
-// funcion de JS corre en el hilo principal (y quien la llamo), sin envolver
+// funcion de JS corre en el thread principal (y quien la llamo), sin envolver
 // nada. Dice donde se va el tiempo de verdad, para saber que pasar a C con un
 // hook.
 //
@@ -32,11 +32,13 @@
 int  profiler_start(JSContext *ctx);
 void profiler_stop(void);
 int  profiler_running(void);
-// En el hilo principal, a menudo: junta las muestras y les pone nombre
+// En el thread principal, a menudo: junta las muestras y les pone nombre
 void profiler_drain(JSContext *ctx);
+// Al acabar cada frame: si fue lento (>100 ms), escribe sus funciones de JS
+void profiler_frame_end(JSContext *ctx);
 // El informe, en texto
 void profiler_report(char *out, size_t room, int top);
-// La fase del bucle principal (sin uso: JavaScriptCore solo muestrea JS)
+// La fase del loop principal (sin uso: JavaScriptCore solo muestrea JS)
 void profiler_phase(const char *phase);
 // Escribe el informe en path (para mirarlo con cat). 0 si va.
 int  profiler_save(JSContext *ctx, const char *path, int top);

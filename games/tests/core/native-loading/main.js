@@ -82,7 +82,7 @@ function check() {
     T.near(encrypted._loopLength, 5678 / b.sampleRate, 1e-9, 'loopLength from the comment, in seconds');
     T.near(encrypted._totalTime, b.duration, 1e-9, 'totalTime');
   });
-  // sin cifrar: el mismo archivo (.ogg), el mismo bucle
+  // sin cifrar: el mismo archivo (.ogg), el mismo loop
   Decrypter.hasEncryptedAudio = false;
   clear._load('../../assets/loop.ogg');
   waited = 0;

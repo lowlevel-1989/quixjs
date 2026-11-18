@@ -1,5 +1,5 @@
 /*
- * QuixJS - A lightweight JS runtime using SDL2 and JavaScriptCore
+ * quixjs - A lightweight JS runtime using SDL2 and JavaScriptCore
  * Copyright (C) 2025  Vinicio Valbuena (lowlevel.1989)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -39,10 +39,11 @@ typedef struct {
   const char *debug_sock;  // --debug: consola en este socket Unix
   int show_fps;            // --fps: contador en pantalla y en la salida
   int frame_rate;          // --frame-rate=N: el tope de fps, por encima del toml (para probar)
+  int expose_gc;           // --expose-gc: gc() global, como en V8 (para benchmarks)
   int no_webgl;            // --no-webgl: getContext("webgl") da null
-  int launcher;            // --launcher: el lanzador, un menu antes del juego
+  int launcher;            // --launcher: el launcher, un menu antes del juego
   const char *profile;     // --profile[=archivo]: profiler desde el arranque, informe en el archivo
-  const char *init_dir;     // --gen-config: escribe un toml para el juego y sale
+  const char *gen_config_dir;   // --gen-config: escribe un toml para el juego y sale
 } Args;
 
 int parse_args(int argc, char **argv, Args *args);

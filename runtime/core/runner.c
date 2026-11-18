@@ -1,5 +1,5 @@
 /*
- * QuixJS - A lightweight JS runtime using SDL2 and JavaScriptCore
+ * quixjs - A lightweight JS runtime using SDL2 and JavaScriptCore
  * Copyright (C) 2025  Vinicio Valbuena (lowlevel.1989)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -19,11 +19,13 @@
 // Ejecuta los scripts del juego. Ver runner.h.
 
 #include <stdio.h>
+#include <string.h>
 #include "runner.h"
 
 int runner_run_bundle(JSContext *ctx, const ScriptBundle *bundle, void (*before)(JSContext *ctx, int index)) {
   for (int i = 0; i < bundle->count; i++) {
-    printf("[%02d] %s\n", i, bundle->filenames[i]);
+    const char *name = bundle->filenames[i];
+    printf("[%02d] %s\n", i, strncmp(name, "data:", 5) == 0 ? "inline script" : name);
     if (!bundle->sources[i]) {
       fprintf(stderr, "Error: %s was not loaded\n", bundle->filenames[i]);
       return -1;

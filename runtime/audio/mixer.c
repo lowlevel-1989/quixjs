@@ -1,5 +1,5 @@
 /*
- * QuixJS - A lightweight JS runtime using SDL2 and JavaScriptCore
+ * quixjs - A lightweight JS runtime using SDL2 and JavaScriptCore
  * Copyright (C) 2025  Vinicio Valbuena (lowlevel.1989)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -16,7 +16,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-// El mezclador: los clips ogg, las voces que suenan y la mezcla en el hilo
+// El mezclador: los clips ogg, las voces que suenan y la mezcla en el thread
 // de audio de SDL. Ver mixer.h.
 
 #include <SDL2/SDL.h>
@@ -34,13 +34,13 @@
 
 // Los sonidos cortos (efectos) se decodifican enteros al cargarlos: abrir el
 // decodificador de un ogg (sus cabeceras y tablas) eran ~4 ms en cada play,
-// en el hilo principal (los aleteos de los cuervos, los pasos...)
+// en el thread principal (los aleteos de los cuervos, los pasos...)
 #ifndef PCM_MAX_FRAMES
 #define PCM_MAX_FRAMES (44100 * 3)
 #endif
 
 struct AudioClip {
-  int      refs;          // se toca solo desde el hilo principal
+  int      refs;          // se toca solo desde el thread principal
   uint8_t *data;          // el ogg (NULL si ya esta en pcm)
   size_t   len;
   int16_t *pcm;           // el sonido entero decodificado (interleaved) o NULL
@@ -53,8 +53,8 @@ struct AudioClip {
 
 typedef struct {
   int         id;
-  int         active;     // la usa el hilo de audio
-  int         ended;      // la marca el hilo de audio, la libera el principal
+  int         active;     // la usa el thread de audio
+  int         ended;      // la marca el thread de audio, la libera el principal
   AudioClip  *clip;
   stb_vorbis *dec;
   float       volume, pan, rate;
@@ -102,7 +102,7 @@ static long comment_number(stb_vorbis_comment *cm, const char *key) {
   return -1;
 }
 
-// Se queda con data (malloc) en vez de copiarlo. Vale desde el hilo de
+// Se queda con data (malloc) en vez de copiarlo. Vale desde el thread de
 // trabajo: no toca nada compartido. Si falla, libera data.
 AudioClip *clip_from_ogg_owned(uint8_t *data, size_t len) {
   int err = 0;
@@ -116,7 +116,7 @@ AudioClip *clip_from_ogg_owned(uint8_t *data, size_t len) {
   stb_vorbis_comment cm = stb_vorbis_get_comment(v);
   long loop_start = comment_number(&cm, "LOOPSTART=");
   long loop_length = comment_number(&cm, "LOOPLENGTH=");
-  // corto: entero a pcm ahora (en el hilo de trabajo), y fuera el ogg
+  // corto: entero a pcm ahora (en el thread de trabajo), y fuera el ogg
   int16_t *pcm = NULL;
   int ch = info.channels >= 2 ? 2 : 1;
   if (length > 0 && length <= PCM_MAX_FRAMES && info.channels >= 1) {
@@ -218,13 +218,13 @@ static int voice_refill(Voice *v) {
   float tmp[DEC_FRAMES * 2];
   int ch = v->clip->channels >= 2 ? 2 : 1;
   long want = DEC_FRAMES;
-  // en bucle no se pasa de loop_end
+  // en loop no se pasa de loop_end
   long next_frame = v->buf_start + consumed + (have_keep ? 1 : 0);
   if (v->loop && v->loop_end > 0 && next_frame + want > v->loop_end) want = v->loop_end - next_frame;
 
   int got = read_frames(v, next_frame, ch, tmp, want);
   if (got <= 0 && v->loop) {
-    // vuelta al inicio del bucle
+    // vuelta al inicio del loop
     if (v->dec) stb_vorbis_seek(v->dec, (unsigned int)v->loop_start);
     next_frame = v->loop_start;
     want = DEC_FRAMES;

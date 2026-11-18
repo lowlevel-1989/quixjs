@@ -63,7 +63,7 @@ function (original) {
   }
 
   // el recorrido de starting, definido una vez (una funcion nueva en cada
-  // llamada era basura para el recolector)
+  // llamada era basura para el GC)
   var found = false, current = null;
   function check(e) {
     if (current[e._eventId] === e) found = true;

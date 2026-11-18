@@ -19,15 +19,15 @@
 // de la tabla, se ejecutan de corrido: se mira directamente que no haya hijo,
 // espera ni cambio de escena (como harian esas funciones de RPG Maker MV) y se
 // llama a la funcion de cada comando (la del juego o la de un plugin) y a
-// checkFreeze. Lo demas sigue por el bucle de siempre.
+// checkFreeze. Lo demas sigue por el loop de siempre.
 //
 // Las condiciones de interruptor, variable e interruptor local (111 de tipo
-// 0, 1 y 2) se resuelven en el propio bucle, igual que command111 de RPG Maker
+// 0, 1 y 2) se resuelven en el propio loop, igual que command111 de RPG Maker
 // MV (se sigue leyendo con $gameSwitches.value(), $gameVariables.value() y
 // $gameSelfSwitches.value(): valen los plugins que las cambian). Solo si
 // command111 es exactamente el de RPG Maker MV (se compara su codigo).
 //
-// Solo se usa si las funciones del bucle son las de RPG Maker MV (o el
+// Solo se usa si las funciones del loop son las de RPG Maker MV (o el
 // updateWaitMode de YEP_GabWindow, que sin espera hace lo mismo); si no, la
 // original.
 //

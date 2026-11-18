@@ -1,5 +1,5 @@
 /*
- * QuixJS - A lightweight JS runtime using SDL2 and JavaScriptCore
+ * quixjs - A lightweight JS runtime using SDL2 and JavaScriptCore
  * Copyright (C) 2025  Vinicio Valbuena (lowlevel.1989)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -22,6 +22,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #include "backend/dummy/backend.h"
 #include "backend/sdl/backend.h"
 #include "core/args.h"
@@ -109,6 +110,13 @@ int backend_save_controller(Backend* backend, const char *pairs) {
   return -1;
 }
 
+void backend_set_title(Backend* backend, const char *game_title) {
+  if (!backend) return;
+  if (game_title && game_title[0]) snprintf(backend->title, sizeof backend->title, "quixjs | %s", game_title);
+  else snprintf(backend->title, sizeof backend->title, "quixjs");
+  if (backend->iface && backend->iface->set_title) backend->iface->set_title(backend);
+}
+
 void backend_set_fullscreen(Backend* backend, int on) {
   if (backend && backend->iface && backend->iface->set_fullscreen) backend->iface->set_fullscreen(backend, on);
 }
@@ -145,4 +153,85 @@ void backend_present_wait(Backend* backend) {
 int backend_presented(Backend* backend, double *ms, int max) {
   if (backend && backend->iface && backend->iface->presented) return backend->iface->presented(backend, ms, max);
   return -1;
+}
+
+// ------------------------------------------------ el aviso de carga
+//
+// Al cargar una partida, el juego se para en imagenes de medio segundo o mas
+// (crear el mapa, subir sus texturas): parece colgado. quix.loading(true) lo
+// pone el hook de la carga; quix.loading(false), el del mapa ya creado. Tras
+// la carga suele quedar algo pesado (el mapa al que lleva un evento): el aviso
+// sigue hasta LOADING_CALM_MS de imagenes normales, o como mucho
+// LOADING_MAX_MS desde que empezo.
+#define LOADING_CALM_MS 1000.0
+#define LOADING_SLOW_MS 150.0     // una imagen mas larga no es normal
+#define LOADING_MAX_MS  30000.0
+
+static double loading_now(void) {
+  struct timespec ts;
+  clock_gettime(CLOCK_MONOTONIC, &ts);
+  return ts.tv_sec * 1000.0 + ts.tv_nsec / 1e6;
+}
+
+// el backend con el aviso (para backend_loading_poke, que no lo recibe)
+static Backend *loading_backend;
+static double loading_repainted;
+
+// Si ya habia una carga (Continue y luego su mapa), sigue la que habia, con el
+// retardo mas corto de las dos
+void backend_set_loading(Backend* backend, int on, double after_ms) {
+  if (!backend) return;
+  double now = loading_now();
+  loading_backend = backend;
+  if (on) {
+    if (!backend->loading) {
+      printf("[loading] on%s\n", after_ms > 0 ? " (shown if it takes long)" : "");
+      backend->loading_since = now;
+      backend->loading_tick = now;
+      backend->loading_after = after_ms;
+      backend->loading_shown = 0;
+    } else if (after_ms < backend->loading_after) {
+      backend->loading_after = after_ms;
+    }
+    backend->loading = 1;
+  } else if (backend->loading == 1) {
+    backend->loading_calm = now;
+    backend->loading = 2;
+  }
+}
+
+// Con retardo, solo un parón de verdad (after ms sin mostrar una imagen) lo
+// enseña: una carga rapida no lo ve nunca. Una vez visto, sigue hasta el final
+// (sin parpadear entre una imagen lenta y otra)
+int backend_loading_visible(Backend* backend) {
+  if (!backend || !backend->loading) return 0;
+  if (backend->loading_shown || backend->loading_after <= 0) return 1;
+  if (loading_now() - backend->loading_tick < backend->loading_after) return 0;
+  backend->loading_shown = 1;
+  printf("[loading] shown\n");
+  return 1;
+}
+
+#define LOADING_REPAINT_MS 250.0
+
+void backend_loading_poke(void) {
+  Backend *b = loading_backend;
+  if (!b || !b->loading || !b->iface || !b->iface->repaint) return;
+  double now = loading_now();
+  if (now - b->loading_tick < LOADING_REPAINT_MS || now - loading_repainted < LOADING_REPAINT_MS) return;
+  if (!backend_loading_visible(b)) return;
+  loading_repainted = now;
+  b->iface->repaint(b);
+}
+
+void backend_loading_tick(Backend* backend) {
+  if (!backend || !backend->loading) return;
+  double now = loading_now();
+  if (now - backend->loading_tick > LOADING_SLOW_MS) backend->loading_calm = now;
+  backend->loading_tick = now;
+  if ((backend->loading == 2 && now - backend->loading_calm >= LOADING_CALM_MS) ||
+      now - backend->loading_since > LOADING_MAX_MS) {
+    backend->loading = 0;
+    printf("[loading] off (%.1f s)\n", (now - backend->loading_since) / 1000.0);
+  }
 }

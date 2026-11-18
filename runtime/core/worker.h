@@ -1,5 +1,5 @@
 /*
- * QuixJS - A lightweight JS runtime using SDL2 and JavaScriptCore
+ * quixjs - A lightweight JS runtime using SDL2 and JavaScriptCore
  * Copyright (C) 2025  Vinicio Valbuena (lowlevel.1989)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -18,14 +18,14 @@
 
 #pragma once
 
-// Un hilo de trabajo para cargar en segundo plano (decodificar imagenes, leer
-// y descifrar sonidos): lo que tarda decenas de ms y en el hilo principal era
-// una caida. work corre en el hilo (sin JS ni nada compartido); done, en el
-// hilo principal (worker_poll, una vez por vuelta del bucle), con el JS.
+// Un thread de trabajo para cargar en segundo plano (decodificar imagenes, leer
+// y descifrar sonidos): lo que tarda decenas de ms y en el thread principal era
+// una caida. work corre en el thread (sin JS ni nada compartido); done, en el
+// thread principal (worker_poll, una vez por vuelta del loop), con el JS.
 
 #include "js/js.h"
 
-// 0 si se pidio; -1 si no hay hilo (el que llama lo hace al momento)
+// 0 si se pidio; -1 si no hay thread (el que llama lo hace al momento)
 int  worker_submit(void (*work)(void *arg), void (*done)(JSContext *ctx, void *arg), void *arg);
 void worker_poll(JSContext *ctx);
 int  worker_pending(void);   // pedidos y aun no entregados

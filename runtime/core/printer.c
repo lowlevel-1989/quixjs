@@ -1,5 +1,5 @@
 /*
- * QuixJS - A lightweight JS runtime using SDL2 and JavaScriptCore
+ * quixjs - A lightweight JS runtime using SDL2 and JavaScriptCore
  * Copyright (C) 2025  Vinicio Valbuena (lowlevel.1989)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -19,7 +19,11 @@
 // Escribe en la salida la configuracion leida, al arrancar.
 
 #include <stdio.h>
+#include <string.h>
 #include "printer.h"
+
+// el script tal cual, o "" si no hay
+static const char *script_name(const char *s) { return s ? s : ""; }
 
 void print_config(const Config *cfg) {
   printf("\n--- Loaded Configuration ---\n");
@@ -40,12 +44,12 @@ void print_config(const Config *cfg) {
   printf("height = %d\n\n", cfg->game.height);
 
   printf("[scripts]\n");
-  printf("entry = %s\n", cfg->scripts.entry);
+  printf("entry = %.*s%s\n", 80, script_name(cfg->scripts.entry), strlen(script_name(cfg->scripts.entry)) > 80 ? "..." : "");
   for (int i = 0; i < cfg->scripts.libs_count; i++) {
-    printf("libs[%d] = %s\n", i, cfg->scripts.libs[i]);
+    printf("libs[%d] = %.*s%s\n", i, 80, cfg->scripts.libs[i], strlen(cfg->scripts.libs[i]) > 80 ? "..." : "");
   }
   for (int i = 0; i < cfg->scripts.includes_count; i++) {
-    printf("includes[%d] = %s\n", i, cfg->scripts.includes[i]);
+    printf("includes[%d] = %.*s%s\n", i, 80, cfg->scripts.includes[i], strlen(cfg->scripts.includes[i]) > 80 ? "..." : "");
   }
   if (cfg->fonts_count > 0) {
     printf("\n[fonts]\n");

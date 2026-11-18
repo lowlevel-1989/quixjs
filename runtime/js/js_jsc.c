@@ -1,5 +1,5 @@
 /*
- * QuixJS - A lightweight JS runtime using SDL2 and JavaScriptCore
+ * quixjs - A lightweight JS runtime using SDL2 and JavaScriptCore
  * Copyright (C) 2025  Vinicio Valbuena (lowlevel.1989)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -19,14 +19,14 @@
 // La capa de motor (js.h) sobre la API en C de JavaScriptCore.
 //
 // - Un JSValue con un objeto o una cadena guarda su JSValueRef. Si es "tuyo"
-//   (lo devolvio una funcion de la capa) esta protegido del recolector
+//   (lo devolvio una funcion de la capa) esta protegido del GC
 //   (JSValueProtect) hasta su JS_FreeValue (JSValueUnprotect).
 // - Las funciones de C y los objetos de las clases de los bindings son
 //   objetos de JSC creados con una JSClassRef (callbacks): su dato privado
 //   (FnPriv u ObjPriv) dice que funcion de C llamar o que puntero de C
 //   llevan.
 // - Una excepcion queda pendiente en el JSContext hasta JS_GetException.
-// - Los finalizadores (en mitad de una recoleccion) no pueden tocar el motor:
+// - Los finalizadores (en mitad de un GC) no pueden tocar el motor:
 //   lo que sueltan (JS_FreeValueRT) se suelta despues (drain).
 
 #include <stdarg.h>
@@ -38,9 +38,10 @@
 #include <JavaScriptCore/JavaScript.h>
 #include "js.h"
 // La API privada en C de JavaScriptCore (la compilamos nosotros): memoria,
-// recoleccion completa y su profiler de muestreo
+// GC completo y su sampling profiler
 JSObjectRef JSGetMemoryUsageStatistics(JSContextRef ctx);
 void JSSynchronousGarbageCollectForDebugging(JSContextRef ctx);
+void JSReportExtraMemoryCost(JSContextRef ctx, size_t size);
 bool JSContextGroupEnableSamplingProfiler(JSContextGroupRef group);
 void JSContextGroupDisableSamplingProfiler(JSContextGroupRef group);
 JSStringRef JSContextGroupTakeSamplesFromSamplingProfiler(JSContextGroupRef group);
@@ -68,7 +69,7 @@ struct JSRuntime {
   ClassEntry classes[MAX_CLASSES];
   JSContext *contexts[MAX_CONTEXTS];
   int context_count;
-  // lo que soltaron los finalizadores, para soltarlo fuera de la recoleccion
+  // lo que soltaron los finalizadores, para soltarlo fuera del GC
   JSValueRef *pending_free;
   int pending_count, pending_cap;
 };
@@ -973,7 +974,7 @@ static QuixValue fast_call(void *priv, JSContextRef c, QuixValue self, int argc,
     r = JS_UNDEFINED;
   } else {
     // el resultado era de la funcion (protegido): ahora es de JSC, que lo
-    // convierte enseguida (sin crear nada en medio: no puede recolectar)
+    // convierte enseguida (sin crear nada en medio: no puede pasar el GC)
     JS_FreeValue(ctx, r);
   }
   if (native_prof) {
@@ -1474,6 +1475,10 @@ int JS_ObjectTypeCounts(JSRuntime *rt, char names[][48], double *counts, int max
   }
   JSPropertyNameArrayRelease(props);
   return n;
+}
+
+void JS_ReportExtraMemory(JSContext *ctx, size_t bytes) {
+  if (ctx && bytes) JSReportExtraMemoryCost(ctx->g, bytes);
 }
 
 void JS_IdleWork(JSRuntime *rt, double ms) {

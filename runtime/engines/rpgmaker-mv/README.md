@@ -7,8 +7,8 @@ handheld. Each one gives the same result as the original function. The
 words frame, update, preset and playthrough are explained in
 [runtime](../../README.md#words-used-in-the-code).
 
-`[hooks] engine = "rpgmaker-mv"` turns on the hooks of `hooks.toml` (30
-hooks on 35 paths, marked "preset" below). Most of them check that the
+`[hooks] engine = "rpgmaker-mv"` turns on the hooks of `hooks.toml` (31
+hooks on 41 paths, marked "preset" below). Most of them check that the
 function is the one of RPG Maker MV or of its plugin; if not, they leave the
 original. The ones marked "no check yet" do not check it yet: a game whose
 plugin changes that function can turn them off with `"off"` in its `[hooks]`.
@@ -19,11 +19,15 @@ The others are turned on by each port in its own `[hooks]`.
 | `request-images-once.js` | `Game_Interpreter.requestImages` | preset: each event command list is walked once to preload its images, not every time a parallel event starts again |
 | `skip-branch-table.js`   | `Game_Interpreter.prototype.skipBranch` | preset (no check yet): jumps over a false "if" block with a table built once per list, instead of line by line |
 | `adjust-tone.js`         | `Bitmap.prototype.adjustTone` | preset: changes the tone of an image in C (`adjust_tone.c`), without getImageData and a JS loop |
+| `blur-native.js`, `blur.c` | `Bitmap.prototype.blur` | preset: the blur of the screen snapshot behind the menu and battles in C, instead of 18 full-screen drawImage calls (330 ms to 50 ms on the RG CubeXX); exact to the math of the original |
 | `tilemap-sprites-once-per-frame.js` | `Tilemap.prototype.update` | preset (no check yet): at 30 fps the map sprites are updated once per drawn frame (not twice), except those with an animation or a balloon; the tile animation keeps counting every update |
 | `windowlayer-skip-empty.js` | `WindowLayer.prototype.renderWebGL` | preset (no check yet): with no window open, no filter pass (an empty full-screen render and a wait for the GPU every frame) |
 | `event-idle-fast.js`     | `Game_Event.prototype.update` | preset (no check yet): a quiet event (no parallel, no movement, no chase) only updates its counters, as the whole chain of RPG Maker and plugins would |
 | `tint-native.js`, `tint.c` | `Sprite.prototype._executeTint` | preset: the recolor of a sprite (battle flashes, tones) in C in one pass, instead of about eight canvas operations with blend modes; same pixels |
 | `yep-enemy-name-refresh.js` | `Window_EnemyVisualSelect.prototype.updateBattlerName` | preset: YEP_BattleEngineCore is missing the braces of an if and redrew every enemy name every frame; now only when the name changes |
+| `refresh-if-same-drawing.js` | `Window_BattleEnemy.prototype.refresh`, `Window_BattleStatus.prototype.refresh` | preset: the drawing calls of a window refresh are recorded; if they are the same as last time the bitmap is left alone (not drawn nor uploaded to the GPU again); if anything draws another way, the original refresh |
+| `loading-notice.js` | `DataManager.loadGame`, `DataManager.setupNewGame`, `Scene_Map.prototype.onMapLoaded`, `Scene_Battle.prototype.createDisplayObjects`, `Scene_Map.prototype.start`, `Scene_Battle.prototype.start` | preset: "Loading..." at the bottom right while a save is loaded or a new game starts (`quix.loading`); it goes away once the scene has started and frames are normal again. On a map change or at the start of a battle, only if the game stalls for more than 1 s (on the RX6S, several seconds before a battle); never when coming back from a menu. On the RG CubeXX, Continue is ~4 s of half-second frames |
+| `yep-enemy-select-refresh.js` | `Window_EnemyVisualSelect.prototype.refresh` | preset: with Show Enemy Name off (or a hidden enemy) YEP_BattleEngineCore cleared every enemy window every frame and it was uploaded to the GPU again (~90 uploads per second in a Fear & Hunger battle); now it is cleared once |
 | `pure-common-events.js`  | `Game_CommonEvent.prototype.update` | preset: a pure parallel common event (only conditions and switch or variable changes, no waits, no randomness) is not run again while what it reads and writes stays the same |
 | `achievements-menu.js`   | `Scene_Menu.prototype.createCommandWindow` | preset: an "Achievements" option in the game menu with the achievements of the port (`[achievements_menu] icon` for its IconSet icon) |
 | `lazy-data.js`, `lazy_data.c` | `DataManager.loadDataFile` | preset: the pages of each troop and the list of each common event stay as text until they are used (fewer objects for the collector) |
@@ -31,7 +35,9 @@ The others are turned on by each port in its own `[hooks]`.
 | `load-audio-native.js`   | `WebAudio.prototype._load` | preset: quixjs reads, decrypts and opens the sounds in the background, with the loop comments read in C |
 | `lz-string-native.js`, `lz_string.c` | `LZString.decompressFromBase64` | preset: loading a save decompresses in C; checked once against the LZString of the game |
 | `gc-on-transition.js`    | `Scene_Map.prototype.create`, `Scene_Battle.prototype.create` | preset: a full collection when the scene is created, with the screen black |
-| `gc-when-still.js`       | `Scene_Map.prototype.update` | preset: the due collection runs while the player stands still, not while walking |
+| `gc-when-still.js`       | `Scene_Map.prototype.update` | optional (not in the preset): the due collection runs while the player stands still; with JavaScriptCore it was a little worse than letting it collect on its own |
+| `scene-release.js`       | `Scene_Base.prototype.terminate` | preset: when a scene ends, clears what kept it alive: the sprites of the last batch of PixiJS v4 and its filter stack, and globals that point to one of its sprites (YEP_BattleEngineCore: `childSprite`) |
+| `battle-release.js`      | `Scene_Battle.prototype.terminate` | preset: when a battle ends, BattleManager lets go of its sprites and windows (it kept the whole battle until the next one) |
 | `fluid-timestep-cap.js`  | `SceneManager.updateMain` | preset: at most 4 updates per frame with TDDP_FluidTimestep, so a slow frame does not spiral down |
 | `interpreter-fast.js`    | `Game_Interpreter.prototype.update` | preset: runs in a row the commands that cannot change the checks done before each one (conditions, switches, variables) |
 | `any-event-starting.js`  | `Game_Map.prototype.isAnyEventStarting` | preset: counts the starting events instead of walking every event of the map |
@@ -47,6 +53,7 @@ The others are turned on by each port in its own `[hooks]`.
 | `refresh-on-net-change.js` | `Game_Map.prototype.refresh` | preset (no check yet): the refresh is skipped when every switch and variable is back to its value and nothing else asked for it |
 | `skip-hidden-sprites.js` | `Sprite_Character.prototype.update` | preset (no check yet): the sprites without image or out of the screen are not updated while they stay so |
 | `terrax-lights-only.js`  | `Spriteset_Map.prototype.update` | TerraxLighting only walks the events whose note is a light |
+| `snap-half.js`           | `SceneManager.snapForBackground` | the blurred snapshot behind the menu and battles is read from the GPU at half resolution and enlarged in C before the blur: a quarter of the `readPixels` (113 ms to 29 ms on the RG CubeXX, where reading from the GPU is slow); a bit blurrier than the original |
 | `tone-filter-when-needed.js` | `Spriteset_Base.prototype.updateToneChanger` | preset (no check yet): with tone 0,0,0,0 the ToneFilter of the base layer is taken out (two full-screen passes less per frame) |
 | `playthrough.js`         | | not a hook: the playthrough in progress (`$gameSystem._quix`) for the cheats and the achievements |
 | `natives.c`, `natives.h` | | the list of native functions (`__quixEngine["rpgmaker-mv"]`) |

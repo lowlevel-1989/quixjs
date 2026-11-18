@@ -2,21 +2,21 @@
 
 [English](README.md) | Español
 
-El arranque y el bucle principal de quixjs. `main.c` lee las opciones y
+El arranque y el loop principal de quixjs. `main.c` lee las opciones y
 el toml del juego, crea el backend y el contexto de JavaScriptCore, añade las APIs del
 navegador (`binding/`), compila y ejecuta los scripts del juego y después corre
-el bucle hasta que no queda nada por hacer. El resto de archivos son las piezas
+el loop hasta que no queda nada por hacer. El resto de archivos son las piezas
 que usa `main.c`: opciones, config, carga de scripts, reloj y timers, teclas,
 urls y las herramientas de prueba (`--script`, `--debug`).
 
 | archivo           | de qué se encarga |
 |-------------------|-------------------|
-| `main.c`          | arranque, el menú de `--launcher` antes del juego, bucle principal, entrada a KeyboardEvent, logros comprobados en cada frame, composición de la pantalla (capas en la GPU o en memoria), `--fps`, `--hold`, captura, código de salida |
+| `main.c`          | arranque, el menú de `--launcher` antes del juego, loop principal, entrada a KeyboardEvent, logros comprobados en cada frame, composición de la pantalla (capas en la GPU o en memoria), `--fps`, `--hold`, captura, código de salida |
 | `app_context.h`   | `AppContext`: backend, config, contador de frames y petición de `quix.exit()`, compartido con los bindings |
 | `args.c`          | opciones de la línea de comandos (`-c`, `-b`, `--test`, `--frames`, `--script`, `--debug`, `--gen-config`, `--launcher`...) |
 | `config_loader.c` | lee el toml del juego (`[engine]` y `[engine.pc]` / `[engine.handheld]`, `[game]` con `title`, `id` y `mods`, `[scripts]`, `[fonts]`, `[launcher]`, `[saves]` con `dir` desde `game_dir`, `[controls]`) con tomlc17; `[symbols]` y `[[achievements]]` los lee `achievements/`, `[hooks]` los lee `hooks/` |
 | `printer.c`       | muestra la config cargada al arrancar |
-| `init.c`          | `--gen-config <carpeta>`: mira el juego (`package.json` de nw.js, `index.html`, su CSS, `rpg_core.js` / `rmmz_core.js`, `pixi.js`) y escribe un `config.toml` en stdout |
+| `gen_config.c`    | `--gen-config <carpeta o .html>`: mira el juego (`package.json` de nw.js, `index.html` o el `.html` dado, su CSS, `rpg_core.js` / `rmmz_core.js`, `pixi.js`) y escribe un `config.toml` en stdout |
 | `compiler.c`      | lee los scripts y comprueba su sintaxis; también carga los scripts añadidos después (`<script src>`) |
 | `runner.c`        | ejecuta cada script en orden |
 | `timer.c`         | reloj (real o fijo), setTimeout / setInterval, requestAnimationFrame |
@@ -24,12 +24,12 @@ urls y las herramientas de prueba (`--script`, `--debug`).
 | `url.c`           | urls del juego a rutas del disco (`img/a.png?v=1`, `file://`, `http://localhost/`), data URIs, lectura de archivos |
 | `input_script.c`  | `--script <archivo>`: guion de entrada para pruebas, una acción por línea en un frame dado (`press`, `down`, `up`, `shot`, `log`, `exit`) |
 | `debug_server.c`  | `--debug`: consola de debug en un socket Unix (`quixjs.sock`), se usa con `tools/console.py` |
-| `profiler.c`      | `--profile`: el profiler de muestreo de JavaScriptCore, un informe cada 10 s y al salir |
-| `watchdog.c`      | salida de emergencia: un hilo lee los mandos del kernel; Select + Start sale si el bucle lleva más de 1 s parado |
-| `worker.c`        | un hilo de trabajo para cargar en segundo plano (decodificar imágenes, leer y descifrar sonidos) |
+| `profiler.c`      | `--profile`: el sampling profiler de JavaScriptCore, un informe cada 10 s y al salir |
+| `watchdog.c`      | salida de emergencia: un thread lee los mandos del kernel; Select + Start sale si el loop lleva más de 1 s parado |
+| `worker.c`        | un thread de trabajo para cargar en segundo plano (decodificar imágenes, leer y descifrar sonidos) |
 | `memstats.c`      | memoria de canvas, imágenes y texturas WebGL, para el comando `mem` |
 
-## El bucle principal
+## El loop principal
 
 Con `--launcher` primero va el menú, en la misma ventana, y el juego arranca
 con Play. En cada vuelta: eventos del backend -> consola de debug -> guion de
@@ -38,9 +38,9 @@ entrada -> KeyboardEvent -> promesas -> timers vencidos. Una vez por frame
 callbacks de `requestAnimationFrame`, avanzan el video y el audio, se comprueban
 los logros y se presenta la pantalla. Con `[engine] fps` el frame dura 1000/fps
 ms. `[engine] vsync` se pasa al backend antes de que cree la ventana. Con
-`[engine] present_ahead` otro hilo presenta cada imagen en su refresco. Con
-menos RAM libre que `[engine] low_memory_mb` se hace una recolección completa
-de JS. El bucle termina cuando no queda nada (ni timers, ni rAF,
+`[engine] present_ahead` otro thread presenta cada imagen en su refresco. Con
+menos RAM libre que `[engine] low_memory_mb` se hace un GC completo
+de JS. El loop termina cuando no queda nada (ni timers, ni rAF,
 ni promesas, ni audio sonando, ni entrada), se cierra la ventana, se llama a
 `quix.exit()` o se llega a `--frames`. Con el backend sdl la ventana sigue
 abierta mientras haya un canvas en pantalla.
@@ -64,7 +64,7 @@ timer o frame) y `rest` (el resto del tiempo entre frames).
 ## Reloj fijo
 
 Con `--fixed-step` (y con `--test`, salvo con `-b sdl`) el tiempo solo avanza
-cuando lo pide el bucle: un frame son exactamente 1000/60 ms, y cuando no hay
+cuando lo pide el loop: un frame son exactamente 1000/60 ms, y cuando no hay
 nada que hacer el reloj salta al siguiente timer o frame en vez de dormir. Los
 tests dan siempre el mismo resultado y corren tan rápido como se pueda.
 
@@ -78,6 +78,8 @@ no pararía la página).
 el juego, con el archivo y la línea); JavaScriptCore lo compila al ejecutarlo,
 y lo que más se ejecuta también a código máquina (JIT). No hay caché: la
 primera versión de quixjs, sobre QuickJS, guardaba bytecode en `cache_dir`.
+Ahora `cache_dir` guarda los programas de WebGL ya enlazados
+(`<cache_dir>/shaders`, `gfx/shader_cache.c`).
 
 ## Consola de debug
 

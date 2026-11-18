@@ -12,6 +12,7 @@ forman parte del runtime.
 | `build-jsc.sh` | compila JavaScriptCore como librería estática, para el PC (`host`) o para las portátiles contra Debian buster (aarch64, armhf), con libc++ e ICU; `make` lo ejecuta si falta |
 | `embed_engines.py` | mete los hooks de `runtime/engines/<motor>/*.js` (y su `hooks.toml`) en el binario, en `obj/gen/engines.h`; lo ejecuta el `Makefile` ([engines](../runtime/engines/README.es.md)) |
 | `embed_shaders.py` | pasa `runtime/shaders/*.vert` y `*.frag` a cadenas de C en `obj/gen/shaders.h`; lo ejecuta el `Makefile` antes de compilar ([shaders](../runtime/shaders/README.es.md)) |
+| `h5bench.sh` | `make bench`: corre h5bench (JavaScript, WebGL, canvas 2d, memoria) con quixjs, resultados en `results/h5bench/` ([benchmark](../docs/benchmark.es.md)) |
 | `gen_gl.py`  | genera `runtime/gfx/gl_funcs.h` (funciones de OpenGL ES 2.0) y `runtime/binding/webgl_constants.h` (constantes de WebGL 1) a partir de la cabecera GLES2 de SDL2 |
 
 ## console.py

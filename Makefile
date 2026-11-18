@@ -44,7 +44,7 @@ CORE_SRCS = runtime/js/js_jsc.c \
 						runtime/core/keymap.c \
 						runtime/core/url.c \
 						runtime/core/worker.c \
-						runtime/core/init.c \
+						runtime/core/gen_config.c \
 						runtime/core/input_script.c \
 						runtime/core/debug_server.c \
 						runtime/gfx/surface.c \
@@ -54,6 +54,9 @@ CORE_SRCS = runtime/js/js_jsc.c \
 						runtime/gfx/image_loader.c \
 						runtime/gfx/font.c \
 						runtime/gfx/gl.c \
+						runtime/gfx/driver.c \
+						runtime/gfx/shader_cache.c \
+						$(wildcard runtime/gfx/drivers/*.c) \
 						runtime/binding/timer.c \
 						runtime/binding/events.c \
 						runtime/binding/navigator.c \
@@ -126,13 +129,30 @@ GEN_ENGINES = obj/gen/engines.h
 $(GEN_ENGINES): $(ENGINE_FILES) tools/embed_engines.py
 	python3 tools/embed_engines.py runtime/engines $@
 
+# La version de quixjs: la del archivo VERSION (QUIX_VERSION)
+GEN_VERSION = obj/gen/version.h
+$(GEN_VERSION): VERSION
+	@mkdir -p $(dir $@)
+	printf '// generado desde VERSION: no editar\n#define QUIX_VERSION "%s"\n' "$$(tr -d ' \n' < VERSION)" > $@
+
+# make TRACE=1: las medidas [trace] de los puntos criticos (runtime/core/trace.h,
+# docs/benchmark.md). La cabecera solo cambia si cambia TRACE: entonces se
+# recompila todo lo nuestro, y sin TRACE no queda nada en el binario
+TRACE ?= 0
+GEN_TRACE = obj/gen/trace_config.h
+$(GEN_TRACE): FORCE_TRACE
+	@mkdir -p $(dir $@)
+	@echo '#define QUIX_TRACE $(TRACE)' | cmp -s - $@ || echo '#define QUIX_TRACE $(TRACE)' > $@
+.PHONY: FORCE_TRACE
+FORCE_TRACE:
+
 # Las cabeceras propias: si cambia una, se recompila lo nuestro
-HEADERS = $(shell find runtime -name '*.h' -not -path 'runtime/thirdparty/*') $(GEN_SHADERS) $(GEN_ENGINES)
+HEADERS = $(shell find runtime -name '*.h' -not -path 'runtime/thirdparty/*') $(GEN_SHADERS) $(GEN_ENGINES) $(GEN_VERSION) $(GEN_TRACE)
 
 ifeq ($(PLATFORM),portmaster)
 include portmaster/portmaster.mk
 else
-.PHONY: all clean test release
+.PHONY: all clean test release bench
 
 all: $(TARGET)
 
@@ -159,6 +179,11 @@ $(CORE_SRCS:.c=.o): $(HEADERS) | $(JSC_LIB)
 # Ejecuta los juegos de games/tests en modo test (sin ventana)
 test: $(TARGET)
 	./tests/run.sh
+
+# h5bench (tools/h5bench.sh): benchmark de JavaScript, WebGL, canvas 2d y
+# memoria, con ventana; los resultados en results/h5bench/
+bench: $(TARGET)
+	tools/h5bench.sh
 
 clean:
 	rm -f $(OBJS) $(TARGET)

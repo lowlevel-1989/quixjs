@@ -1,5 +1,5 @@
 /*
- * QuixJS - A lightweight JS runtime using SDL2 and JavaScriptCore
+ * quixjs - A lightweight JS runtime using SDL2 and JavaScriptCore
  * Copyright (C) 2025  Vinicio Valbuena (lowlevel.1989)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -19,6 +19,8 @@
 // El objeto global quix. Ver quix.h.
 
 #include <stdio.h>
+#include <sys/resource.h>
+#include <unistd.h>
 #include <string.h>
 #include <time.h>
 #include "core/app_context.h"
@@ -26,9 +28,12 @@
 #include "core/timer.h"
 #include "core/url.h"
 #include "gfx/font.h"
+#include "gfx/gl.h"
+#include "gfx/driver.h"
 #include "achievements/achievements.h"
 #include "canvas.h"
 #include "quix.h"
+#include "core/trace.h"
 
 static JSValue js_quix_exit(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
   AppContext *app = JS_GetContextOpaque(ctx);
@@ -167,9 +172,9 @@ static JSValue js_quix_isGpuCanvas(JSContext *ctx, JSValueConst this_val, int ar
   return JS_NewBool(ctx, cd && (cd->gpu != NULL || cd->gpu_wanted));
 }
 
-// quix.collectGarbage(): una recoleccion completa de la memoria del JS ahora;
-// quix.collectGarbage('due'): la que toca (parcial o completa). Devuelve
-// cuanto tardo (ms). Para hacerla cuando no se nota (un cambio de mapa, con la
+// quix.collectGarbage(): un GC completo de la memoria del JS ahora;
+// quix.collectGarbage('due'): el que toca (parcial o completo). Devuelve
+// cuanto tardo (ms). Para hacerlo cuando no se nota (un cambio de mapa, con la
 // pantalla en negro; el personaje quieto) y no a mitad de un desplazamiento
 static JSValue js_quix_collectGarbage(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
   (void)this_val;
@@ -184,10 +189,14 @@ static JSValue js_quix_collectGarbage(JSContext *ctx, JSValueConst this_val, int
   if (due) JS_CollectDue(JS_GetRuntime(ctx));
   else JS_RunGC(JS_GetRuntime(ctx));
   clock_gettime(CLOCK_MONOTONIC, &b);
-  return JS_NewFloat64(ctx, (b.tv_sec - a.tv_sec) * 1000.0 + (b.tv_nsec - a.tv_nsec) / 1e6);
+  double ms = (b.tv_sec - a.tv_sec) * 1000.0 + (b.tv_nsec - a.tv_nsec) / 1e6;
+#if QUIX_TRACE
+  if (ms >= 1.0) printf("[trace] collectGarbage %s: %.2f ms\n", due ? "due" : "full", ms);
+#endif
+  return JS_NewFloat64(ctx, ms);
 }
 
-// quix.gcPressure(): cuanto falta para que JavaScriptCore recolecte por su
+// quix.gcPressure(): cuanto falta para que JavaScriptCore pase el GC por su
 // cuenta (0 recien hecha, 1 a punto)
 static JSValue js_quix_gcPressure(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
   (void)this_val;
@@ -196,7 +205,63 @@ static JSValue js_quix_gcPressure(JSContext *ctx, JSValueConst this_val, int arg
   return JS_NewFloat64(ctx, JS_GCPressure(JS_GetRuntime(ctx)));
 }
 
+// quix.memoryUsage(): lo que da process.memoryUsage() en nw.js. rss y
+// maxRss, del proceso (/proc/self/statm y getrusage); heapUsed, heapTotal y
+// external, del heap de JavaScriptCore. Recorre el heap: no es para cada
+// frame
+static JSValue js_quix_memoryUsage(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+  (void)this_val;
+  (void)argc;
+  (void)argv;
+  double rss = 0;
+  FILE *f = fopen("/proc/self/statm", "r");
+  if (f) {
+    long size = 0, res = 0;
+    if (fscanf(f, "%ld %ld", &size, &res) == 2) rss = (double)res * (double)sysconf(_SC_PAGESIZE);
+    fclose(f);
+  }
+  struct rusage ru;
+  double max_rss = getrusage(RUSAGE_SELF, &ru) == 0 ? (double)ru.ru_maxrss * 1024.0 : 0;
+  JSMemoryUsage m;
+  JS_ComputeMemoryUsage(JS_GetRuntime(ctx), &m);
+  JSValue o = JS_NewObject(ctx);
+  JS_SetPropertyStr(ctx, o, "rss", JS_NewFloat64(ctx, rss));
+  JS_SetPropertyStr(ctx, o, "maxRss", JS_NewFloat64(ctx, max_rss));
+  // heapSize cuenta lo vivo en el ultimo GC: antes del primero es
+  // 0, y entonces lo reservado es la mejor lectura
+  JS_SetPropertyStr(ctx, o, "heapUsed", JS_NewFloat64(ctx, (double)(m.heap_size > 0 ? m.heap_size : m.heap_capacity)));
+  JS_SetPropertyStr(ctx, o, "heapTotal", JS_NewFloat64(ctx, (double)m.heap_capacity));
+  JS_SetPropertyStr(ctx, o, "external", JS_NewFloat64(ctx, (double)m.extra_memory));
+  return o;
+}
+
+// quix.gpuDriver(): el driver de OpenGL ES ("panfrost", "mali", "mali-g31" o "default",
+// gfx/drivers/), o null sin WebGL; para que un hook haga
+// lo que mejor va con cada uno
+static JSValue js_quix_gpuDriver(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+  (void)this_val; (void)argc; (void)argv;
+  if (!gl_available()) return JS_NULL;
+  return JS_NewString(ctx, gpu_driver()->name);
+}
+
+// quix.loading(true | false[, ms]): el aviso de carga ("Loading...") mientras
+// el juego carga (una partida, un mapa, una batalla); con false se quita en
+// cuanto las imagenes van normales (backend_set_loading). Con ms, solo sale
+// si la carga dura mas que eso. Lo usa el hook rpgmaker-mv/loading-notice.
+static JSValue js_quix_loading(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+  (void)this_val;
+  AppContext *app = JS_GetContextOpaque(ctx);
+  double after = 0;
+  if (argc > 1 && JS_ToFloat64(ctx, &after, argv[1]) != 0) after = 0;
+  if (after < 0 || after != after) after = 0;
+  if (app && app->backend) backend_set_loading(app->backend, argc > 0 && JS_ToBool(ctx, argv[0]), after);
+  return JS_UNDEFINED;
+}
+
 static const JSCFunctionListEntry js_quix_funcs[] = {
+  JS_CFUNC_DEF("loading", 1, js_quix_loading),
+  JS_CFUNC_DEF("gpuDriver", 0, js_quix_gpuDriver),
+  JS_CFUNC_DEF("memoryUsage", 0, js_quix_memoryUsage),
   JS_CFUNC_DEF("isGpuCanvas", 1, js_quix_isGpuCanvas),
   JS_CFUNC_DEF("achievementUnlocked", 1, js_quix_achievementUnlocked),
   JS_CFUNC_DEF("achievements", 0, js_quix_achievements),

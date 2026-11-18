@@ -26,10 +26,81 @@ var DataManager = {
 };
 window.DataManager = DataManager;
 
+// cargar y empezar una partida (loading-notice): lo que pide el aviso de
+// carga, apuntado (quix.loading de verdad tambien se llama)
+DataManager.loadGame = function (id) { return id === 1; };
+DataManager.setupNewGame = function () { return 'new'; };
+var loadingCalls = [];
+var quixLoading = quix.loading;
+quix.loading = function (on, after) { loadingCalls.push(after ? on + ' ' + after : on); return quixLoading.apply(quix, arguments); };
+
+// Window_EnemyVisualSelect de YEP_BattleEngineCore, con su refresh tal cual
+// (yep-enemy-select-refresh)
+var Yanfly = { Param: { BECEnemyFontSize: 20 } };
+function Window_EnemyVisualSelect() {
+  var drawn = [];
+  this.contents = { clears: 0, drawn: drawn, height: 100, width: 200, fontSize: 0,
+    clear: function () { this.clears++; this.drawn.length = 0; } };
+  this._battler = { hidden: false, isHidden: function () { return this.hidden; }, name: function () { return 'Maneba'; } };
+  this._showEnemyName = false;
+  this._requestRefresh = true;
+}
+Window_EnemyVisualSelect.prototype.lineHeight = function () { return 36; };
+Window_EnemyVisualSelect.prototype.drawText = function (text) { this.contents.drawn.push(text); };
+Window_EnemyVisualSelect.prototype.refresh = function() {
+    this.contents.clear();
+    if (!this._battler) return;
+    if (!this._showEnemyName) return;
+    if (this._battler.isHidden()) return;
+    this._requestRefresh = false;
+    this.contents.fontSize = Yanfly.Param.BECEnemyFontSize;
+    var text = this._battler.name();
+    var wy = this.contents.height - this.lineHeight();
+    this.drawText(text, 0, wy, this.contents.width, 'center');
+};
+
+// Bitmap y ventanas de RPG Maker MV, lo justo (refresh-if-same-drawing): cada
+// dibujo cuenta en ops y llama a _setDirty, como en rpg_core.js
+function DrawBitmap() { this.ops = []; this.dirty = 0; this.fontSize = 28; this.textColor = '#ffffff'; this.width = 100; this.height = 50; }
+DrawBitmap.prototype._setDirty = function () { this.dirty++; };
+DrawBitmap.prototype.clear = function () { this.ops.length = 0; this._setDirty(); };
+DrawBitmap.prototype.drawText = function (t, x, y) { this.ops.push('text ' + t + ' ' + x + ',' + y + ' ' + this.textColor); this._setDirty(); };
+DrawBitmap.prototype.blt = function (src, sx, sy, sw, sh, dx, dy) { if (src.ready) this.ops.push('blt ' + src.name + ' ' + dx + ',' + dy); this._setDirty(); };
+function Icons() { this.name = 'IconSet'; this.ready = false; this.width = 0; this.height = 0; }
+Icons.prototype.isReady = function () { return this.ready; };
+var icons = new Icons();
+function Window_BattleStatus() { this.contents = new DrawBitmap(); this.hp = 100; this.direct = false; }
+Window_BattleStatus.prototype.refresh = function () {
+  this.contents.clear();
+  this.contents.textColor = this.hp < 50 ? '#ff0000' : '#ffffff';
+  this.contents.drawText('HP ' + this.hp, 0, 0);
+  this.contents.blt(icons, 0, 0, 32, 32, 60, 0);
+  if (this.direct) { this.contents.ops.push('direct'); this.contents._setDirty(); }   // un plugin que pinta directamente
+};
+Window_BattleStatus.prototype.redrawRow = function () { this.contents.ops.push('row'); this.contents._setDirty(); };
+
 // Scene_Map de RPG Maker, lo justo (gc-on-transition)
+// lo minimo de PIXI y de las escenas para scene-release y battle-release: un
+// objeto de dibujo con parent, el renderer con su lote de sprites y su pila
+// de filtros, y BattleManager (una funcion con propiedades, como en RPG Maker)
+var PIXI = { DisplayObject: function () { this.parent = null; } };
+function sprite(parent) { var s = new PIXI.DisplayObject(); s.parent = parent || null; return s; }
+
+function BattleManager() {}
+function Scene_Base() { PIXI.DisplayObject.call(this); }
+Scene_Base.prototype = Object.create(PIXI.DisplayObject.prototype);
+Scene_Base.prototype.terminate = function () { this.terminated = true; return 'terminated'; };
+function Scene_Battle() { Scene_Base.call(this); }
+Scene_Battle.prototype = Object.create(Scene_Base.prototype);
+Scene_Battle.prototype.terminate = function () { Scene_Base.prototype.terminate.call(this); this.battleEnded = true; };
+Scene_Battle.prototype.createDisplayObjects = function () { this.displayed = true; };
+Scene_Battle.prototype.start = function () { this.battleStarted = true; };
+
 function Scene_Map() {}
 Scene_Map.prototype.create = function () { this.created = true; return 'created'; };
 Scene_Map.prototype.update = function () { this.updated = (this.updated || 0) + 1; return 'updated'; };
+Scene_Map.prototype.start = function () { this.started = true; };
+Scene_Map.prototype.onMapLoaded = function () { this.mapLoaded = true; };
 // la de YEP_ButtonCommonEvents, tal cual (button-events-keys)
 var Yanfly = { Param: { BCEList: {} } }, Input = { repeated: {}, isRepeated: function (k) { return !!this.repeated[k]; } };
 var reserved = [];
@@ -265,7 +336,7 @@ var LZString = {
   decompressFromBase64: function (s) { lzCalls++; return 'original'; }
 };
 
-// El bucle del interprete de RPG Maker MV (rpg_objects.js, MIT), tal cual,
+// El loop del interprete de RPG Maker MV (rpg_objects.js, MIT), tal cual,
 // y unos comandos de prueba que apuntan lo que hacen en un rastro
 var trace = [];
 var SceneManagerReal = SceneManager;
@@ -275,7 +346,9 @@ SceneManager._nextScene = null;
 SceneManager.isSceneChanging = function() {
     return this._exiting || !!this._nextScene;
 };
-var Graphics = { frameCount: 0 };
+var Graphics = { frameCount: 0,
+                 _renderer: { plugins: { sprite: { sprites: [], currentIndex: 0 } },
+                              filterManager: { filterData: { index: 0, stack: [{ target: null }, { target: null, filters: [1] }] } } } };
 var GI = Game_Interpreter.prototype;
 GI.isRunning = function() {
     return !!this._list;
@@ -837,6 +910,100 @@ Sprite.prototype.update = function() {
 var mvSpriteUpdate = Sprite.prototype.update;
 
 function startTests() {
+  T.test('rpgmaker-mv/yep-enemy-select-refresh', function () {
+    var w = new Window_EnemyVisualSelect();
+    var clears = w.contents.clears;
+    for (var i = 0; i < 5; i++) w.refresh();   // Show Enemy Name apagado
+    T.equal(w.contents.clears - clears, 1, 'no name: cleared once');
+    T.equal(w._requestRefresh, false, 'no name: no more refresh requests');
+    w._showEnemyName = true;
+    w._battler.hidden = true;
+    w._requestRefresh = true;
+    w.refresh();
+    w.refresh();
+    T.equal(w._requestRefresh, true, 'hidden enemy: still waiting to draw');
+    T.equal(w.contents.drawn.length, 0, 'hidden enemy: nothing drawn');
+    w._battler.hidden = false;
+    w.refresh();
+    T.deepEqual(w.contents.drawn, ['Maneba'], 'shown: the name is drawn');
+    T.equal(w._requestRefresh, false, 'shown: refresh done');
+    var c2 = w.contents.clears;
+    w._battler.hidden = true;
+    w.refresh();
+    T.equal(w.contents.clears - c2, 1, 'hidden again: cleared once');
+  });
+
+  T.test('rpgmaker-mv/loading-notice', function () {
+    T.equal(DataManager.loadGame.__quixHook, 'rpgmaker-mv/loading-notice', 'installed');
+    loadingCalls.length = 0;
+    T.equal(DataManager.loadGame(1), true, 'load: the original result');
+    T.deepEqual(loadingCalls, [true], 'load: notice on');
+    var scene = new Scene_Map();
+    scene.start();
+    T.ok(scene.started, 'map start: the original runs');
+    T.deepEqual(loadingCalls, [true, false], 'map started: notice ending');
+    loadingCalls.length = 0;
+    T.equal(DataManager.loadGame(2), false, 'broken save: false');
+    T.deepEqual(loadingCalls, [true, false], 'broken save: notice off');
+    loadingCalls.length = 0;
+    T.equal(DataManager.setupNewGame(), 'new', 'new game: the original result');
+    T.deepEqual(loadingCalls, [true], 'new game: notice on');
+    quix.loading(false);
+    loadingCalls.length = 0;
+    var m = new Scene_Map();
+    m.onMapLoaded();
+    m.start();
+    T.ok(m.mapLoaded && m.started, 'map change: the originals run');
+    T.deepEqual(loadingCalls, ['true 1000', false], 'map change: notice only if it takes long');
+    var hadMenu = 'Scene_MenuBase' in window, prev = SceneManager._previousClass;
+    if (!hadMenu) window.Scene_MenuBase = function () {};
+    var Menu = function () {};
+    Menu.prototype = Object.create(Scene_MenuBase.prototype);
+    SceneManager._previousClass = Menu;
+    loadingCalls.length = 0;
+    m = new Scene_Map();
+    m.onMapLoaded();
+    m.start();
+    T.deepEqual(loadingCalls, [false], 'back from a menu: no notice');
+    SceneManager._previousClass = prev;
+    if (!hadMenu) delete window.Scene_MenuBase;
+    loadingCalls.length = 0;
+    var b = new Scene_Battle();
+    b.createDisplayObjects();
+    b.start();
+    T.ok(b.displayed && b.battleStarted, 'battle: the originals run');
+    T.deepEqual(loadingCalls, ['true 1000', false], 'battle: notice only if it takes long');
+  });
+
+  T.test('rpgmaker-mv/refresh-if-same-drawing', function () {
+    var w = new Window_BattleStatus(), b = w.contents;
+    w.refresh();
+    T.deepEqual(b.ops, ['text HP 100 0,0 #ffffff'], 'first refresh draws');
+    var d = b.dirty;
+    w.refresh();
+    T.equal(b.dirty, d, 'same drawing: the bitmap is not touched');
+    w.hp = 40;
+    w.refresh();
+    T.deepEqual(b.ops, ['text HP 40 0,0 #ff0000'], 'other text and color: drawn again');
+    w.redrawRow();
+    d = b.dirty;
+    w.refresh();
+    T.ok(b.dirty > d, 'drawn outside refresh: the next refresh draws');
+    T.deepEqual(b.ops, ['text HP 40 0,0 #ff0000'], 'and leaves the bitmap right');
+    icons.ready = true;
+    icons.width = icons.height = 32;
+    w.refresh();
+    T.deepEqual(b.ops, ['text HP 40 0,0 #ff0000', 'blt IconSet 60,0'], 'icon loaded later: drawn');
+    w.direct = true;
+    w.refresh();
+    T.deepEqual(b.ops, ['text HP 40 0,0 #ff0000', 'blt IconSet 60,0', 'direct'], 'plugin drawing directly: the original refresh');
+    T.ok(w._quixDrawOff, 'and the window goes on without the hook');
+    w.direct = false;
+    d = b.dirty;
+    w.refresh();
+    T.ok(b.dirty > d, 'without the hook: always drawn');
+  });
+
   T.test('rpgmaker-mv/request-images-once', function () {
     T.equal(Game_Interpreter.requestImages.__quixHook, 'rpgmaker-mv/request-images-once', 'installed');
     var a = [1, 2, 3], b = [4];
@@ -1163,7 +1330,7 @@ function startTests() {
     CUR = {}; Graphics.frameCount = 50; D.update();
     $gameSwitches.value = sv;
     T.ok(callers.length === 1 && callers[0].indexOf('cond') >= 0, 'MV conditions are solved by the table (' + callers[0].trim() + ')');
-    // la proteccion contra cuelgues: un bucle infinito de comandos de la tabla
+    // la proteccion contra cuelgues: un loop infinito de comandos de la tabla
     var LOOP = [cmd(122, 0, ['n']), cmd(0, 0)];
     var C = new Game_Interpreter(); C._tag = 'l'; C.setupTest(LOOP, {});
     C.command0 = function () { this._index = -1; return true; };   // vuelve al principio siempre
@@ -1450,14 +1617,56 @@ function startTests() {
   });
 
   T.test('rpgmaker-mv/gc-on-transition', function () {
-    var collected = 0, gc = quix.collectGarbage;
+    var collected = [], gc = quix.collectGarbage;
     T.equal(typeof gc(), 'number', 'quix.collectGarbage returns how long it took (ms)');
-    quix.collectGarbage = function () { collected++; return gc(); };
-    var scene = new Scene_Map();
+    quix.collectGarbage = function (kind) { collected.push(kind === 'due' ? 'due' : (scene && scene.created ? 'late' : 'full')); return gc(kind); };
+    var scene = null;
+    scene = new Scene_Map();
     T.equal(scene.create(), 'created', 'the original create runs and its result comes back');
     T.ok(scene.created, 'the scene is created');
-    T.equal(collected, 1, 'one full collection when the scene is created');
+    T.deepEqual(collected, ['full', 'due'], 'a full collection before creating the scene and a partial one after');
+    // de vuelta del menu (una Scene_MenuBase): el mapa sale sin pantalla en negro, sin GC
+    var hadMenuBase = 'Scene_MenuBase' in window, prevClass = SceneManager._previousClass;
+    if (!hadMenuBase) window.Scene_MenuBase = function () {};
+    var MenuScene = function () {};
+    MenuScene.prototype = Object.create(Scene_MenuBase.prototype);
+    SceneManager._previousClass = MenuScene;
+    collected = [];
+    scene = new Scene_Map();
+    scene.create();
+    T.ok(scene.created, 'from the menu: the scene is created');
+    T.deepEqual(collected, [], 'from the menu: no collection');
+    SceneManager._previousClass = prevClass;
+    if (!hadMenuBase) delete window.Scene_MenuBase;
     quix.collectGarbage = gc;
+  });
+
+  T.test('rpgmaker-mv/scene-release and battle-release', function () {
+    var scene = new Scene_Battle(), other = new Scene_Battle();
+    var layer = sprite(scene), win = sprite(layer), mine = sprite(scene), theirs = sprite(other);
+    var r = Graphics._renderer;
+    r.plugins.sprite.sprites = [win, mine, theirs];
+    r.filterManager.filterData.stack[1].target = mine;
+    window.childSprite = win;         // un plugin que asigna sin var
+    window.otherSprite = theirs;      // de otra escena: se queda
+    BattleManager._spriteset = layer;
+    BattleManager._logWindow = win;
+    BattleManager._registeredSprites = { 1: mine, 2: win };
+    BattleManager._phase = 'battleEnd';
+    BattleManager._actions = [mine];  // una lista con otras cosas: no se toca
+    scene.terminate();
+    T.ok(scene.terminated && scene.battleEnded, 'the original terminate runs');
+    T.equal(r.plugins.sprite.sprites.length, 0, 'the last batch of PIXI is emptied');
+    T.equal(r.filterManager.filterData.stack[1].target, null, 'the unused levels of the filter stack let go of their target');
+    T.equal(window.childSprite, null, 'a global that points into the scene is cleared');
+    T.equal(window.otherSprite, theirs, 'a global of another scene stays');
+    T.equal(BattleManager._spriteset, null, 'BattleManager lets go of the spriteset');
+    T.equal(BattleManager._logWindow, null, 'and of the log window');
+    T.deepEqual(BattleManager._registeredSprites, {}, 'a table of sprites is emptied');
+    T.equal(BattleManager._phase, 'battleEnd', 'other values stay');
+    T.equal(BattleManager._actions.length, 1, 'arrays stay');
+    delete window.childSprite;
+    delete window.otherSprite;
   });
 
   T.test('rpgmaker-mv/gc-when-still', function () {
@@ -1633,7 +1842,7 @@ function startTests() {
       T.deepEqual(d[5].pages, ['changed'], 'a value set by the game stays');
       T.ok(pages5.length === 1, 'objects already handed out are untouched');
       var created = 0, gc = quix.collectGarbage;
-      quix.collectGarbage = function () { created++; return 0; };
+      quix.collectGarbage = function (kind) { if (kind !== 'due') created++; return 0; };
       d[1].pages;
       new Scene_Map().create();
       quix.collectGarbage = gc;

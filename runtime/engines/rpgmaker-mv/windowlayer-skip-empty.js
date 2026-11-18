@@ -9,7 +9,7 @@
 // capacidad (con fps sin tope).
 //
 // Con el hook, si ningun hijo es una ventana visible y abierta (lo mismo que
-// mira el bucle del original), no hay filtro: se dibujan los hijos que no son
+// mira el loop del original), no hay filtro: se dibujan los hijos que no son
 // ventanas, como hace el original al final. Lo que se ve es lo mismo. Con
 // alguna ventana abierta, el original.
 //

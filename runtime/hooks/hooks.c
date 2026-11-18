@@ -1,5 +1,5 @@
 /*
- * QuixJS - A lightweight JS runtime using SDL2 and JavaScriptCore
+ * quixjs - A lightweight JS runtime using SDL2 and JavaScriptCore
  * Copyright (C) 2025  Vinicio Valbuena (lowlevel.1989)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -223,7 +223,8 @@ int hooks_install(JSContext *ctx) {
     Hook *h = &hooks[i];
     if (h->installed) continue;
     if (h->kind == HOOK_ENGINE) {
-      // la funcion del archivo recibe la original y devuelve la nueva
+      // la funcion del archivo recibe la original (y la ruta, por si el
+      // mismo archivo sirve para varias) y devuelve la nueva
       size_t room = strlen(h->engine_source) + 1024;
       char *code = malloc(room);
       if (!code) continue;
@@ -234,9 +235,9 @@ int hooks_install(JSContext *ctx) {
                " var k = parts[parts.length - 1], f = o[k];"
                " if (typeof f !== 'function') return 0;"
                " if (f.__quixHook) return 1;"
-               " var g = (%s)(f);"
+               " var g = (%s)(f, '%s');"
                " g.__quixHook = '%s'; o[k] = g; return 1; })()",
-               h->path, h->engine_source, h->engine_name);
+               h->path, h->engine_source, h->path, h->engine_name);
       JSValue r = JS_Eval(ctx, code, strlen(code), h->engine_name, JS_EVAL_TYPE_GLOBAL);
       free(code);
       int ok = 0;

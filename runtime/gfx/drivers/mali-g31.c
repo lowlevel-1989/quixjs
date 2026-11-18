@@ -1,5 +1,5 @@
 /*
- * QuixJS - A lightweight JS runtime using SDL2 and JavaScriptCore
+ * quixjs - A lightweight JS runtime using SDL2 and JavaScriptCore
  * Copyright (C) 2025  Vinicio Valbuena (lowlevel.1989)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -16,10 +16,18 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#pragma once
+// mali-g31: libmali en una Mali-G31 (la GPU del RK3326: R36S y sus clones).
+// Probado en: RX6S (clon de la R36S, ROCKNIX).
 
-// quixjs --gen-config <carpeta>: mira el juego (package.json de nw.js, index.html,
-// su CSS, rpg_core.js / rmmz_core.js, pixi.js) y escribe en stdout un
-// toml para ejecutarlo. Devuelve 0 si todo bien.
+#include "common.h"
 
-int init_generate(const char *dir);
+const GpuDriver gpu_driver_mali_g31 = {
+  .name = "mali-g31",
+  // sin thread que presenta: con el, el juego esperaba ~16 ms por imagen a
+  // que el thread mostrara la anterior. En el mapa de Fear & Hunger, de ~17
+  // a ~27 fps; con semilla, de ~400 a ~100 frames de mas de 60 ms en el mapa
+  // y de ~510 a ~210 en batalla (en ~1000)
+  .thread_wait = 0,
+  // la imagen anterior, como mali (drv_present_previous, common.c)
+  .present = drv_present_previous,
+};

@@ -1,5 +1,5 @@
 /*
- * QuixJS - A lightweight JS runtime using SDL2 and JavaScriptCore
+ * quixjs - A lightweight JS runtime using SDL2 and JavaScriptCore
  * Copyright (C) 2025  Vinicio Valbuena (lowlevel.1989)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -19,7 +19,7 @@
 #pragma once
 
 // Los trucos de un port ([[cheat]] en el toml del juego). Se activan en el
-// lanzador (Cheats) y un truco activo fija simbolos de [symbols] mientras se
+// launcher (Cheats) y un truco activo fija simbolos de [symbols] mientras se
 // juega:
 //
 //   [symbols]

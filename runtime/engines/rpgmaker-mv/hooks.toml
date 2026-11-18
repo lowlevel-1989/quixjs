@@ -7,7 +7,8 @@
 # El juego manda: en su [hooks] puede poner otro en la misma ruta, o "off".
 # Lo que hace cada uno, en su archivo (runtime/engines/rpgmaker-mv/<hook>.js).
 # Hay hooks en esta carpeta que no estan aqui (refresh-if-changed,
-# terrax-lights-only): un juego que los quiera los pone en su [hooks].
+# terrax-lights-only, gc-when-still): un juego que los quiera los pone en su
+# [hooks].
 [hooks]
 # datos, imagenes, sonidos y partidas: en C, sin crear objetos de JS de mas
 "DataManager.loadDataFile" = "rpgmaker-mv/lazy-data"
@@ -15,10 +16,22 @@
 "WebAudio.prototype._load" = "rpgmaker-mv/load-audio-native"
 "LZString.decompressFromBase64" = "rpgmaker-mv/lz-string-native"
 "Bitmap.prototype.adjustTone" = "rpgmaker-mv/adjust-tone"
-# el recolector de memoria: cuando no se nota
+"Bitmap.prototype.blur" = "rpgmaker-mv/blur-native"
+# "Loading..." al cargar una partida o empezar una nueva; en un cambio de
+# mapa o al empezar una batalla, solo si tarda
+"DataManager.loadGame" = "rpgmaker-mv/loading-notice"
+"DataManager.setupNewGame" = "rpgmaker-mv/loading-notice"
+"Scene_Map.prototype.onMapLoaded" = "rpgmaker-mv/loading-notice"
+"Scene_Battle.prototype.createDisplayObjects" = "rpgmaker-mv/loading-notice"
+"Scene_Map.prototype.start" = "rpgmaker-mv/loading-notice"
+"Scene_Battle.prototype.start" = "rpgmaker-mv/loading-notice"
+# el GC: cuando no se nota
 "Scene_Map.prototype.create" = "rpgmaker-mv/gc-on-transition"
 "Scene_Battle.prototype.create" = "rpgmaker-mv/gc-on-transition"
-"Scene_Map.prototype.update" = "rpgmaker-mv/gc-when-still"
+# al terminar una escena, soltar lo que la mantenia viva (PixiJS, variables
+# globales y, de una batalla, BattleManager)
+"Scene_Base.prototype.terminate" = "rpgmaker-mv/scene-release"
+"Scene_Battle.prototype.terminate" = "rpgmaker-mv/battle-release"
 # el ritmo a 30 fps (TDDP_FluidTimestep o el de RPG Maker)
 "SceneManager.updateMain" = "rpgmaker-mv/fluid-timestep-cap"
 # eventos, interprete y personajes
@@ -39,6 +52,10 @@
 # plugins muy usados
 "Scene_Map.prototype.updateButtonEvents" = "rpgmaker-mv/button-events-keys"
 "Window_EnemyVisualSelect.prototype.updateBattlerName" = "rpgmaker-mv/yep-enemy-name-refresh"
+"Window_EnemyVisualSelect.prototype.refresh" = "rpgmaker-mv/yep-enemy-select-refresh"
+# ventanas que se redibujan igual: no se tocan (ni se suben a la GPU)
+"Window_BattleEnemy.prototype.refresh" = "rpgmaker-mv/refresh-if-same-drawing"
+"Window_BattleStatus.prototype.refresh" = "rpgmaker-mv/refresh-if-same-drawing"
 "Game_Switches.prototype.value" = "rpgmaker-mv/olivia-meta-fast"
 "Game_Variables.prototype.value" = "rpgmaker-mv/olivia-meta-fast"
 "Game_Switches.prototype.setValue" = "rpgmaker-mv/olivia-meta-fast"

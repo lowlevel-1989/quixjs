@@ -1,5 +1,5 @@
 /*
- * QuixJS - A lightweight JS runtime using SDL2 and JavaScriptCore
+ * quixjs - A lightweight JS runtime using SDL2 and JavaScriptCore
  * Copyright (C) 2025  Vinicio Valbuena (lowlevel.1989)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -34,7 +34,7 @@
 void platform_mem_init(void) {
   // Los bloques grandes del malloc de C (pixeles de imagenes y canvas) en su
   // propio mmap: al liberarlos la memoria vuelve al sistema enseguida. Sin
-  // esto glibc sube su umbral y los mete en su monton, donde se fragmentan
+  // esto glibc sube su umbral y los mete en su heap, donde se fragmentan
   // (en una portatil eran 70 MB libres que no volvian al sistema).
   mallopt(M_MMAP_THRESHOLD, 128 * 1024);
 }

@@ -1,5 +1,5 @@
 /*
- * QuixJS - A lightweight JS runtime using SDL2 and JavaScriptCore
+ * quixjs - A lightweight JS runtime using SDL2 and JavaScriptCore
  * Copyright (C) 2025  Vinicio Valbuena (lowlevel.1989)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -19,7 +19,7 @@
 #pragma once
 
 // <script> anadidos con appendChild: los que tienen src se cargan en el
-// siguiente ciclo del bucle y despues reciben load
+// siguiente ciclo del loop y despues reciben load
 // o error, en el orden en que se anadieron; los que no tienen src ejecutan
 // su texto al momento. Asi cargan sus plugins RPG Maker y muchas librerias.
 //

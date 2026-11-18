@@ -1,5 +1,5 @@
 /*
- * QuixJS - A lightweight JS runtime using SDL2 and JavaScriptCore
+ * quixjs - A lightweight JS runtime using SDL2 and JavaScriptCore
  * Copyright (C) 2025  Vinicio Valbuena (lowlevel.1989)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,9 +17,10 @@
  */
 
 // El programa: lee las opciones y el toml del juego, crea el backend y el
-// motor de JS, carga los scripts y corre el bucle principal (eventos,
+// motor de JS, carga los scripts y corre el loop principal (eventos,
 // timers, requestAnimationFrame, presentar y esperar al siguiente frame).
 
+#include <limits.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -39,7 +40,7 @@
 #include "core/runner.h"
 #include "core/timer.h"
 #include "core/app_context.h"
-#include "core/init.h"
+#include "core/gen_config.h"
 #include "core/input_script.h"
 #include "core/debug_server.h"
 #include "binding/timer.h"
@@ -58,9 +59,11 @@
 #include "binding/audio.h"
 #include "binding/webgl.h"
 #include "binding/video.h"
-#include "gfx/gl.h"
 #include "audio/mixer.h"
 #include "backend/backend.h"
+#include "gfx/gl.h"
+#include "gfx/shader_cache.h"
+#include "gfx/driver.h"
 #include "gfx/image_loader.h"
 #include "gfx/raster.h"
 #include "gfx/font.h"
@@ -228,6 +231,44 @@ static double real_ms(void) {
   return ts.tv_sec * 1000.0 + ts.tv_nsec / 1e6;
 }
 
+// El resumen del log ([perf]): siempre, sin --fps. Una linea por minuto y
+// otra al salir, para que un log enviado desde una consola diga como fue
+// (fps, frames de mas de 50 y de 100 ms y el driver)
+typedef struct {
+  double start, prev;
+  long   frames, over50, over100;
+} PerfSpan;
+
+static PerfSpan perf_minute, perf_all;
+
+static void perf_print(const char *what, const PerfSpan *p, double now) {
+  double s = (now - p->start) / 1000.0;
+  if (p->frames < 2 || s <= 0) return;
+  printf("[perf] %s: %.1f fps, %ld frames, %ld over 50 ms, %ld over 100 ms (driver %s)\n", what, p->frames / s,
+         p->frames, p->over50, p->over100, gpu_driver()->name);
+}
+
+static void perf_add(PerfSpan *p, double now) {
+  if (p->start == 0) p->start = now;
+  if (p->prev > 0) {
+    double gap = now - p->prev;
+    if (gap > 50) p->over50++;
+    if (gap > 100) p->over100++;
+  }
+  p->prev = now;
+  p->frames++;
+}
+
+static void perf_frame(void) {
+  double now = real_ms();
+  perf_add(&perf_minute, now);
+  perf_add(&perf_all, now);
+  if (now - perf_minute.start >= 60000) {
+    perf_print("last minute", &perf_minute, now);
+    perf_minute = (PerfSpan){ .start = now, .prev = now };
+  }
+}
+
 static void fps_tick(FpsMeter *f) {
   double now = real_ms();
   if (f->window_start == 0) f->window_start = now;
@@ -296,8 +337,8 @@ static void present_screen(JSContext *ctx, Backend *backend, Surface *scratch) {
       memset(l, 0, sizeof(*l));
       l->key = cd;
       if (cd->webgl) {
-        // entregada al hilo que presenta: el canvas sigue en otra textura
-        if (backend->present_async) l->gl_tex = webgl_canvas_handoff(cd, &l->w, &l->h, &l->premultiplied);
+        // entregada al thread que presenta: el canvas sigue en otra textura
+        if (backend->present_async) l->gl_tex = webgl_canvas_handoff(cd, backend->present_thread ? 2 : 3, &l->w, &l->h, &l->premultiplied);
         if (!l->gl_tex) {
           backend->present_async = 0;
           l->gl_tex = webgl_canvas_texture(cd, &l->w, &l->h, &l->premultiplied);
@@ -370,7 +411,7 @@ int main(int argc, char **argv) {
   }
 
   // --gen-config escribe el toml por la salida: sin nada mas
-  if (args.init_dir) return init_generate(args.init_dir);
+  if (args.gen_config_dir) return gen_config(args.gen_config_dir);
 
   // la version, la primera linea de los logs (para saber cual usa cada uno)
   printf("quixjs v%s\n", QUIX_VERSION);
@@ -403,16 +444,25 @@ int main(int argc, char **argv) {
   backend->resizable = args.resizable;
   backend->no_vsync = !cfg.engine.vsync;
   backend->present_ahead = cfg.engine.present_ahead;
-  // controller.map junto al toml del juego (Controls del lanzador)
+  // controller.map junto al toml del juego (Controls del launcher)
   const char *cfg_slash = strrchr(args.config_path, '/');
   if (cfg_slash) snprintf(backend->controller_map, sizeof backend->controller_map, "%.*s/controller.map",
                           (int)(cfg_slash - args.config_path), args.config_path);
   else snprintf(backend->controller_map, sizeof backend->controller_map, "controller.map");
+  // la ventana: "quixjs | <juego>" ([game] title); document.title la cambia
+  backend_set_title(backend, cfg.launcher.title);
   backend_init(backend, cfg.game.width, cfg.game.height);
+  // los programas de WebGL ya enlazados, en <cache_dir>/shaders (sin
+  // cache_dir, no se guardan)
+  if (cfg.game.cache_dir[0]) {
+    char shaders[MAX_PATH_LEN + 16];
+    snprintf(shaders, sizeof shaders, "%s/shaders", cfg.game.cache_dir);
+    shader_cache_init(shaders);
+  }
   // Select + Start sale aunque el juego no responda (solo con ventana)
   if (args.backend == BACKEND_SDL) watchdog_start();
 
-  // [saves] y los logros: los usan el lanzador y el juego
+  // [saves] y los logros: los usan el launcher y el juego
   const char *patterns[MAX_SAVE_PATTERNS];
   for (int i = 0; i < cfg.saves.files_count; i++) patterns[i] = cfg.saves.files[i];
   // dir: la carpeta de las partidas, como game_dir (sin dir, game_dir)
@@ -444,14 +494,14 @@ int main(int argc, char **argv) {
     return 1;
   }
 
-  // --script tambien maneja el lanzador: sus frames van antes que los del juego
+  // --script tambien maneja el launcher: sus frames van antes que los del juego
   if (args.script && input_script_load(args.script) != 0) {
     backend_cleanup(backend);
     free(backend);
     return 1;
   }
 
-  // los ajustes del jugador (Options del lanzador)
+  // los ajustes del jugador (Options del launcher)
   Settings settings;
   settings_load(&settings, args.config_path);
   settings_apply_cheats(&settings);
@@ -474,7 +524,7 @@ int main(int argc, char **argv) {
     }
   }
 
-  // los mods activos: los elegidos en el lanzador (Mods, en
+  // los mods activos: los elegidos en el launcher (Mods, en
   // quixjs-settings.toml) o, sin eso, [game] mods. Antes de leer el juego
   {
     char (*names)[64] = settings.mods_set ? settings.mods : cfg.mods.names;
@@ -490,7 +540,7 @@ int main(int argc, char **argv) {
   ScriptBundle bundle = {0};
 
   // [engine] js_memory: la RAM que JavaScriptCore cree tener. Con menos,
-  // recolecta antes y su monton crece menos (antes de crear el motor; un
+  // pasa el GC antes y su heap crece menos (antes de crear el motor; un
   // JSC_forceRAMSize del entorno manda)
   if (cfg.engine.js_memory > 0) {
     char bytes[32];
@@ -539,6 +589,10 @@ int main(int argc, char **argv) {
   js_api_add_xhr(ctx);
   js_api_add_blob(ctx);
   js_api_add_quix(ctx);
+  if (args.expose_gc) {
+    JSValue r = JS_Eval(ctx, "globalThis.gc = function () { quix.collectGarbage(); };", 55, "<expose-gc>", 0);
+    JS_FreeValue(ctx, r);
+  }
   js_api_add_video(ctx);
   hooks_add_api(ctx);
   engines_add_api(ctx);
@@ -584,7 +638,7 @@ int main(int argc, char **argv) {
     else snprintf(profile_path, sizeof(profile_path), "quixjs-profile.txt");
     args.profile = profile_path;
   }
-  // el tope de fps: el del toml (lo decide el port: en el lanzador no se
+  // el tope de fps: el del toml (lo decide el port: en el launcher no se
   // cambia); --frame-rate para probar
   if (args.frame_rate > 0) cfg.engine.fps = args.frame_rate;
   if (!failed && args.debug_sock && debug_init(args.debug_sock) != 0) failed = 1;
@@ -594,6 +648,12 @@ int main(int argc, char **argv) {
   double next_profile_drain = 0;
   double next_malloc_trim = 0;
   double next_mem_check = 0, next_mem_rescue = 0;
+  // el guardian de memoria: cuando vale la pena otro GC completo
+#define GC_USEFUL_MB     8        // menos que esto liberado: no sirvio
+#define GC_RETRY_DROP_MB 16
+#define GC_RETRY_MS      60000.0
+  long gc_retry_below = LONG_MAX;
+  double gc_retry_at = 0;
   if (!failed && args.profile && profiler_start(ctx) == 0) {
     printf("Profiling: report in %s every 10 s\n", args.profile);
     next_profile_save = real_ms() + 10000;
@@ -604,20 +664,20 @@ int main(int argc, char **argv) {
   if (cfg.engine.fps != 60) printf("Frame rate: %d fps\n", cfg.engine.fps);
   int keep_window = args.backend == BACKEND_SDL;
 
-  // Bucle principal
+  // Loop principal
   while (!failed) {
     double t_events = fps.enabled ? real_ms() : 0;
     watchdog_alive();
     // las muestras del profiler: una vez por segundo (JavaScriptCore las
     // guarda entre medias; recogerlas y leer su JSON en cada vuelta costaba
     // decenas de ms por imagen en la consola)
-    // lo libre del monton de malloc, de vuelta al sistema (cada 10 s)
+    // lo libre del heap de malloc, de vuelta al sistema (cada 10 s)
     if (real_ms() >= next_malloc_trim) {
       platform_mem_trim();
       next_malloc_trim = real_ms() + 10000;
     }
     // guardian de memoria: si al sistema le queda poca RAM (MemAvailable por
-    // debajo de [engine] low_memory_mb), una recoleccion completa de JS y lo
+    // debajo de [engine] low_memory_mb), un GC completo de JS y lo
     // libre de malloc de vuelta, como mucho cada 5 s. Sin esto, en una
     // portatil de 1 GB el sistema empezaba a releer el programa del disco
     // (tirones de mas de 1 s) y acababa bloqueado.
@@ -625,11 +685,37 @@ int main(int argc, char **argv) {
       next_mem_check = real_ms() + 1000;
       long avail = platform_mem_available_mb();
       if (avail >= 0 && avail < cfg.engine.low_memory_mb && real_ms() >= next_mem_rescue) {
-        double g0 = real_ms();
-        JS_RunGC(rt);
-        platform_mem_trim();
-        long after = platform_mem_available_mb();
-        printf("[memory] %ld MB left: full collection (%.0f ms), now %ld MB\n", avail, real_ms() - g0, after);
+        // primero lo que no para el juego: los pixeles de las imagenes que ya
+        // estan en la GPU; el GC completo (una parada de 100-200 ms en
+        // una portatil) solo si con eso no basta
+        int n = 0;
+        size_t freed = js_image_release_uploaded(&n);
+        if (freed) {
+          platform_mem_trim();
+          long now = platform_mem_available_mb();
+          printf("[memory] %ld MB left: released %.0f MB of %d images already on the GPU, now %ld MB\n", avail,
+                 freed / 1048576.0, n, now);
+          avail = now;
+        }
+        // un GC completo que apenas libero (lo que queda es memoria que el
+        // juego usa): repetirlo cada 5 s era una parada de 230-400 ms cada
+        // 5 s sin ganar nada (RX6S, 731 MB). El siguiente, cuando la RAM
+        // libre baje GC_RETRY_DROP_MB mas o pase GC_RETRY_MS.
+        if (avail >= 0 && avail < cfg.engine.low_memory_mb &&
+            (avail <= gc_retry_below || real_ms() >= gc_retry_at)) {
+          double g0 = real_ms();
+          JS_RunGC(rt);
+          platform_mem_trim();
+          long after = platform_mem_available_mb();
+          printf("[memory] %ld MB left: full collection (%.0f ms), now %ld MB\n", avail, real_ms() - g0, after);
+          if (after - avail < GC_USEFUL_MB) {
+            gc_retry_below = after - GC_RETRY_DROP_MB;
+            gc_retry_at = real_ms() + GC_RETRY_MS;
+          } else {
+            gc_retry_below = LONG_MAX;
+            gc_retry_at = 0;
+          }
+        }
         next_mem_rescue = real_ms() + 5000;
       }
     }
@@ -757,10 +843,10 @@ int main(int argc, char **argv) {
           vb_n = (int)(ratio + 0.5);
           if (fabs(ratio - vb_n) > 0.05 || (hz > 0 && fabs(hz - 1000.0 / vper) > 1.5)) vb_n = 0;
         }
-        // con el hilo que presenta (present_ahead): esta imagen se entrega
+        // con el thread que presenta (present_ahead): esta imagen se entrega
         // cuando ya se haya mostrado la anterior (en su refresco menos
         // VB_LEAD) y el juego sigue sin esperar. Hasta entonces, el hueco
-        // es para el recolector.
+        // es para el GC.
         int ahead = backend->present_thread && vb_n >= 2;
         double t_hold = fps.enabled ? real_ms() : 0;
         if (ahead) {
@@ -770,6 +856,9 @@ int main(int argc, char **argv) {
         }
         backend->present_async = 0;
         backend->present_at = 0;
+        // sin el thread: la imagen se entrega igual (el canvas sigue en otra
+        // textura) y el driver decide cuando se ve (gfx/drivers/, present)
+        if (!backend->present_thread) backend->present_async = 1;
         if (vb_n >= 2) {
           double r = real_ms();
           double target = vb_target > 0 ? vb_target + vb_n * vper : vlast + vb_n * vper;
@@ -777,7 +866,7 @@ int main(int argc, char **argv) {
           while (target - VB_LEAD < r) target += vper;                     // tarde: el siguiente
           vb_target = target;
           vb_frames = vb_n;
-          present_at = target - VB_LEAD + (clock_now_ms() - r);           // a la escala del bucle
+          present_at = target - VB_LEAD + (clock_now_ms() - r);           // a la escala del loop
         } else {
           vb_target = 0;
         }
@@ -785,7 +874,7 @@ int main(int argc, char **argv) {
           backend->present_async = 1;
           backend->present_at = vb_target - VB_LEAD;
         } else {
-          // el hueco hasta presentar: para el recolector (lo que deja pendiente
+          // el hueco hasta presentar: para el GC (lo que deja pendiente
           // lo haria si no en medio del JavaScript de las imagenes siguientes)
           if (present_at - clock_now_ms() > 3) JS_IdleWork(JS_GetRuntime(ctx), present_at - clock_now_ms() - 1.5);
           while (clock_now_ms() < present_at) sleep_ms(present_at - clock_now_ms());
@@ -794,8 +883,10 @@ int main(int argc, char **argv) {
       }
       profiler_phase("present");
       present_screen(ctx, backend, &scratch);
+      backend_loading_tick(backend);
+      perf_frame();
       if (args.debug_sock) {
-        // cuando se mostraron de verdad (con el hilo que presenta, mas tarde)
+        // cuando se mostraron de verdad (con el thread que presenta, mas tarde)
         double shown[64];
         int k = backend_presented(backend, shown, 64);
         if (k < 0) debug_note_present(real_ms());
@@ -820,6 +911,7 @@ int main(int argc, char **argv) {
         dec_ms = quix_mem.decode_ms;
       }
 
+      profiler_frame_end(ctx);
       app.frame++;
       if (args.debug_sock) debug_frame_done();
       // el tope puede cambiar en caliente (comando fps de la consola de debug)
@@ -869,7 +961,7 @@ int main(int argc, char **argv) {
     // los tests se espera de verdad, sin adelantar el reloj del juego)
     if (images_pending && clock_is_fixed()) {
       // con el reloj fijo el reloj del juego salta al siguiente timer sin
-      // esperar: un poco de tiempo real para que el hilo de trabajo avance
+      // esperar: un poco de tiempo real para que el thread de trabajo avance
       sleep_ms(1);
       if (wake < 0) continue;
     } else if (images_pending && (wake < 0 || wake > clock_now_ms() + 2)) {
@@ -930,6 +1022,7 @@ int main(int argc, char **argv) {
     if (secs > 0) printf("FPS: %.1f (average of %ld frames)\n", (fps.total - 1) / secs, fps.total);
   }
   input_script_free();
+  perf_print("whole session", &perf_all, real_ms());
   if (args.profile && profiler_running()) {
     profiler_save(ctx, args.profile, 60);
     printf("Profile: %s\n", args.profile);

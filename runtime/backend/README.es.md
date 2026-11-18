@@ -11,7 +11,7 @@ convierte en KeyboardEvent. `quix.pressKey()` usa la misma cola.
 |-------------------|-------------------|
 | `backend.h/.c`    | `BackendInterface`, `InputEvent`, `GamepadState`, `PresentLayer`; crea el backend y mantiene la cola de entrada |
 | `sdl/backend.c`   | ventana SDL presentada con OpenGL ES 2, teclado, mandos, texto de `--fps` |
-| `sdl/mapper.c`    | Controls del lanzador: lee el mando crudo y guarda una línea de SDL_GAMECONTROLLERCONFIG en `controller.map` (heredado de tamatama) |
+| `sdl/mapper.c`    | Controls del launcher: lee el mando crudo y guarda una línea de SDL_GAMECONTROLLERCONFIG en `controller.map` (heredado de tamatama) |
 | `dummy/backend.c` | sin ventana: guarda el último frame para `--screenshot` y los tests |
 
 ## sdl
@@ -32,7 +32,7 @@ convierte en KeyboardEvent. `quix.pressKey()` usa la misma cola.
   `getGamepads()` lo da pulsado una vez.
 - Vsync: `SDL_GL_SetSwapInterval(1)` salvo con `[engine] vsync = false`.
 - Imagen de adelanto (`[engine] present_ahead`): con los fps a la mitad del
-  refresco o menos, otro hilo presenta cada imagen en su refresco y el juego
+  refresco o menos, otro thread presenta cada imagen en su refresco y el juego
   sigue con la siguiente. Solo con Mesa, los refrescos de la pantalla (DRM) y
   `EGL_KHR_surfaceless_context`. Con `EGL_KHR_fence_sync` el contexto que
   presenta espera a que la GPU acabe el canvas WebGL.

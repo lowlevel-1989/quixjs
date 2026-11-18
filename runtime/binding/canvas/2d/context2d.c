@@ -1,5 +1,5 @@
 /*
- * QuixJS - A lightweight JS runtime using SDL2 and JavaScriptCore
+ * quixjs - A lightweight JS runtime using SDL2 and JavaScriptCore
  * Copyright (C) 2025  Vinicio Valbuena (lowlevel.1989)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -209,7 +209,7 @@ JSValue js_create_canvas_context(JSContext *ctx, JSValueConst canvas) {
     return JS_EXCEPTION;
   }
   // el canvas: prestado en C, vivo por una propiedad oculta del contexto
-  // (el canvas guarda el contexto igual: el recolector ve el ciclo y puede
+  // (el canvas guarda el contexto igual: el GC ve el ciclo y puede
   // liberar los dos)
   c->canvas = canvas;
   JS_SetHidden(ctx, obj, "canvas", JS_DupValue(ctx, canvas));

@@ -1,5 +1,5 @@
 /*
- * QuixJS - A lightweight JS runtime using SDL2 and JavaScriptCore
+ * quixjs - A lightweight JS runtime using SDL2 and JavaScriptCore
  * Copyright (C) 2025  Vinicio Valbuena (lowlevel.1989)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -52,10 +52,18 @@ static char *read_file(const char *path, size_t *plen) {
 static int load_script(JSContext *ctx, const char *game_dir, const char *rel_path, char **out_src, size_t *out_len,
                        char **out_path) {
   char path[1024];
-  url_resolve(game_dir, rel_path, path, sizeof(path));
-  printf("Loading: %s\n", path);
   size_t len = 0;
-  char *src = read_file(path, &len);
+  char *src;
+  if (strncmp(rel_path, "data:", 5) == 0) {
+    // un <script> escrito dentro del HTML (--gen-config lo guarda asi)
+    src = (char *)url_decode_data(rel_path, &len);
+    snprintf(path, sizeof(path), "inline script");
+    printf("Loading: inline script (%zu bytes)\n", len);
+  } else {
+    url_resolve(game_dir, rel_path, path, sizeof(path));
+    printf("Loading: %s\n", path);
+    src = read_file(path, &len);
+  }
   if (!src) {
     fprintf(stderr, "Error: cannot read %s\n", path);
     return -1;
@@ -73,7 +81,7 @@ static int load_script(JSContext *ctx, const char *game_dir, const char *rel_pat
 }
 
 int compile_scripts(JSContext *ctx, const Config *cfg, ScriptBundle *bundle) {
-  int has_entry = strlen(cfg->scripts.entry) > 0;
+  int has_entry = cfg->scripts.entry && cfg->scripts.entry[0];
   int total = cfg->scripts.libs_count + cfg->scripts.includes_count + (has_entry ? 1 : 0);
   bundle->sources = calloc(total ? total : 1, sizeof(char *));
   bundle->sizes = calloc(total ? total : 1, sizeof(size_t));

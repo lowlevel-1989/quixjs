@@ -1,4 +1,5 @@
 [game]
+title     = "DOM test"
 cache_dir = "cache/tests/core/dom"
 game_dir  = "games/tests/core/dom"
 width     = 320

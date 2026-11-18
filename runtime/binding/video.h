@@ -1,5 +1,5 @@
 /*
- * QuixJS - A lightweight JS runtime using SDL2 and JavaScriptCore
+ * quixjs - A lightweight JS runtime using SDL2 and JavaScriptCore
  * Copyright (C) 2025  Vinicio Valbuena (lowlevel.1989)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -28,7 +28,7 @@
 void js_api_add_video(JSContext *ctx);
 // Una vez por imagen: avanza los videos que suenan
 void video_tick(void);
-// 1 si hay alguno sonando (el bucle principal no se para)
+// 1 si hay alguno sonando (el loop principal no se para)
 int  video_active(void);
 // La imagen del video visible, o NULL. *changed: si es nueva desde la ultima vez.
 const Surface *video_screen(int *changed);

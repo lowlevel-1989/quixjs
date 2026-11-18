@@ -1,5 +1,5 @@
 /*
- * QuixJS - A lightweight JS runtime using SDL2 and JavaScriptCore
+ * quixjs - A lightweight JS runtime using SDL2 and JavaScriptCore
  * Copyright (C) 2025  Vinicio Valbuena (lowlevel.1989)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -39,7 +39,9 @@ void    webgl_canvas_sync(CanvasData *cd);
 void    webgl_canvas_resized(CanvasData *cd);
 // Textura del canvas para presentarla sin leerla (0 si no hay)
 unsigned webgl_canvas_texture(CanvasData *cd, int *w, int *h, int *premultiplied);
-// Como webgl_canvas_texture, pero la textura se entrega (la muestra otro hilo
-// mas tarde) y el canvas sigue dibujando en otra. 0 si no se puede
-// (preserveDrawingBuffer): entonces se usa webgl_canvas_texture.
-unsigned webgl_canvas_handoff(CanvasData *cd, int *w, int *h, int *premultiplied);
+// Como webgl_canvas_texture, pero la textura se entrega (se muestra mas tarde)
+// y el canvas sigue dibujando en otra. buffers: 2 (la muestra el thread que
+// presenta) o 3 (sin el thread: el driver puede mostrarla en la siguiente
+// entrega, gfx/drivers/). 0 si no se puede (preserveDrawingBuffer):
+// entonces se usa webgl_canvas_texture.
+unsigned webgl_canvas_handoff(CanvasData *cd, int buffers, int *w, int *h, int *premultiplied);

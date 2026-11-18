@@ -1,5 +1,5 @@
 /*
- * QuixJS - A lightweight JS runtime using SDL2 and JavaScriptCore
+ * quixjs - A lightweight JS runtime using SDL2 and JavaScriptCore
  * Copyright (C) 2025  Vinicio Valbuena (lowlevel.1989)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -363,6 +363,9 @@ static const char nwjs_src[] =
 "   'setMinimumSize', 'setMaximumSize', 'setShowInTaskbar'].forEach(function (k) { win[k] = function () {}; });\n"
 "  win.isDevToolsOpen = function () { return false; };\n"
 "  win.close = function () { if (g.quix) quix.exit(0); };\n"
+"  // window.close() cierra la ventana de nw.js: salir (RPG Maker lo usa en\n"
+"  // SceneManager.exit)\n"
+"  g.close = win.close;\n"
 "  win.menu = null; win.title = ''; win.isFullscreen = true; win.zoomLevel = 0;\n"
 "  win.width = g.innerWidth; win.height = g.innerHeight; win.x = 0; win.y = 0;\n"
 "  win.window = g;\n"
@@ -438,7 +441,11 @@ static const char nwjs_src[] =
 "  process.chdir = function () {};\n"
 "  process.exit = function (c) { if (g.quix) quix.exit(c || 0); };\n"
 "  process.nextTick = function (f) { var a = [].slice.call(arguments, 1); Promise.resolve().then(function () { f.apply(null, a); }); };\n"
-"  process.memoryUsage = function () { return { rss: 0, heapTotal: 0, heapUsed: 0, external: 0 }; };\n"
+"  process.memoryUsage = function () {\n"
+"    var m = g.quix ? quix.memoryUsage() : { rss: 0, heapTotal: 0, heapUsed: 0, external: 0 };\n"
+"    return { rss: m.rss, heapTotal: m.heapTotal, heapUsed: m.heapUsed, external: m.external, arrayBuffers: 0 };\n"
+"  };\n"
+"  process.resourceUsage = function () { return { maxRSS: g.quix ? quix.memoryUsage().maxRss / 1024 : 0 }; };\n"
 "  process.hrtime = function (prev) {\n"
 "    var t = performance.now(), s = Math.floor(t / 1000), ns = Math.floor((t % 1000) * 1e6);\n"
 "    if (prev) { s -= prev[0]; ns -= prev[1]; if (ns < 0) { s--; ns += 1e9; } }\n"

@@ -1,5 +1,5 @@
 /*
- * QuixJS - A lightweight JS runtime using SDL2 and JavaScriptCore
+ * quixjs - A lightweight JS runtime using SDL2 and JavaScriptCore
  * Copyright (C) 2025  Vinicio Valbuena (lowlevel.1989)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -18,7 +18,7 @@
 
 #pragma once
 
-// El estado del runtime que comparten el bucle principal y los bindings: el
+// El estado del runtime que comparten el loop principal y los bindings: el
 // backend, la configuracion y el frame actual. Los bindings lo leen con
 // JS_GetContextOpaque(ctx).
 

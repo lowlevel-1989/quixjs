@@ -30,6 +30,10 @@ and libopus; `make VIDEO=0` builds without it.
 
 ## Release
 
+The version of quixjs is in the file `VERSION` (the `make` builds and the
+release take it from there). For a new version change it, the title of
+`README.md` and `README.es.md`, and add its block to `CHANGELOG`.
+
 ```
 make release
 ```

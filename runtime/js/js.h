@@ -1,5 +1,5 @@
 /*
- * QuixJS - A lightweight JS runtime using SDL2 and JavaScriptCore
+ * quixjs - A lightweight JS runtime using SDL2 and JavaScriptCore
  * Copyright (C) 2025  Vinicio Valbuena (lowlevel.1989)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -33,10 +33,10 @@
 //     contexto (JS_GetException la recoge).
 //
 // Diferencia con QuickJS: no hay contador de referencias. Un valor guardado
-// desde C (JS_DupValue) queda protegido del recolector de JSC hasta su
+// desde C (JS_DupValue) queda protegido del GC de JSC hasta su
 // JS_FreeValue. Un objeto que guarda a otro que a su vez lo guarda a el no se
 // liberaria nunca: para eso, JS_SetHidden (una propiedad oculta del objeto,
-// que el recolector si sigue).
+// que el GC si sigue).
 
 #pragma once
 
@@ -128,7 +128,7 @@ JSValue JS_GetGlobalObject(JSContext *ctx);
 
 JSValue JS_DupValue(JSContext *ctx, JSValueConst v);
 void JS_FreeValue(JSContext *ctx, JSValue v);
-// desde un finalizador (se suelta despues, fuera de la recoleccion)
+// desde un finalizador (se suelta despues, fuera del GC)
 void JS_FreeValueRT(JSRuntime *rt, JSValue v);
 
 JSValue JS_NewObject(JSContext *ctx);
@@ -175,7 +175,7 @@ int JS_DefinePropertyValueStr(JSContext *ctx, JSValueConst obj, const char *name
 int JS_SetPrototype(JSContext *ctx, JSValueConst obj, JSValueConst proto);
 
 // Una propiedad oculta (con clave Symbol) que guarda val en obj: el
-// recolector la sigue, asi que no hace falta proteger val desde C y un
+// GC la sigue, asi que no hace falta proteger val desde C y un
 // ciclo entre los dos se puede liberar. Se queda con val.
 int JS_SetHidden(JSContext *ctx, JSValueConst obj, const char *name, JSValue val);
 JSValue JS_GetHidden(JSContext *ctx, JSValueConst obj, const char *name);
@@ -354,7 +354,7 @@ typedef enum JSTypedArrayEnum {
 JSValue JS_NewArrayBufferCopy(JSContext *ctx, const uint8_t *buf, size_t len);
 // Que es un valor, sin lanzar nada (JS_GetArrayBuffer y
 // JS_GetTypedArrayBuffer lanzan un TypeError si no es lo suyo: crear el error
-// y su pila cuesta, y es basura para el recolector)
+// y su pila cuesta, y es basura para el GC)
 enum { JS_BUFFER_NONE, JS_BUFFER_ARRAY_BUFFER, JS_BUFFER_TYPED_ARRAY };
 int JS_BufferKind(JSContext *ctx, JSValueConst obj);
 // Los bytes de un ArrayBuffer o de una vista (Uint8Array...), sin lanzar
@@ -370,26 +370,30 @@ JSValue JS_GetTypedArrayBuffer(JSContext *ctx, JSValueConst obj, size_t *pbyte_o
 // ---------- memoria ----------
 
 typedef struct JSMemoryUsage {
-  int64_t heap_size;       // el monton de JavaScriptCore (bytes)
+  int64_t heap_size;       // el heap de JavaScriptCore (bytes)
   int64_t heap_capacity;
-  int64_t extra_memory;    // memoria fuera del monton (buffers...)
+  int64_t extra_memory;    // memoria fuera del heap (buffers...)
   int64_t object_count;
 } JSMemoryUsage;
 void JS_ComputeMemoryUsage(JSRuntime *rt, JSMemoryUsage *s);
-// El trabajo del recolector que cabe en ms de tiempo libre (el barrido de la
-// ultima recoleccion): para el hueco antes de presentar
+// Memoria nueva fuera del heap que un objeto JS mantiene viva (los pixeles
+// de un canvas o una imagen): cuenta para que el GC pase antes y
+// libere los objetos que ya no se usan
+void JS_ReportExtraMemory(JSContext *ctx, size_t bytes);
+// El trabajo del GC que cabe en ms de tiempo libre (el barrido de la
+// ultima GC): para el hueco antes de presentar
 void JS_IdleWork(JSRuntime *rt, double ms);
-// Cuanto falta para la siguiente recoleccion: 0 recien hecha, 1 a punto
+// Cuanto falta para el siguiente GC: 0 recien hecho, 1 a punto
 double JS_GCPressure(JSRuntime *rt);
-// La siguiente recoleccion ya (parcial o completa, la que toque)
+// El siguiente GC ya (parcial o completo, el que toque)
 void JS_CollectDue(JSRuntime *rt);
-// Cuantos objetos vivos (o creados desde la ultima recoleccion) hay de cada
+// Cuantos objetos vivos (o creados desde el ultimo GC) hay de cada
 // tipo: names[i] y counts[i], hasta max. Devuelve cuantos tipos
 int JS_ObjectTypeCounts(JSRuntime *rt, char names[][48], double *counts, int max);
-// una recoleccion completa ahora
+// un GC completo ahora
 void JS_RunGC(JSRuntime *rt);
 
-// El profiler de muestreo de JavaScriptCore (un hilo suyo toma una muestra
+// El sampling profiler de JavaScriptCore (un thread suyo toma una muestra
 // de la pila cada 10 ms, JSC_sampleInterval en main.c; runtime/core/profiler.c
 // lo resume). Las muestras se
 // recogen como el objeto de su JSON: { interval, traces: [{ timestamp,

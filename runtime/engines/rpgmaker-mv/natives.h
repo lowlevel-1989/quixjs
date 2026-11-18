@@ -1,5 +1,5 @@
 /*
- * QuixJS - A lightweight JS runtime using SDL2 and JavaScriptCore
+ * quixjs - A lightweight JS runtime using SDL2 and JavaScriptCore
  * Copyright (C) 2025  Vinicio Valbuena (lowlevel.1989)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -26,6 +26,9 @@ JSValue rpgmaker_mv_natives(JSContext *ctx);
 
 // adjust_tone.c (hook adjust-tone.js)
 JSValue rpgmaker_mv_adjust_tone(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv);
+
+// blur.c (hook blur-native.js)
+JSValue rpgmaker_mv_blur(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv);
 
 // decrypt.c (hooks decrypt-image-native.js y load-audio-native.js)
 JSValue rpgmaker_mv_set_decrypt_key(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv);

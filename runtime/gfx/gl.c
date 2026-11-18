@@ -1,5 +1,5 @@
 /*
- * QuixJS - A lightweight JS runtime using SDL2 and JavaScriptCore
+ * quixjs - A lightweight JS runtime using SDL2 and JavaScriptCore
  * Copyright (C) 2025  Vinicio Valbuena (lowlevel.1989)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,7 +17,7 @@
  */
 
 // El contexto OpenGL ES 2 de WebGL y del canvas en la GPU, sus funciones
-// cargadas en tiempo de ejecucion, y EGL (hilos y fences). Ver gl.h.
+// cargadas en tiempo de ejecucion, y EGL (threads y fences). Ver gl.h.
 
 #include <SDL2/SDL.h>
 #include <dlfcn.h>
@@ -25,6 +25,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "gl.h"
+#include "driver.h"
 
 QxGL qgl;
 
@@ -109,6 +110,7 @@ int gl_init(int headless) {
   snprintf(renderer_name, sizeof(renderer_name), "%s", (const char *)qgl.GetString(GL_RENDERER));
   extensions = (const char *)qgl.GetString(GL_EXTENSIONS);
   printf("WebGL: %s (%s)\n", renderer_name, (const char *)qgl.GetString(GL_VERSION));
+  gpu_driver_detect(renderer_name, (const char *)qgl.GetString(GL_VERSION));
   gl_state = 1;
   return 0;
 }
@@ -119,8 +121,8 @@ int gl_available(void) {
 
 // ------------------------------------------------- sin ventana (EGL)
 //
-// Para presentar desde otro hilo (backend sdl, present_ahead) la ventana es
-// de ese hilo: en EGL una superficie solo puede estar en un hilo. Los
+// Para presentar desde otro thread (backend sdl, present_ahead) la ventana es
+// de ese thread: en EGL una superficie solo puede estar en un thread. Los
 // contextos de este (WebGL y el auxiliar) pasan a usarse sin superficie
 // (EGL_KHR_surfaceless_context; solo dibujan en sus framebuffers). EGL se
 // usa directamente: SDL siempre los liga a la ventana.
@@ -145,12 +147,12 @@ static struct {
   void *(*GetProcAddress)(const char *);
   EGLSync_ (*CreateSyncKHR)(EGLDisplay_, unsigned, const intptr_t *);
   int (*ClientWaitSyncKHR)(EGLDisplay_, EGLSync_, int, uint64_t);
-  unsigned (*DestroySyncKHR)(EGLDisplay_, EGLSync_);
   int (*WaitSyncKHR)(EGLDisplay_, EGLSync_, int);
+  unsigned (*DestroySyncKHR)(EGLDisplay_, EGLSync_);
   EGLDisplay_ dpy;
 } egl;
-static int         offthread = 0;     // los contextos de este hilo, sin ventana
-static void       *cur_context = NULL; // el actual de este hilo (con offthread)
+static int         offthread = 0;     // los contextos de este thread, sin ventana
+static void       *cur_context = NULL; // el actual de este thread (con offthread)
 static EGLContext_ egl_aux = NULL;    // el auxiliar creado sin SDL
 
 static int egl_bind(void *context) {
@@ -196,12 +198,12 @@ static void fence_setup(void) {
   *(void **)&egl.ClientWaitSyncKHR = egl.GetProcAddress("eglClientWaitSyncKHR");
   *(void **)&egl.DestroySyncKHR = egl.GetProcAddress("eglDestroySyncKHR");
   if (!egl.CreateSyncKHR || !egl.ClientWaitSyncKHR || !egl.DestroySyncKHR) egl.CreateSyncKHR = NULL;
-  // la espera en la GPU: quien presenta no se para
+  // la espera en la GPU (gl_fence_wait_gpu): quien presenta no se para
   if (egl_has("EGL_KHR_wait_sync")) *(void **)&egl.WaitSyncKHR = egl.GetProcAddress("eglWaitSyncKHR");
 }
 
-// Sin el hilo que presenta, la marca tambien hace falta: el contexto que
-// presenta (otro, en este hilo) lee la textura del canvas WebGL. Mesa
+// Sin el thread que presenta, la marca tambien hace falta: el contexto que
+// presenta (otro, en este thread) lee la textura del canvas WebGL. Mesa
 // (panfrost) ordena solo el trabajo de dos contextos; libmali no: en la RGB30
 // la capa de ventanas (lo ultimo de cada imagen) a veces no estaba dibujada
 // al presentar y el menu de la batalla pestaneaba.
@@ -228,7 +230,7 @@ int gl_offthread_begin(void) {
   egl.dpy = egl.GetCurrentDisplay();
   if (!egl.dpy || !egl_has("EGL_KHR_surfaceless_context")) return -1;
   fence_setup();
-  // se suelta la ventana (SDL deja de tener nada actual en este hilo)
+  // se suelta la ventana (SDL deja de tener nada actual en este thread)
   SDL_GL_MakeCurrent(gl_window, NULL);
   if (egl_bind(gl_context) != 0) {
     SDL_GL_MakeCurrent(gl_window, gl_context);
@@ -254,10 +256,10 @@ void *gl_fence(void) {
   return f;
 }
 
-void gl_fence_wait(void *fence) {
+void gl_fence_wait_gpu(void *fence) {
   if (!fence) return;
-  // con EGL_KHR_wait_sync espera la GPU (lo que dibuje despues este hilo va
-  // detras); si no, este hilo
+  // con EGL_KHR_wait_sync espera la GPU (lo que dibuje despues este thread va
+  // detras); si no, la CPU de este thread
   if (!egl.WaitSyncKHR || !egl.WaitSyncKHR(egl.dpy, fence, 0)) egl.ClientWaitSyncKHR(egl.dpy, fence, 0, EGL_FOREVER_KHR_);
   egl.DestroySyncKHR(egl.dpy, fence);
 }

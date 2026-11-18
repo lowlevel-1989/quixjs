@@ -1,5 +1,5 @@
 /*
- * QuixJS - A lightweight JS runtime using SDL2 and JavaScriptCore
+ * quixjs - A lightweight JS runtime using SDL2 and JavaScriptCore
  * Copyright (C) 2025  Vinicio Valbuena (lowlevel.1989)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -163,7 +163,7 @@ int config_load(Config *out, const char *filename) {
   if (scripts.type == TOML_TABLE) {
     toml_datum_t entry = toml_get(scripts, "entry");
     if (entry.type == TOML_STRING) {
-      strncpy(out->scripts.entry, entry.u.s, sizeof(out->scripts.entry));
+      out->scripts.entry = strdup(entry.u.s);
     }
 
     toml_datum_t libs = toml_get(scripts, "libs");
@@ -174,7 +174,7 @@ int config_load(Config *out, const char *filename) {
       for (int i = 0; i < count && out->scripts.libs_count < MAX_SCRIPT_FILES; i++) {
         toml_datum_t lib = libs.u.arr.elem[i];
         if (lib.type == TOML_STRING) {
-          strncpy(out->scripts.libs[out->scripts.libs_count], lib.u.s, MAX_PATH_LEN);
+          out->scripts.libs[out->scripts.libs_count] = strdup(lib.u.s);
           out->scripts.libs_count++;
         }
       }
@@ -188,7 +188,7 @@ int config_load(Config *out, const char *filename) {
       for (int i = 0; i < count && out->scripts.includes_count < MAX_SCRIPT_FILES; i++) {
         toml_datum_t inc = includes.u.arr.elem[i];
         if (inc.type == TOML_STRING) {
-          strncpy(out->scripts.includes[out->scripts.includes_count], inc.u.s, MAX_PATH_LEN);
+          out->scripts.includes[out->scripts.includes_count] = strdup(inc.u.s);
           out->scripts.includes_count++;
         }
       }
@@ -247,7 +247,7 @@ int config_load(Config *out, const char *filename) {
     }
   }
 
-  // [game] title, id y mods: el nombre (el del lanzador), el id del juego
+  // [game] title, id y mods: el nombre (el del launcher), el id del juego
   // (Transfer Save solo pasa partidas del mismo; sin id, el titulo) y los
   // mods activos (mods/<nombre>/ junto al config, con las mismas rutas que
   // dentro de game_dir)

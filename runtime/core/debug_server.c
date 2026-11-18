@@ -1,5 +1,5 @@
 /*
- * QuixJS - A lightweight JS runtime using SDL2 and JavaScriptCore
+ * quixjs - A lightweight JS runtime using SDL2 and JavaScriptCore
  * Copyright (C) 2025  Vinicio Valbuena (lowlevel.1989)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -33,6 +33,7 @@
 #include <sys/un.h>
 #include <time.h>
 #include <unistd.h>
+#include "binding/image.h"
 #include "core/memstats.h"
 #include "platform/platform.h"
 #include "core/keymap.h"
@@ -134,6 +135,7 @@ static const char help_text[] =
   "fps [N]              the frame rate cap; fps N changes it now (10 to 60)\n"
   "gc                   run the garbage collector: how long it takes and what it frees\n"
   "mem                  size of the JS heap and number of objects\n"
+  "mem release          free the CPU pixels of images already on the GPU (as with low RAM)\n"
   "pacing               intervals between frames really presented, since the last pacing\n"
   "ach                  achievements of the port and the values of their symbols\n"
   "ach reset            forget the unlocked achievements\n"
@@ -244,7 +246,7 @@ static int handle(Client *c, DebugEnv *env, char *line) {
       }
     }
   } else if (strcmp(line, "gc") == 0) {
-    // una pasada del recolector de basura: cuanto tarda y cuanto libera
+    // una pasada del GC: cuanto tarda y cuanto libera
     JSRuntime *rt = JS_GetRuntime(env->ctx);
     JSMemoryUsage before, after;
     JS_ComputeMemoryUsage(rt, &before);
@@ -277,6 +279,11 @@ static int handle(Client *c, DebugEnv *env, char *line) {
     for (int k = 0; k < 7; k++) reply(c, " %s %d", name[k], count[k]);
     reply(c, "\nlast intervals (ms):%s\nok\n", seq);
     present_count = 0;
+  } else if (strcmp(line, "mem") == 0 && strcmp(arg, "release") == 0) {
+    // lo que hace quixjs cuando falta RAM, sin esperar a que falte
+    int n = 0;
+    size_t freed = js_image_release_uploaded(&n);
+    reply(c, "released %.1f MB of %d images already on the GPU\nok\n", freed / 1048576.0, n);
   } else if (strcmp(line, "mem") == 0) {
     JSMemoryUsage m;
     JS_ComputeMemoryUsage(JS_GetRuntime(env->ctx), &m);
@@ -294,7 +301,7 @@ static int handle(Client *c, DebugEnv *env, char *line) {
     }
     reply(c, "ok\n");
   } else if (strcmp(line, "types") == 0) {
-    // los objetos de JavaScript por tipo. Dos seguidos sin recoleccion en
+    // los objetos de JavaScript por tipo. Dos seguidos sin GC en
     // medio: la diferencia es lo que se ha creado (la basura que se genera)
     static char names[400][48];
     static double counts[400], prev[400];

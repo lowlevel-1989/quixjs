@@ -1,5 +1,5 @@
 /*
- * QuixJS - A lightweight JS runtime using SDL2 and JavaScriptCore
+ * quixjs - A lightweight JS runtime using SDL2 and JavaScriptCore
  * Copyright (C) 2025  Vinicio Valbuena (lowlevel.1989)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -19,11 +19,11 @@
 #pragma once
 
 // Image / HTMLImageElement: al asignar src, una imagen de archivo o de Blob se
-// decodifica en el hilo de trabajo (core/worker.h) y load/error llegan cuando
+// decodifica en el thread de trabajo (core/worker.h) y load/error llegan cuando
 // esta; un archivo con transformacion (core/url.h: uno cifrado) se lee y se
 // transforma alli tambien;
 // una data: URI se decodifica al momento y load llega en el siguiente ciclo
-// del bucle, como en el navegador.
+// del loop, como en el navegador.
 
 #include "js/js.h"
 #include "gfx/surface.h"
@@ -31,6 +31,15 @@
 void js_api_add_image(JSContext *ctx);
 JSValue js_create_image(JSContext *ctx);
 
-// NULL si val no es una imagen o aun no ha cargado
+// Los pixeles de una imagen, NULL si val no es una imagen o aun no ha cargado.
+// Para dibujarla en un canvas 2d: desde entonces sus pixeles se quedan
 const Surface *js_image_get_surface(JSContext *ctx, JSValueConst val);
+// Para subirla a WebGL (no la marca como usada en 2d)
+const Surface *js_image_get_surface_gpu(JSContext *ctx, JSValueConst val);
+// Ya esta en una textura de WebGL
+void js_image_uploaded(JSContext *ctx, JSValueConst val);
+// Con poca RAM: suelta los pixeles de la CPU de las imagenes que ya estan en
+// una textura y nunca se dibujaron en 2d (se decodifican otra vez si hacen
+// falta). Devuelve los bytes soltados y en count cuantas
+size_t js_image_release_uploaded(int *count);
 

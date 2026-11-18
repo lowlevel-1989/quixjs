@@ -1,5 +1,5 @@
 /*
- * QuixJS - A lightweight JS runtime using SDL2 and JavaScriptCore
+ * quixjs - A lightweight JS runtime using SDL2 and JavaScriptCore
  * Copyright (C) 2025  Vinicio Valbuena (lowlevel.1989)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -20,7 +20,7 @@
 
 // Transfer Save: pasar las partidas a otro dispositivo de la misma red (un
 // PC, una portatil), sin teclado y sin abrir puertos. Heredado de tamatama
-// (src/transfer). Lo abre el lanzador (--launcher).
+// (src/transfer). Lo abre el launcher (--launcher).
 
 // La pantalla de Transfer Save, con las pantallas ya abiertas (ui_open).
 // game: el id del juego ([game] id, o su titulo si no tiene); solo se

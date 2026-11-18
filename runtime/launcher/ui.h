@@ -1,5 +1,5 @@
 /*
- * QuixJS - A lightweight JS runtime using SDL2 and JavaScriptCore
+ * quixjs - A lightweight JS runtime using SDL2 and JavaScriptCore
  * Copyright (C) 2025  Vinicio Valbuena (lowlevel.1989)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -18,10 +18,10 @@
 
 #pragma once
 
-// Las pantallas propias de quixjs (el lanzador, Transfer Save, los logros),
+// Las pantallas propias de quixjs (el launcher, Transfer Save, los logros),
 // las que no son del juego. Heredado de tamatama (src/shared/screen.h). Todas
 // son iguales:
-//   un logo y un titulo arriba (y una firma pequena, en el lanzador)
+//   un logo y un titulo arriba (y una firma pequena, en el launcher)
 //   unas lineas de texto
 //   una lista de opciones: las primeras van en una ventana que se desliza si
 //   no caben; las ultimas (tantas como Screen.fixed), debajo y quietas

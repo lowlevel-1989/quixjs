@@ -21,7 +21,7 @@ archivo, y las palabras que usa el codigo. Como compilarlo y usarlo esta en el
 | simbolo | un nombre para un valor del juego (`[symbols]`), que leen los logros y escriben los trucos |
 | partida | un juego empezado con New Game, junto con sus guardados |
 | port | un juego empaquetado para PortMaster, descrito por su `port.toml` |
-| lanzador | el menu antes del juego (`--launcher`) |
+| launcher | el menu antes del juego (`--launcher`) |
 
 ## Como funciona
 
@@ -32,7 +32,7 @@ config.toml --> core/config_loader --> core/compiler (lee y comprueba) ---> core
                                |                      ^
                      gfx/ (dibuja cada canvas)        | KeyboardEvent, mandos
                                |                      |
-core/main (bucle) --present--> backend/ (sdl: ventana, teclas, mandos | dummy: sin ventana)
+core/main (loop) --present--> backend/ (sdl: ventana, teclas, mandos | dummy: sin ventana)
                   <--timers--- core/timer (setTimeout, rAF, reloj fijo)
 ```
 
@@ -40,7 +40,7 @@ core/main (bucle) --present--> backend/ (sdl: ventana, teclas, mandos | dummy: s
    JavaScriptCore (`js/`), y anade las APIs del navegador (`binding/`).
 2. `core/compiler.c` lee los scripts y comprueba su sintaxis, y
    `core/runner.c` los ejecuta en orden.
-3. El bucle principal: eventos de entrada -> promesas -> timers. Una vez por
+3. El loop principal: eventos de entrada -> promesas -> timers. Una vez por
    frame (cada 1000/60 ms, o 1000/`[engine] fps`) ademas pone los hooks cuya
    funcion ya existe, ejecuta los callbacks de `requestAnimationFrame`, avanza
    el video y presenta los canvas en pantalla. Termina cuando no queda nada
@@ -51,7 +51,7 @@ core/main (bucle) --present--> backend/ (sdl: ventana, teclas, mandos | dummy: s
 
 | carpeta       | que hace |
 |---------------|----------|
-| `core/`       | bucle principal, opciones, config, carga de scripts, reloj y timers, teclas, urls ([README](core/README.es.md)) |
+| `core/`       | loop principal, opciones, config, carga de scripts, reloj y timers, teclas, urls ([README](core/README.es.md)) |
 | `gfx/`        | dibujo por software, sin JS: superficies, colores, paths, imagenes, fuentes; GL para WebGL ([README](gfx/README.es.md)) |
 | `js/`         | la capa de motor: la API que usan los bindings, sobre la API en C de JavaScriptCore (`js.h`, `js_jsc.c`) |
 | `binding/`    | las APIs del navegador para JS (clases y funciones sobre `js/js.h`) ([README](binding/README.es.md)) |
@@ -63,11 +63,11 @@ core/main (bucle) --present--> backend/ (sdl: ventana, teclas, mandos | dummy: s
 | `shaders/`    | los shaders GLSL, metidos en el binario al compilar ([README](shaders/README.es.md)) |
 | `backend/`    | ventana y entrada: `sdl` y `dummy` (sin ventana, para los tests) ([README](backend/README.es.md)) |
 | `platform/`   | lo que depende del sistema operativo: memoria, fuente por defecto, red local, usuario ([README](platform/README.es.md)) |
-| `launcher/`   | menu del lanzador (`--launcher`): jugar, logros, transferir partida, mando, opciones, trucos (heredado de tamatama) ([README](launcher/README.es.md)) |
+| `launcher/`   | menu del launcher (`--launcher`): jugar, logros, transferir partida, mando, opciones, trucos (heredado de tamatama) ([README](launcher/README.es.md)) |
 | `transfer/`   | Transfer Save: envia las partidas a otro dispositivo de la misma red (heredado de tamatama) ([README](transfer/README.es.md)) |
 | `achievements/` | logros para los ports, definidos en el toml del juego ([README](achievements/README.es.md)) |
 | `symbols/`    | `[symbols]`: nombres para el estado del juego, que leen los logros y escriben los trucos ([README](symbols/README.es.md)) |
-| `cheats/`     | trucos para los ports (`[[cheat]]`), encendidos en el lanzador; una partida con trucos no consigue logros ([README](cheats/README.es.md)) |
+| `cheats/`     | trucos para los ports (`[[cheat]]`), encendidos en el launcher; una partida con trucos no consigue logros ([README](cheats/README.es.md)) |
 | `thirdparty/` | codigo de otros proyectos: tomlc17 y stb (stb_vorbis, stb_easy_font), sin modificar; nestegg; y `webkit/` (JavaScriptCore, compilado aparte por `tools/build-jsc.sh`, [README](thirdparty/webkit/README.es.md)) |
 | `thirdparty/nestegg/` | nestegg de Mozilla: lee archivos WebM; solo se compila con video (`VERSION` tiene su commit) |
 
@@ -77,15 +77,15 @@ Los archivos principales. El README de cada carpeta tiene el resto.
 
 | archivo                     | que hace |
 |-----------------------------|----------|
-| `core/main.c`               | arranque, bucle principal, entrada a KeyboardEvent, composicion de la pantalla, captura, codigo de salida |
+| `core/main.c`               | arranque, loop principal, entrada a KeyboardEvent, composicion de la pantalla, captura, codigo de salida |
 | `core/args.c`               | opciones de la linea de comandos |
 | `core/config_loader.c`      | lee el toml del juego |
 | `core/compiler.c`           | lee los scripts y comprueba su sintaxis |
 | `core/runner.c`             | ejecuta cada script en orden |
-| `core/init.c`               | `--gen-config`: un `config.toml` desde la carpeta de un juego |
-| `core/profiler.c`           | `--profile`: el profiler de muestreo de JavaScriptCore |
+| `core/gen_config.c`         | `--gen-config`: un `config.toml` desde la carpeta de un juego o uno de sus `.html` |
+| `core/profiler.c`           | `--profile`: el sampling profiler de JavaScriptCore |
 | `core/watchdog.c`           | salida de emergencia: Select + Start sale con el juego colgado |
-| `core/worker.c`             | un hilo de trabajo para cargar en segundo plano (imagenes, sonidos) |
+| `core/worker.c`             | un thread de trabajo para cargar en segundo plano (imagenes, sonidos) |
 | `core/memstats.c`           | memoria de canvas, imagenes y texturas WebGL (comando `mem`) |
 | `core/timer.c`              | reloj (real o fijo), setTimeout/setInterval, requestAnimationFrame |
 | `core/keymap.c`             | KeyboardEvent.code -> key y keyCode |
@@ -121,14 +121,14 @@ Los archivos principales. El README de cada carpeta tiene el resto.
 | `binding/canvas/2d/text.c`  | font, measureText, fillText |
 | `backend/backend.c`         | interfaz comun de los backends y cola de entrada |
 | `backend/sdl/backend.c`     | ventana SDL, teclado, mandos, present |
-| `backend/sdl/mapper.c`      | Controls del lanzador: asignar los botones de un mando |
+| `backend/sdl/mapper.c`      | Controls del launcher: asignar los botones de un mando |
 | `backend/dummy/backend.c`   | sin ventana: guarda el ultimo frame |
 | `hooks/hooks.c`             | lee `[hooks]` y envuelve las funciones del juego cuando existen |
 | `launcher/settings.c`       | `quixjs-settings.toml`: lo que se cambia en Options y Cheats |
 | `video/video.c`             | WebM: separa las pistas con nestegg, VP8/VP9 con libvpx, Opus con libopus, YUV a RGBA |
-| `audio/mixer.c`             | voces y el flujo de un video, mezclados en el hilo de audio de SDL |
+| `audio/mixer.c`             | voces y el flujo de un video, mezclados en el thread de audio de SDL |
 
 ## Memoria
 
-Un valor guardado desde C esta protegido del recolector de JavaScriptCore hasta su
+Un valor guardado desde C esta protegido del GC de JavaScriptCore hasta su
 `JS_FreeValue`. Las reglas estan en [js](js/README.es.md).

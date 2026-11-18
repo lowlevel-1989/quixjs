@@ -1,5 +1,5 @@
 /*
- * QuixJS - A lightweight JS runtime using SDL2 and JavaScriptCore
+ * quixjs - A lightweight JS runtime using SDL2 and JavaScriptCore
  * Copyright (C) 2025  Vinicio Valbuena (lowlevel.1989)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -23,7 +23,7 @@
 #include "stb/stb_easy_font.h"
 #include "toast.h"
 
-// Retro: rectangulos de bordes rectos y la letra de pixeles del lanzador
+// Retro: rectangulos de bordes rectos y la letra de pixeles del launcher
 // (stb_easy_font), a escala entera
 
 static void fill(Surface *s, int x, int y, int w, int h, unsigned rgb) {

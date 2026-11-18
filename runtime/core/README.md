@@ -16,7 +16,7 @@ urls and the test tools (`--script`, `--debug`).
 | `args.c`          | command line options (`-c`, `-b`, `--test`, `--frames`, `--script`, `--debug`, `--gen-config`, `--launcher`...) |
 | `config_loader.c` | reads the toml of the game (`[engine]` and `[engine.pc]` / `[engine.handheld]`, `[game]` with `title`, `id` and `mods`, `[scripts]`, `[fonts]`, `[launcher]`, `[saves]` with `dir` from `game_dir`, `[controls]`) with tomlc17; `[symbols]` and `[[achievements]]` are read by `achievements/`, `[hooks]` by `hooks/` |
 | `printer.c`       | prints the loaded config at start |
-| `init.c`          | `--gen-config <folder>`: looks at the game (nw.js `package.json`, `index.html`, its CSS, `rpg_core.js` / `rmmz_core.js`, `pixi.js`) and writes a `config.toml` to stdout |
+| `gen_config.c`    | `--gen-config <folder or .html>`: looks at the game (nw.js `package.json`, `index.html` or the given `.html`, its CSS, `rpg_core.js` / `rmmz_core.js`, `pixi.js`) and writes a `config.toml` to stdout |
 | `compiler.c`      | reads the scripts and checks their syntax; also loads the scripts added later (`<script src>`) |
 | `runner.c`        | runs each script in order |
 | `timer.c`         | clock (real or fixed), setTimeout / setInterval, requestAnimationFrame |
@@ -77,6 +77,8 @@ it would not stop the page).
 the game starts, with the file and line); JavaScriptCore compiles it when it
 runs, and the code that runs most also to machine code (JIT). There is no
 cache: the first version of quixjs, on QuickJS, kept bytecode in `cache_dir`.
+Now `cache_dir` keeps the WebGL programs already linked
+(`<cache_dir>/shaders`, `gfx/shader_cache.c`).
 
 ## Debug console
 

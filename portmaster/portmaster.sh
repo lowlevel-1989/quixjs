@@ -36,7 +36,7 @@ QUIXJS="./quixjs.$ARCH"
 echo "@TITLE@ port @PORT_VERSION@, quixjs $(cat VERSION 2>/dev/null): quixjs.$ARCH ($CFW_NAME)"
 $ESUDO chmod +x "$GAMEDIR/quixjs.$ARCH"
 
-# la fuente del lanzador y las librerias que no todos los CFW traen
+# la fuente del launcher y las librerias que no todos los CFW traen
 export QUIXJS_FONT="$GAMEDIR/fonts/DejaVuSans-Bold.ttf"
 export LD_LIBRARY_PATH="$GAMEDIR/libs.$ARCH:$LD_LIBRARY_PATH"
 
@@ -48,8 +48,9 @@ if [ ! -d "$GAMEDIR/@GAME_DIR@" ]; then
   exit 1
 fi
 
-# quixjs lee el mando con SDL; gptokeyb sin -c solo da Select+Start para cerrar
+# quixjs lee el mando con SDL; gptokeyb sin -c solo da hotkey+Start para cerrar
 export SDL_GAMECONTROLLERCONFIG="$sdl_controllerconfig"
+export HOTKEY="${HOTKEY:-guide}"
 if [ -n "$GPTOKEYB2" ]; then
   $GPTOKEYB2 "quixjs.$ARCH" &
 else

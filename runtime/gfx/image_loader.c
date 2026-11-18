@@ -1,5 +1,5 @@
 /*
- * QuixJS - A lightweight JS runtime using SDL2 and JavaScriptCore
+ * quixjs - A lightweight JS runtime using SDL2 and JavaScriptCore
  * Copyright (C) 2025  Vinicio Valbuena (lowlevel.1989)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -46,7 +46,7 @@ static int surface_from_sdl(SDL_Surface *img, Surface *out) {
   return 0;
 }
 
-// A pixeles sueltos (malloc), sin Surface ni estadisticas: vale desde otro hilo
+// A pixeles sueltos (malloc), sin Surface ni estadisticas: vale desde otro thread
 static int pixels_from_sdl(SDL_Surface *img, uint8_t **px, int *w, int *h) {
   if (!img) return -1;
   SDL_Surface *rgba = SDL_ConvertSurfaceFormat(img, SDL_PIXELFORMAT_RGBA32, 0);

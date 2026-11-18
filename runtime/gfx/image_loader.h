@@ -1,5 +1,5 @@
 /*
- * QuixJS - A lightweight JS runtime using SDL2 and JavaScriptCore
+ * quixjs - A lightweight JS runtime using SDL2 and JavaScriptCore
  * Copyright (C) 2025  Vinicio Valbuena (lowlevel.1989)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -30,5 +30,5 @@ int image_load_memory(const uint8_t *data, size_t len, Surface *out);
 int image_save_png(const uint8_t *rgba, int w, int h, const char *path);
 // Decodifica a pixeles RGBA sueltos (malloc; el que llama los libera): de un
 // archivo (path) o de memoria (data, len). No toca las estadisticas ni nada
-// compartido, asi que vale desde otro hilo (la decodificacion en segundo plano)
+// compartido, asi que vale desde otro thread (la decodificacion en segundo plano)
 int image_decode_pixels(const uint8_t *data, size_t len, const char *path, uint8_t **px, int *w, int *h);

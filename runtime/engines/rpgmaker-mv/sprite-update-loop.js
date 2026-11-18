@@ -5,7 +5,7 @@
 // actualizacion (los del mapa, las ventanas, la escena). En Fear & Hunger era
 // ~0,3 MB por segundo de basura que luego JavaScriptCore tiene que limpiar.
 //
-// Con el hook, un bucle que hace lo mismo que forEach: recorre hasta la
+// Con el hook, un loop que hace lo mismo que forEach: recorre hasta la
 // longitud que tenia al empezar y salta las posiciones que ya no estan (si un
 // hijo se quita a si mismo mientras se recorre), y llama a update de los
 // hijos que lo tienen. Sin crear nada.

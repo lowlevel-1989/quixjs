@@ -9,7 +9,7 @@ compilado por nosotros como librería estática (`tools/build-jsc.sh`).
 
 | archivo    | qué hace |
 |------------|----------|
-| `js.h`     | la API: valores (`JSValue`), objetos y propiedades, funciones de C y clases con datos de C, errores, ejecutar código, ArrayBuffer y TypedArray, memoria y el profiler de muestreo |
+| `js.h`     | la API: valores (`JSValue`), objetos y propiedades, funciones de C y clases con datos de C, errores, ejecutar código, ArrayBuffer y TypedArray, memoria y el sampling profiler |
 | `js_jsc.c` | la API sobre JavaScriptCore: un `JSValue` con un objeto o una cadena guarda su `JSValueRef`; las funciones de C y los objetos de las clases son objetos de JSC creados con una `JSClassRef` cuyo dato privado dice qué función de C llamar o qué puntero de C llevan |
 
 ## Reglas
@@ -27,17 +27,17 @@ los bindings:
   (`JS_GetException`).
 
 No hay contador de referencias: un valor guardado desde C (`JS_DupValue`)
-queda protegido del recolector de JavaScriptCore hasta su `JS_FreeValue`. Dos
+queda protegido del GC de JavaScriptCore hasta su `JS_FreeValue`. Dos
 objetos que se guardan entre sí desde C no se liberarían nunca; para eso,
 `JS_SetHidden` guarda un valor como propiedad oculta (con clave Symbol) del
-otro objeto, que el recolector sí sigue (el canvas y su contexto 2d o WebGL).
+otro objeto, que el GC sí sigue (el canvas y su contexto 2d o WebGL).
 
 ## Lo que da JavaScriptCore
 
 - las tareas de las promesas (microtareas) se ejecutan solas al volver de cada
   llamada desde C;
 - `RegExp.$1..$9`, `lastMatch`... vienen de serie;
-- la memoria, una recolección completa y el profiler de muestreo salen de su
+- la memoria, un GC completo y el sampling profiler salen de su
   API privada en C (`JSGetMemoryUsageStatistics`,
   `JSSynchronousGarbageCollectForDebugging`,
   `JSContextGroupEnableSamplingProfiler`...): quixjs sigue en C.

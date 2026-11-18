@@ -1,5 +1,5 @@
 /*
- * QuixJS - A lightweight JS runtime using SDL2 and JavaScriptCore
+ * quixjs - A lightweight JS runtime using SDL2 and JavaScriptCore
  * Copyright (C) 2025  Vinicio Valbuena (lowlevel.1989)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -26,7 +26,7 @@
 //   | +------+  Defeat the first boss            |
 //   +--------------------------------------------+
 //
-// Retro, como el lanzador: un panel oscuro de esquinas rectas con un borde
+// Retro, como el launcher: un panel oscuro de esquinas rectas con un borde
 // del color del distintivo; el distintivo es un cuadrado de ese color con la
 // inicial; todo con la letra de pixeles (stb_easy_font) a escala entera. px es
 // el tamano de letra del titulo, que el backend saca del alto de la ventana.

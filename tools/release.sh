@@ -14,7 +14,7 @@ set -eu
 cd "$(dirname "$0")/.."
 
 PORT=${PORT:-fearandhunger}
-V=$(sed -n 's/^#define QUIX_VERSION "\(.*\)"/\1/p' runtime/binding/quix.h)
+V=$(tr -d ' \n' < VERSION)
 OUT=release
 PM=obj/portmaster/zip/$PORT
 

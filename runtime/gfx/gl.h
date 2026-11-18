@@ -1,5 +1,5 @@
 /*
- * QuixJS - A lightweight JS runtime using SDL2 and JavaScriptCore
+ * quixjs - A lightweight JS runtime using SDL2 and JavaScriptCore
  * Copyright (C) 2025  Vinicio Valbuena (lowlevel.1989)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -60,20 +60,20 @@ void gl_shutdown(void);
 int  gl_aux_begin(void);
 void gl_aux_end(void);
 
-// Presentar desde otro hilo (backend sdl): gl_offthread_begin suelta la
-// ventana en este hilo y los contextos de WebGL siguen sin ella (EGL con
+// Presentar desde otro thread (backend sdl): gl_offthread_begin suelta la
+// ventana en este thread y los contextos de WebGL siguen sin ella (EGL con
 // EGL_KHR_surfaceless_context). 0 si se puede; si no, todo sigue como estaba.
 // gl_offthread_end lo deshace.
 int  gl_offthread_begin(void);
 void gl_offthread_end(void);
-// Lo dibujado hasta ahora en este hilo: lo manda a la GPU y devuelve una
-// marca (EGL_KHR_fence_sync; NULL si no hay) que el otro hilo espera con
-// gl_fence_wait antes de usar las texturas (con el contexto que las usa ya
-// actual: la espera la hace su GPU si se puede).
+// Lo dibujado hasta ahora en este thread: lo manda a la GPU y devuelve una
+// marca (EGL_KHR_fence_sync; NULL si no hay) que quien presenta espera con
+// gl_fence_wait_cpu antes de usar las texturas.
 void *gl_fence(void);
-void gl_fence_wait(void *fence);
-// Lo mismo, esperando este hilo (la CPU) a que la GPU termine. Sin el hilo
-// que presenta: con libmali la espera en la GPU (eglWaitSyncKHR) no basta y
-// el menu del titulo y el de la batalla de RPG Maker pestaneaban en la RGB30;
-// esperando la CPU no, y presentar tarda lo mismo (17-20 ms en batalla)
+// Esperar lo marcado y soltar la marca. _gpu: la GPU de este contexto espera
+// (eglWaitSyncKHR; la CPU sigue). _cpu: la CPU de este thread espera; con
+// libmali la espera en la GPU no basta (el menu del titulo y el de la batalla
+// de RPG Maker pestaneaban en la RGB30). Cual usa el thread que presenta lo
+// dice el driver (gfx/drivers/, thread_wait)
+void gl_fence_wait_gpu(void *fence);
 void gl_fence_wait_cpu(void *fence);

@@ -1,5 +1,5 @@
 /*
- * QuixJS - A lightweight JS runtime using SDL2 and JavaScriptCore
+ * quixjs - A lightweight JS runtime using SDL2 and JavaScriptCore
  * Copyright (C) 2025  Vinicio Valbuena (lowlevel.1989)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -69,7 +69,7 @@ struct Video {
   int             preskip;          // muestras del principio que no se oyen
   int             w, h;
   double          duration;
-  // el hilo que decodifica: lee el WebM, manda el audio al mezclador y deja
+  // el thread que decodifica: lee el WebM, manda el audio al mezclador y deja
   // las imagenes convertidas en frames_q (a lo sumo FRAMES por delante)
   pthread_t       thread;
   int             thread_on;
@@ -77,7 +77,7 @@ struct Video {
   pthread_cond_t  cond;
   Frame           frames_q[FRAMES];
   int             stop;
-  int             eof;              // el hilo llego al final del archivo
+  int             eof;              // el thread llego al final del archivo
   // el reloj: el del audio si hay, si no el del runtime
   int             playing, ended, audio_open;
   double          start_ms, paused_at;
@@ -290,7 +290,7 @@ static int free_slot(Video *v) {
   }
 }
 
-// El hilo: lee paquetes, el audio al mezclador, las imagenes a la cola
+// El thread: lee paquetes, el audio al mezclador, las imagenes a la cola
 static void *decoder(void *arg) {
   Video *v = arg;
   for (;;) {
@@ -313,7 +313,7 @@ static void *decoder(void *arg) {
           if (img->fmt != VPX_IMG_FMT_I420 && img->fmt != VPX_IMG_FMT_I422 && img->fmt != VPX_IMG_FMT_I444) continue;
           int slot = free_slot(v);
           if (slot < 0) break;
-          // la conversion, fuera del cerrojo: ese hueco solo lo toca este hilo
+          // la conversion, fuera del cerrojo: ese hueco solo lo toca este thread
           yuv_to_rgba(img, &v->frames_q[slot].rgba);
           pthread_mutex_lock(&v->lock);
           v->frames_q[slot].time = ts / 1e9;
@@ -360,7 +360,7 @@ int video_update(Video *v, Surface *frame) {
   int shown = 0, pending = 0;
   pthread_mutex_lock(&v->lock);
   // Con el reloj fijo (--test) el tiempo corre mucho mas que el real: se
-  // espera a que el hilo haya decodificado hasta ahora (una imagen que aun
+  // espera a que el thread haya decodificado hasta ahora (una imagen que aun
   // no toca, la cola llena o el final), para que sea siempre igual
   while (clock_is_fixed() && !v->eof && !v->stop) {
     int ahead = 0, full = 0;
@@ -396,7 +396,7 @@ int video_update(Video *v, Surface *frame) {
   for (int i = 0; i < FRAMES; i++) pending += v->frames_q[i].full;
   int eof = v->eof;
   pthread_mutex_unlock(&v->lock);
-  // fin: el hilo acabo, no quedan imagenes y, si hay audio, se oyo entero
+  // fin: el thread acabo, no quedan imagenes y, si hay audio, se oyo entero
   if (eof && !pending && (!v->audio_open || mixer_stream_queued() == 0 || now >= v->duration)) {
     v->ended = 1;
     v->playing = 0;

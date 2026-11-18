@@ -12,7 +12,7 @@ games and tests can use.
 Usage: quixjs [options]
 Options:
   -c, --config <path>    Path to config.toml file (default: config.toml)
-      --gen-config <dir> Print a config.toml for the game in <dir> and exit
+      --gen-config <dir|.html> Print a config.toml for the game and exit
   -b, --backend <type>   Select backend: sdl or dummy (default: sdl)
       --fullscreen       Fullscreen, keeping the aspect ratio (black bars)
       --resizable        Resizable from the start (a tiling WM tiles it)
@@ -26,6 +26,7 @@ Options:
       --profile[=file]   Sampling profiler: report in file (quixjs-profile.txt) every 10 s and on exit
       --launcher         Menu before the game: play, achievements, transfer save, options
       --no-webgl         No WebGL: games use their canvas renderer
+      --expose-gc        A global gc() that collects now, as in V8 (benchmarks)
       --hold <ms>        With a window: keep it open <ms> after the end
       --test             Test mode: dummy backend, fixed clock, max 600 frames,
                          the game must call quix.exit() (with -b sdl: window
@@ -58,13 +59,15 @@ never calls `quix.exit()`.
 ## --gen-config
 
 `--gen-config <dir>` looks at the game in `<dir>` (or in `<dir>/www`) and prints a
-`config.toml` to stdout:
+`config.toml` to stdout. Given an `.html` file instead of a folder, it uses that page
+(for games or tests with several pages):
 
 - the `package.json` of nw.js: its `main` (the `index.html`), the window size and
   title; with it, `nwjs = true`
 - the `<script src>` of the `index.html`, in the same order: the first ones in a
   `lib/` or `libs/` folder go to `libs`, the last one is `entry` and the rest go to
-  `includes`
+  `includes`. A `<script>` with the code inside the page goes in its place as a
+  `data:text/javascript,` URL
 - the `@font-face` of its CSS, as `[fonts]`
 - RPG Maker MV (`rpg_core.js`) or MZ (`rmmz_core.js`) and its screen size, and the
   version of `pixi.js`
@@ -72,6 +75,9 @@ never calls `quix.exit()`.
   the save files in `[saves]`
 
 Check it and edit it: it is a starting point.
+
+The window title is `quixjs | <[game] title>`; if the game sets `document.title`,
+the window shows that one.
 
 ## config.toml
 
@@ -100,7 +106,7 @@ title     = "My Game"        # the title of the menu (default: [engine] name)
 version   = "1.0.0"          # the version of the game or the port (informative)
 id        = "my-game"        # Transfer Save only between the same game (default: the title)
 game_dir  = "games/mygame"   # base folder: scripts, images, json...
-cache_dir = "cache/mygame"   # not used (there is no bytecode cache with JavaScriptCore)
+cache_dir = "cache/mygame"   # the WebGL shaders already linked (in <cache_dir>/shaders)
 width     = 640              # window size and default canvas size
 height    = 480
 mods      = []               # active mods (see Mods)
@@ -165,11 +171,14 @@ heavy event) uses the time left by the previous ones, so the player does not
 see it late. The cost is one more frame between pressing a button and seeing
 it (33 ms at 30 fps).
 
-It only works with Mesa drivers (panfrost, lima, the PC), the refreshes of the
-screen (DRM) and EGL with `EGL_KHR_surfaceless_context`. Otherwise, or with
+It only works with the drivers that allow it (all of the current ones, see
+[drivers](../runtime/gfx/drivers/README.md)), the refreshes of the screen
+(DRM) and EGL with `EGL_KHR_surfaceless_context`. Otherwise, or with
 `present_ahead = false`, each frame is presented by the main loop when it is
-ready. (With libmali on the RGB30 it presented at 20 fps instead of 30, so it
-is not used there.) Measured in Fear & Hunger (the crows of the fortress, RG
+ready. If the compositor holds the thread back (every frame change takes more
+than a refresh and a half for ~2 s, as with sway on the RGB30 the first time
+after powering it on), the thread stops and frames are presented without it
+(`[present] one frame ahead: stopped` in the output). Measured in Fear & Hunger (the crows of the fortress, RG
 CubeXX): the late frames in 30 s go from 13 to 3 at 1416 MHz and from 36 to 3
 at 1008 MHz.
 
@@ -349,6 +358,7 @@ QUIXJS_FONT=/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf ./quixjs -c ...
 | variable                | what it does |
 |-------------------------|--------------|
 | `QUIXJS_FONT`           | the default font (a `.ttf` file) |
+| `QUIXJS_SLOW_FRAME_MS`  | with `--profile` or `prof start`: frames longer than that many ms print which JS ran in them (`[slow frame js]`; 100 by default), see [benchmark](benchmark.md) |
 | `QUIXJS_TRANSFER_HOSTS` | Transfer Save only talks to these addresses (comma or space separated, for example `127.0.0.1`); used by `tests/transfer.sh` |
 
 ## The quix object
@@ -372,3 +382,5 @@ Only exists in quixjs (`typeof quix !== 'undefined'`).
 | `quix.collectGarbage(due)` | a full JS collection now (`'due'`: the one that is due); returns ms |
 | `quix.gcPressure()`     | 0 just collected, 1 about to collect                         |
 | `quix.isGpuCanvas(canvas)` | `true` if that canvas draws on the GPU (hook `gpu-canvas`) |
+| `quix.loading(on[, ms])` | the loading notice ("Loading..." at the bottom right): `true` when loading starts, `false` when it ends (it goes away once frames are normal again, at most after 30 s). With `ms`, it only shows if the game stalls longer than that without showing a frame. While the game is stuck loading, the last frame is shown again with the notice (by the `present_ahead` thread or, without it, by the game itself during its long jobs). Used by the `rpgmaker-mv/loading-notice` hook |
+| `quix.gpuDriver()` | the OpenGL ES driver: `"panfrost"`, `"mali"`, `"mali-g31"` or `"default"` (`null` without WebGL); see [gfx](../runtime/gfx/drivers/README.md) |

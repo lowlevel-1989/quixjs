@@ -1,5 +1,5 @@
 /*
- * QuixJS - A lightweight JS runtime using SDL2 and JavaScriptCore
+ * quixjs - A lightweight JS runtime using SDL2 and JavaScriptCore
  * Copyright (C) 2025  Vinicio Valbuena (lowlevel.1989)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -16,7 +16,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-// Asignar el mando (Controls del lanzador). Heredado de tamatama
+// Asignar el mando (Controls del launcher). Heredado de tamatama
 // (src/backend/sdl/mapper.c): se lee el mando crudo (SDL_Joystick, sin
 // mapeo), una entrada cada vez, y lo pedido se guarda como una linea de
 // SDL_GAMECONTROLLERCONFIG en controller.map, el formato de PortMaster:

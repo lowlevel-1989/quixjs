@@ -12,7 +12,7 @@ toml que describe cada juego, los ports y los mods, los controles, y el objeto
 Usage: quixjs [options]
 Options:
   -c, --config <path>    Path to config.toml file (default: config.toml)
-      --gen-config <dir> Print a config.toml for the game in <dir> and exit
+      --gen-config <dir|.html> Print a config.toml for the game and exit
   -b, --backend <type>   Select backend: sdl or dummy (default: sdl)
       --fullscreen       Fullscreen, keeping the aspect ratio (black bars)
       --resizable        Resizable from the start (a tiling WM tiles it)
@@ -26,6 +26,7 @@ Options:
       --profile[=file]   Sampling profiler: report in file (quixjs-profile.txt) every 10 s and on exit
       --launcher         Menu before the game: play, achievements, transfer save, options
       --no-webgl         No WebGL: games use their canvas renderer
+      --expose-gc        A global gc() that collects now, as in V8 (benchmarks)
       --hold <ms>        With a window: keep it open <ms> after the end
       --test             Test mode: dummy backend, fixed clock, max 600 frames,
                          the game must call quix.exit() (with -b sdl: window
@@ -58,13 +59,15 @@ a llamar a `quix.exit()`.
 ## --gen-config
 
 `--gen-config <carpeta>` mira el juego de `<carpeta>` (o de `<carpeta>/www`) y escribe un
-`config.toml` en stdout:
+`config.toml` en stdout. Con un archivo `.html` en vez de una carpeta, usa esa pagina
+(para juegos o tests con varias paginas):
 
 - el `package.json` de nw.js: su `main` (el `index.html`), el tamano y el titulo de
   la ventana; con el, `nwjs = true`
 - los `<script src>` del `index.html`, en el mismo orden: los primeros que estan en
   una carpeta `lib/` o `libs/` van a `libs`, el ultimo es `entry` y el resto van a
-  `includes`
+  `includes`. Un `<script>` con el codigo dentro de la pagina va en su sitio como
+  una URL `data:text/javascript,`
 - los `@font-face` de su CSS, como `[fonts]`
 - RPG Maker MV (`rpg_core.js`) o MZ (`rmmz_core.js`) y su tamano de pantalla, y la
   version de `pixi.js`
@@ -72,6 +75,9 @@ a llamar a `quix.exit()`.
   las partidas en `[saves]`
 
 Revisalo y editalo: es un punto de partida.
+
+El titulo de la ventana es `quixjs | <[game] title>`; si el juego pone
+`document.title`, la ventana ensena ese.
 
 ## config.toml
 
@@ -88,9 +94,9 @@ nwjs      = false      # modo nw.js: require('fs'), process...
 webgl     = true       # getContext("webgl"); false = el renderer de canvas
 fps       = 60         # requestAnimationFrame por segundo, de 10 a 60
 vsync     = true       # esperar al refresco de la pantalla al presentar
-present_ahead = true   # una imagen de adelanto (la muestra otro hilo)
+present_ahead = true   # una imagen de adelanto (la muestra otro thread)
 js_memory = 128        # MB de RAM que JavaScriptCore cree tener (por defecto: la del aparato)
-low_memory_mb = 96     # con menos RAM libre en el sistema, una recoleccion completa de JS (0: no)
+low_memory_mb = 96     # con menos RAM libre en el sistema, un GC completo de JS (0: no)
 
 [engine.pc]            # lo que cambia en el PC ([engine.handheld]: en las portatiles)
 fps = 60
@@ -100,7 +106,7 @@ title     = "Mi juego"        # el titulo del menu (por defecto: [engine] name)
 version   = "1.0.0"           # la version del juego o del port (informativa)
 id        = "mi-juego"        # Transfer Save solo entre el mismo juego (por defecto: el titulo)
 game_dir  = "games/mijuego"   # carpeta base: scripts, imagenes, json...
-cache_dir = "cache/mijuego"   # no se usa (con JavaScriptCore no hay cache de bytecode)
+cache_dir = "cache/mijuego"   # los shaders de WebGL ya enlazados (en <cache_dir>/shaders)
 width     = 640               # tamano de la ventana y del canvas por defecto
 height    = 480
 mods      = []                # mods activos (ver Mods)
@@ -135,7 +141,7 @@ conditions = ["boss_dead"]
 icon = 5                      # su icono del IconSet (0: ninguno)
 
 [controls]
-gamepad = true                # la opcion Controls del lanzador (asignar los botones)
+gamepad = true                # la opcion Controls del launcher (asignar los botones)
 
 [hooks]
 "Spriteset_Map.prototype.createLightmask" = "gpu-canvas"
@@ -158,22 +164,25 @@ y dibuja la mitad de las imagenes. `vsync = false` presenta sin esperar al
 refresco de la pantalla.
 
 `present_ahead` (true por defecto) deja una imagen lista de adelanto. Con los
-fps a la mitad del refresco o menos (30 en una pantalla de 60 Hz), otro hilo
+fps a la mitad del refresco o menos (30 en una pantalla de 60 Hz), otro thread
 muestra cada imagen en su refresco y el juego sigue con la siguiente sin
-esperar. Una imagen que tarda mas que su turno (una recoleccion, un evento
+esperar. Una imagen que tarda mas que su turno (un GC, un evento
 pesado) usa el tiempo que dejaron las anteriores, asi que el jugador no la ve
 tarde. Cuesta una imagen mas entre pulsar un boton y verlo (33 ms a 30 fps).
 
-Solo funciona con drivers Mesa (panfrost, lima, el PC), los refrescos de la
-pantalla (DRM) y EGL con `EGL_KHR_surfaceless_context`. Si no, o con
-`present_ahead = false`, el bucle principal presenta cada imagen cuando esta
-lista. (Con libmali en la RGB30 presentaba a 20 fps en vez de 30, asi que alli
-no se usa.) Medido en Fear & Hunger (los cuervos de la fortaleza, RG CubeXX):
+Solo funciona con los drivers que lo permiten (todos los de ahora, ver
+[drivers](../runtime/gfx/drivers/README.es.md)), los refrescos de la pantalla
+(DRM) y EGL con `EGL_KHR_surfaceless_context`. Si no, o con
+`present_ahead = false`, el loop principal presenta cada imagen cuando esta
+lista. Si el compositor frena el thread (cada cambio de imagen tarda mas de
+un refresco y medio durante ~2 s, como con sway en la RGB30 la primera vez
+tras encenderla), el thread se para y se sigue sin el
+(`[present] one frame ahead: stopped` en la salida). Medido en Fear & Hunger (los cuervos de la fortaleza, RG CubeXX):
 las imagenes tardias en 30 s pasan de 13 a 3 a 1416 MHz y de 36 a 3 a
 1008 MHz.
 
 `js_memory` (de 32 a 4096 MB) es la RAM que JavaScriptCore cree que tiene el
-aparato. Con ella calcula su monton: con menos, recolecta antes y el monton
+aparato. Con ella calcula su heap: con menos, pasa el GC antes y el heap
 crece menos. En una portatil de 1 GB, Fear & Hunger pasa de 600 a 440 MB con
 `js_memory = 128`, con los mismos fps.
 
@@ -347,6 +356,7 @@ QUIXJS_FONT=/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf ./quixjs -c ...
 | variable                | que hace |
 |-------------------------|----------|
 | `QUIXJS_FONT`           | la fuente por defecto (un archivo `.ttf`) |
+| `QUIXJS_SLOW_FRAME_MS`  | con `--profile` o `prof start`: los frames de mas de esos ms escriben que JS corrio en ellos (`[slow frame js]`; por defecto 100), ver [benchmark](benchmark.es.md) |
 | `QUIXJS_TRANSFER_HOSTS` | Transfer Save solo habla con estas direcciones (separadas por comas o espacios, por ejemplo `127.0.0.1`); la usa `tests/transfer.sh` |
 
 ## El objeto quix
@@ -355,7 +365,7 @@ Solo existe en quixjs (`typeof quix !== 'undefined'`).
 
 | miembro                 | que hace                                                     |
 |-------------------------|--------------------------------------------------------------|
-| `quix.exit(code)`       | termina el bucle principal con ese codigo de salida          |
+| `quix.exit(code)`       | termina el loop principal con ese codigo de salida          |
 | `quix.pressKey(code, t)`| mete una tecla en la cola de entrada: `t` es `"down"`, `"up"` o `"press"` (por defecto) |
 | `quix.frame`            | frames mostrados                                             |
 | `quix.backend`          | `"sdl"` o `"dummy"`                                          |
@@ -367,6 +377,8 @@ Solo existe en quixjs (`typeof quix !== 'undefined'`).
 | `quix.achievements()`   | los logros (id, title, description, type, color, unlocked)   |
 | `quix.achievementsIcon()` | `[achievements_menu] icon` (0 si no hay)                   |
 | `quix.frameTime`        | hora prevista de esta imagen (ms, escala de performance.now), regular: 33.333 ms entre imagenes a 30 fps |
-| `quix.collectGarbage(due)` | una recoleccion completa de JS ya (`'due'`: la que toca); devuelve ms |
-| `quix.gcPressure()`     | 0 recien recolectado, 1 a punto de recolectar                |
+| `quix.collectGarbage(due)` | un GC completo de JS ya (`'due'`: el que toca); devuelve ms |
+| `quix.gcPressure()`     | 0 recien pasado el GC, 1 a punto de pasar el GC                |
 | `quix.isGpuCanvas(canvas)` | `true` si ese canvas dibuja en la GPU (hook `gpu-canvas`) |
+| `quix.loading(on[, ms])` | el aviso de carga ("Loading..." abajo a la derecha): `true` al empezar a cargar, `false` al terminar (se quita cuando las imágenes van normales, como mucho a los 30 s). Con `ms`, solo sale si el juego se para más de esos ms sin mostrar una imagen. Con el juego parado cargando, se repinta la última imagen con el aviso (el thread de `present_ahead` o, sin él, el propio juego en sus trabajos largos). Lo usa el hook `rpgmaker-mv/loading-notice` |
+| `quix.gpuDriver()` | el driver de OpenGL ES: `"panfrost"`, `"mali"`, `"mali-g31"` o `"default"` (`null` sin WebGL); ver [gfx](../runtime/gfx/drivers/README.es.md) |

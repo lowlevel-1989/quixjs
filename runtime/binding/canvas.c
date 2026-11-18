@@ -1,5 +1,5 @@
 /*
- * QuixJS - A lightweight JS runtime using SDL2 and JavaScriptCore
+ * quixjs - A lightweight JS runtime using SDL2 and JavaScriptCore
  * Copyright (C) 2025  Vinicio Valbuena (lowlevel.1989)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -123,7 +123,10 @@ static JSValue js_canvas_set_size(JSContext *ctx, JSValueConst this_val, JSValue
   // canvas y reinicia el estado del contexto
   int w = magic == 0 ? n : cd->surface.w;
   int h = magic == 1 ? n : cd->surface.h;
+  size_t before = (size_t)cd->surface.w * (size_t)cd->surface.h * 4;
   if (surface_resize(&cd->surface, w, h) != 0) return JS_ThrowOutOfMemory(ctx);
+  size_t after = (size_t)w * (size_t)h * 4;
+  if (after > before) JS_ReportExtraMemory(ctx, after - before);
   if (!JS_IsUndefined(cd->context2d)) context2d_reset(ctx, cd->context2d);
   if (cd->webgl) webgl_canvas_resized(cd);
   if (cd->gpu && gpu2d_resize(cd->gpu, w, h) != 0) canvas_leave_gpu(cd, "resize");

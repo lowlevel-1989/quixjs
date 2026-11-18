@@ -1,5 +1,5 @@
 // WebAudio: decodeAudioData (ogg vorbis), fuentes, ganancia, paneo,
-// rampas de volumen, bucles y onended (como lo usa RPG Maker MV)
+// rampas de volumen, loops y onended (como lo usa RPG Maker MV)
 
 var ctx = new AudioContext();
 var pending = 0;
@@ -70,7 +70,7 @@ load('../../assets/tone.ogg', function (data) {
     };
     src.start(0);
 
-    // en bucle no termina; stop() la para
+    // en loop no termina; stop() la para
     var loop = ctx.createBufferSource();
     loop.buffer = buffer;
     loop.loop = true;

@@ -1,5 +1,5 @@
 /*
- * QuixJS - A lightweight JS runtime using SDL2 and JavaScriptCore
+ * quixjs - A lightweight JS runtime using SDL2 and JavaScriptCore
  * Copyright (C) 2025  Vinicio Valbuena (lowlevel.1989)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -95,19 +95,24 @@ typedef struct {
   void (*cleanup)(Backend* backend);
   int  (*should_close)(Backend* backend);
   int  (*get_gamepads)(Backend* backend, GamepadState *pads, int max);
-  // Asignar el mando (Controls del lanzador): ver backend_capture_input
+  // Asignar el mando (Controls del launcher): ver backend_capture_input
   int  (*capture_input)(Backend* backend, int step, char *out, size_t room);
   int  (*save_controller)(Backend* backend, const char *pairs);
-  // Pantalla completa (Options del lanzador, en el PC), sin reiniciar
+  // Pantalla completa (Options del launcher, en el PC), sin reiniciar
   void (*set_fullscreen)(Backend* backend, int on);
+  // El titulo de la ventana (backend->title), ya
+  void (*set_title)(Backend* backend);
   // Los refrescos por segundo de la pantalla de la ventana (0 si no se sabe)
   double (*refresh_rate)(Backend* backend);
-  // Con el hilo que presenta: espera a que se haya mostrado la imagen
-  // entregada (NULL si no hay hilo)
+  // Con el thread que presenta: espera a que se haya mostrado la imagen
+  // entregada (NULL si no hay thread)
   void (*present_wait)(Backend* backend);
   // Cuando se mostraron de verdad las imagenes desde la ultima llamada
   // (CLOCK_MONOTONIC, ms); NULL si el backend no lo sabe
   int  (*presented)(Backend* backend, double *ms, int max);
+  // La ultima imagen mostrada otra vez, con lo de encima (el aviso de carga),
+  // desde el thread del juego a mitad de un trabajo largo; NULL si no sabe
+  void (*repaint)(Backend* backend);
   const char *name;
 } BackendInterface;
 
@@ -118,17 +123,29 @@ struct Backend {
   int   resizable;    // ventana redimensionable (en un tiling WM no flota)
   int   no_vsync;     // presentar sin esperar al refresco (se fija antes de backend_init)
   char  overlay[32];  // texto encima de la ventana, arriba a la derecha (--fps)
-  // controller.map: las asignaciones del mando hechas en el lanzador (lineas
+  // controller.map: las asignaciones del mando hechas en el launcher (lineas
   // de SDL_GAMECONTROLLERCONFIG, como las de PortMaster). Se fija antes de
   // backend_init, que las carga
   char  controller_map[1024];
+  char  title[256];   // el titulo de la ventana: "quixjs | <juego>" (backend_set_title)
   Toast toast;        // aviso de un logro (el backend lo anima y lo quita solo)
-  // Una imagen de adelanto ([engine] present_ahead): las muestra otro hilo y
+  // Una imagen de adelanto ([engine] present_ahead): las muestra otro thread y
   // el juego sigue con la siguiente sin esperar al refresco.
   int    present_ahead;    // permitido (se fija antes de backend_init)
-  int    present_thread;   // el backend lo pone a 1 cuando su hilo va
+  int    present_thread;   // el backend lo pone a 1 cuando su thread va
   int    present_async;    // la siguiente imagen se entrega sin esperar a que se vea
   double present_at;       // y se muestra en ese momento (CLOCK_MONOTONIC, ms; 0: ya)
+  // El aviso de carga ("Loading...", abajo a la derecha) mientras el juego
+  // carga una partida (quix.loading). 1: cargando; 2: la carga termino y el
+  // aviso sigue hasta que las imagenes vayan normales (backend_loading_tick);
+  // 0: sin aviso. Lo lee tambien el thread que presenta.
+  volatile int loading;
+  double loading_since;    // cuando empezo (CLOCK_MONOTONIC, ms)
+  double loading_calm;     // desde cuando van normales las imagenes (con 2)
+  double loading_tick;     // la ultima imagen (backend_loading_tick)
+  double loading_after;    // con retardo: se ve si el juego lleva estos ms sin
+                           // mostrar una imagen (0: enseguida)
+  volatile int loading_shown;   // ya se vio (sigue hasta que acabe la carga)
 
   InputEvent input[INPUT_QUEUE_SIZE];
   int        input_head;
@@ -148,7 +165,7 @@ int  backend_should_close(Backend* backend);
 int  backend_get_gamepads(Backend* backend, GamepadState *pads, int max);
 const char *backend_name(Backend* backend);
 
-// Asignar el mando, entrada a entrada (Controls del lanzador):
+// Asignar el mando, entrada a entrada (Controls del launcher):
 //   CAPTURE_START  abre el primer mando sin mapeo (lo crudo); -1 si no hay
 //   CAPTURE_POLL   1 cuando se ha pulsado y soltado una entrada nueva: out es
 //                  "b3" (boton), "h0.1" (cruceta, con su direccion) o "-a1"
@@ -163,10 +180,26 @@ int  backend_capture_input(Backend* backend, int step, char *out, size_t room);
 int  backend_save_controller(Backend* backend, const char *pairs);
 // La ventana a pantalla completa o no, ya (backend->fullscreen lo dice)
 void backend_set_fullscreen(Backend* backend, int on);
+// El titulo de la ventana: "quixjs | <juego>", o "quixjs" sin titulo. Antes de
+// backend_init vale para crear la ventana; despues la cambia ya
+void backend_set_title(Backend* backend, const char *game_title);
 // Los refrescos por segundo de la pantalla donde esta la ventana (0 si no se sabe)
 double backend_refresh_rate(Backend* backend);
 void   backend_present_wait(Backend* backend);
 int    backend_presented(Backend* backend, double *ms, int max);   // -1 si no lo sabe
+// El aviso de carga: on 1 al empezar a cargar (con after_ms, se ve solo si el
+// juego se para mas de after_ms sin mostrar una imagen; 0: enseguida), 0 al
+// terminar (backend->loading)
+void   backend_set_loading(Backend* backend, int on, double after_ms);
+// Si el aviso se ve ya (cargando y, con retardo, el juego parado ese rato)
+int    backend_loading_visible(Backend* backend);
+// Desde un trabajo largo del juego (subir texturas, compilar shaders...): sin
+// el thread que presenta, nadie repinta mientras el juego esta parado; si
+// el aviso se ve y hace rato que no se muestra nada, la ultima imagen otra
+// vez con el aviso (iface->repaint). Casi gratis si no hay aviso.
+void   backend_loading_poke(void);
+// Una vez por imagen presentada: quita el aviso cuando toca
+void   backend_loading_tick(Backend* backend);
 
 // Cola de entrada (la llenan los backends y quix.pressKey en los tests)
 void backend_push_input(Backend* backend, const InputEvent *ev);

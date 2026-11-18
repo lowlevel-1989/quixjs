@@ -1,5 +1,5 @@
 /*
- * QuixJS - A lightweight JS runtime using SDL2 and JavaScriptCore
+ * quixjs - A lightweight JS runtime using SDL2 and JavaScriptCore
  * Copyright (C) 2025  Vinicio Valbuena (lowlevel.1989)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -18,12 +18,12 @@
 
 #pragma once
 
-// Salida de emergencia: un hilo lee los mandos directamente del kernel
-// (/dev/input/event*). Si Select + Start estan pulsados y el bucle principal
+// Salida de emergencia: un thread lee los mandos directamente del kernel
+// (/dev/input/event*). Si Select + Start estan pulsados y el loop principal
 // lleva mas de un segundo sin pasar (el juego congelado en una tarea larga),
 // quixjs sale. Con el juego respondiendo, sale por el camino normal (el
 // backend sdl). Sin permiso para leer /dev/input (un PC sin root) no hace nada.
 
 void watchdog_start(void);
-// El bucle principal sigue vivo (en cada vuelta)
+// El loop principal sigue vivo (en cada vuelta)
 void watchdog_alive(void);

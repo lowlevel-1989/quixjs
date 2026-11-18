@@ -1,5 +1,5 @@
 /*
- * QuixJS - A lightweight JS runtime using SDL2 and JavaScriptCore
+ * quixjs - A lightweight JS runtime using SDL2 and JavaScriptCore
  * Copyright (C) 2025  Vinicio Valbuena (lowlevel.1989)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -27,7 +27,10 @@
 #include "core/memstats.h"
 #include "webgl.h"
 #include "gfx/gpu2d.h"
+#include "gfx/shader_cache.h"
+#include "backend/backend.h"
 #include "webgl_constants.h"
+#include "core/trace.h"
 
 #define UNPACK_FLIP_Y_WEBGL            0x9240
 #define UNPACK_PREMULTIPLY_ALPHA_WEBGL 0x9241
@@ -44,6 +47,7 @@ typedef struct WebGLCtx {
   JSValue canvas;
   GLuint  fbo, color, depth_stencil, depth, stencil;
   GLuint  color2;              // la otra textura del canvas (webgl_canvas_handoff)
+  GLuint  color3;              // con 3: la entregada antes de color2 (la que se ve)
   int     fresh;               // se ha dibujado en el canvas desde la ultima entrega
   int     handed;              // color2 tiene la ultima imagen entregada
   int     width, height;
@@ -97,10 +101,11 @@ static void fb_free(WebGLCtx *w) {
   if (w->fbo) qgl.DeleteFramebuffers(1, &w->fbo);
   if (w->color) qgl.DeleteTextures(1, &w->color);
   if (w->color2) qgl.DeleteTextures(1, &w->color2);
+  if (w->color3) qgl.DeleteTextures(1, &w->color3);
   if (w->depth_stencil) qgl.DeleteRenderbuffers(1, &w->depth_stencil);
   if (w->depth) qgl.DeleteRenderbuffers(1, &w->depth);
   if (w->stencil) qgl.DeleteRenderbuffers(1, &w->stencil);
-  w->fbo = w->color = w->color2 = w->depth_stencil = w->depth = w->stencil = 0;
+  w->fbo = w->color = w->color2 = w->color3 = w->depth_stencil = w->depth = w->stencil = 0;
   w->handed = 0;
 }
 
@@ -243,7 +248,22 @@ unsigned webgl_canvas_texture(CanvasData *cd, int *w, int *h, int *premultiplied
   return g->color;
 }
 
-unsigned webgl_canvas_handoff(CanvasData *cd, int *w, int *h, int *premultiplied) {
+static GLuint handoff_texture(WebGLCtx *g) {
+  GLint prev_tex = 0;
+  GLuint t = 0;
+  qgl.GetIntegerv(GL_TEXTURE_BINDING_2D, &prev_tex);
+  qgl.GenTextures(1, &t);
+  qgl.BindTexture(GL_TEXTURE_2D, t);
+  qgl.TexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, g->width, g->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+  qgl.TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+  qgl.TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+  qgl.TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+  qgl.TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+  qgl.BindTexture(GL_TEXTURE_2D, (GLuint)prev_tex);
+  return t;
+}
+
+unsigned webgl_canvas_handoff(CanvasData *cd, int buffers, int *w, int *h, int *premultiplied) {
   WebGLCtx *g = cd->webgl;
   // con preserveDrawingBuffer el juego cuenta con lo dibujado: no se cambia
   if (!g || g->lost || !g->color || g->preserve) return 0;
@@ -260,24 +280,18 @@ unsigned webgl_canvas_handoff(CanvasData *cd, int *w, int *h, int *premultiplied
   g->fresh = 0;
   g->handed = 1;
   gl_make_current();
-  GLint prev_tex = 0, prev_fb = 0;
-  qgl.GetIntegerv(GL_TEXTURE_BINDING_2D, &prev_tex);
+  GLint prev_fb = 0;
   qgl.GetIntegerv(GL_FRAMEBUFFER_BINDING, &prev_fb);
-  if (!g->color2) {
-    qgl.GenTextures(1, &g->color2);
-    qgl.BindTexture(GL_TEXTURE_2D, g->color2);
-    qgl.TexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, g->width, g->height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
-    qgl.TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    qgl.TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    qgl.TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    qgl.TexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    qgl.BindTexture(GL_TEXTURE_2D, (GLuint)prev_tex);
-  }
-  // la imagen terminada se entrega; el juego sigue en la otra (como en el
-  // navegador sin preserveDrawingBuffer, lo que tenga no importa)
+  // la imagen terminada se entrega; el juego sigue en otra (como en el
+  // navegador sin preserveDrawingBuffer, lo que tenga no importa). Con 2, la
+  // otra es la entregada antes; con 3 (se muestra la imagen anterior: la
+  // entregada antes aun se tiene que ver), la de antes de esa
   GLuint done = g->color;
-  g->color = g->color2;
+  GLuint next = buffers >= 3 ? g->color3 : g->color2;
+  if (!next) next = handoff_texture(g);
+  if (buffers >= 3) g->color3 = g->color2;
   g->color2 = done;
+  g->color = next;
   qgl.BindFramebuffer(GL_FRAMEBUFFER, g->fbo);
   qgl.FramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, g->color, 0);
   qgl.BindFramebuffer(GL_FRAMEBUFFER, (GLuint)prev_fb);
@@ -467,6 +481,7 @@ static JSValue js_gl_drawArrays(ARGS) {
 }
 
 static JSValue js_gl_drawElements(ARGS) {
+  backend_loading_poke();   // un trabajo largo: el aviso de carga, si toca
   CTX();
   qgl.DrawElements(u(0), n(1), u(2), (const void *)(intptr_t)n(3));
   mark_drawn(w);
@@ -552,6 +567,7 @@ static JSValue js_gl_delete(ARGS, ObjKind kind) {
       break;
     case OBJ_PROGRAM:
       qgl.DeleteProgram(id);
+      shader_cache_forget(id);
       forget(ctx, &w->program, argv[0]);
       break;
     case OBJ_SHADER:
@@ -698,6 +714,7 @@ static JSValue js_gl_shaderSource(ARGS) {
 }
 
 static JSValue js_gl_compileShader(ARGS) {
+  backend_loading_poke();   // un trabajo largo: el aviso de carga, si toca
   CTX();
   if (argc > 0) qgl.CompileShader(obj_name(argv[0], OBJ_SHADER));
   return JS_UNDEFINED;
@@ -716,8 +733,10 @@ static JSValue js_gl_detachShader(ARGS) {
 }
 
 static JSValue js_gl_linkProgram(ARGS) {
+  backend_loading_poke();   // un trabajo largo: el aviso de carga, si toca
   CTX();
-  if (argc > 0) qgl.LinkProgram(obj_name(argv[0], OBJ_PROGRAM));
+  // de la cache de disco si ya se enlazo otra vez (gfx/shader_cache.c)
+  if (argc > 0) shader_cache_link(obj_name(argv[0], OBJ_PROGRAM));
   return JS_UNDEFINED;
 }
 
@@ -740,6 +759,7 @@ static JSValue js_gl_bindAttribLocation(ARGS) {
   const char *name = argc > 2 ? JS_ToCString(ctx, argv[2]) : NULL;
   if (name) {
     qgl.BindAttribLocation(obj_name(argv[0], OBJ_PROGRAM), u(1), name);
+    shader_cache_bind(obj_name(argv[0], OBJ_PROGRAM), u(1), name);
     JS_FreeCString(ctx, name);
   }
   return JS_UNDEFINED;
@@ -993,6 +1013,7 @@ static GLObj *bound_buffer(WebGLCtx *w, GLenum target) {
 }
 
 static JSValue js_gl_bufferData(ARGS) {
+  backend_loading_poke();   // un trabajo largo: el aviso de carga, si toca
   CTX();
   if (argc < 3) return JS_UNDEFINED;
   GLsizeiptr size;
@@ -1024,44 +1045,120 @@ static JSValue js_gl_bufferSubData(ARGS) {
   // Si no, el driver espera a que la GPU acabe de usarlo (en panfrost, ~1.6
   // ms cada vez). Lo que hubiera detras de lo escrito se pierde: con esos
   // usos se vuelve a escribir antes de dibujar.
+  //
+  // (Probado y descartado en la RG CubeXX: orphaning tambien de los buffers
+  // que se reescriben enteros, como el quad de 64 bytes de los filtros de
+  // PIXI, que espera a la GPU una mediana de 4.4 ms, y con un tamano distinto
+  // cada vez para que mesa no reutilice la memoria. bufferSubData bajaba de
+  // ~500 a ~110 us por llamada, pero la batalla iba peor: sin esas esperas el
+  // juego manda a la GPU mas de lo que acaba y el ritmo de las imagenes se
+  // vuelve irregular, de ~100 a 300-600 imagenes tarde.)
   GLObj *b = bound_buffer(w, u(0));
   if (b && n(1) == 0 && b->size >= (GLsizeiptr)len && (b->usage == GL_STREAM_DRAW || b->usage == GL_DYNAMIC_DRAW)) {
     qgl.BufferData(u(0), b->size, NULL, b->usage);
   }
+  TRACE_START(tb);
   qgl.BufferSubData(u(0), (GLintptr)n(1), (GLsizeiptr)len, p);
+  TRACE_END(tb, 1.0, "bufferSubData %zu bytes", len);
   return JS_UNDEFINED;
 }
 
 // --------------------------------------------------------------- texturas
 
+#if defined(__BYTE_ORDER__) && __BYTE_ORDER__ != __ORDER_LITTLE_ENDIAN__
+#error "prepare_pixels supone little endian (el alfa de RGBA en el byte alto de un uint32)"
+#endif
+
 // Copia de la imagen con UNPACK_FLIP_Y / UNPACK_PREMULTIPLY_ALPHA aplicados
+// (premultiply_row).
+//
+// El resultado va a un buffer que se reutiliza (no se libera): pedir memoria
+// nueva en cada subida obligaba al kernel a preparar cada pagina al escribirla
+// (~825 en una imagen de 960x880), y eso era la mayor parte del tiempo. Si
+// una imagen pide mas de 4 MB (mas que una hoja de animacion de 960x880), se
+// usa y se suelta: el buffer fijo no pasa de 4 MB.
+#define PREPARE_KEEP_MAX (4u << 20)
+static uint8_t *prepare_buf;
+static size_t prepare_cap;
+
+// Una fila premultiplicada (c * a / 255 redondeado, la misma cuenta en las
+// dos versiones). En aarch64, 16 pixeles a la vez con NEON: en la RG CubeXX
+// una ventana de 816x396 pasa de ~5,7 ms a ~2,0 ms
+static void premultiply_row_scalar(uint8_t *d, const uint8_t *s, int n) {
+  for (int x = 0; x < n; x++) {
+    uint32_t p, o;
+    memcpy(&p, s + x * 4, 4);   // sin suponer alineacion (un ImageData puede no estarlo)
+    uint32_t a = p >> 24;   // RGBA en memoria: el alfa en el byte alto (little endian)
+    if (a == 255) {
+      o = p;
+    } else if (a == 0) {
+      o = 0;
+    } else {
+      uint32_t r = p & 255, g = (p >> 8) & 255, b = (p >> 16) & 255;
+      r = r * a + 128; r = (r + (r >> 8)) >> 8;
+      g = g * a + 128; g = (g + (g >> 8)) >> 8;
+      b = b * a + 128; b = (b + (b >> 8)) >> 8;
+      o = r | (g << 8) | (b << 16) | (a << 24);
+    }
+    memcpy(d + x * 4, &o, 4);
+  }
+}
+
+#if defined(__aarch64__)
+#include <arm_neon.h>
+// (c * a + 128 + ((c * a + 128) >> 8)) >> 8: con a = 255 da c, con a = 0 da 0
+static inline uint8x8_t mul255(uint8x8_t c, uint8x8_t a) {
+  uint16x8_t t = vaddq_u16(vmull_u8(c, a), vdupq_n_u16(128));
+  return vshrn_n_u16(vaddq_u16(t, vshrq_n_u16(t, 8)), 8);
+}
+
+static inline uint8x16_t mul255q(uint8x16_t c, uint8x16_t a) {
+  return vcombine_u8(mul255(vget_low_u8(c), vget_low_u8(a)), mul255(vget_high_u8(c), vget_high_u8(a)));
+}
+
+static void premultiply_row(uint8_t *d, const uint8_t *s, int n) {
+  int x = 0;
+  for (; x + 16 <= n; x += 16) {
+    uint8x16x4_t p = vld4q_u8(s + x * 4);   // R, G, B y A de 16 pixeles, separados
+    p.val[0] = mul255q(p.val[0], p.val[3]);
+    p.val[1] = mul255q(p.val[1], p.val[3]);
+    p.val[2] = mul255q(p.val[2], p.val[3]);
+    vst4q_u8(d + x * 4, p);
+  }
+  premultiply_row_scalar(d + x * 4, s + x * 4, n - x);
+}
+#else
+#define premultiply_row premultiply_row_scalar
+#endif
+
+static void prepare_done(uint8_t *conv) {
+  if (conv && conv != prepare_buf) free(conv);
+}
+
 static uint8_t *prepare_pixels(WebGLCtx *w, const uint8_t *src, int width, int height) {
   if (!w->flip_y && !w->premultiply) return NULL;
-  size_t row = (size_t)width * 4;
-  uint8_t *out = malloc(row * height);
+  size_t row = (size_t)width * 4, need = row * height;
+  uint8_t *out;
+  if (need > PREPARE_KEEP_MAX) {
+    out = malloc(need);
+  } else {
+    if (need > prepare_cap) {
+      uint8_t *nb = realloc(prepare_buf, need);
+      if (!nb) return NULL;
+      prepare_buf = nb;
+      prepare_cap = need;
+    }
+    out = prepare_buf;
+  }
   if (!out) return NULL;
   for (int y = 0; y < height; y++) {
     const uint8_t *s = src + row * (w->flip_y ? height - 1 - y : y);
     uint8_t *d = out + row * y;
-    if (w->premultiply) {
-      for (int x = 0; x < width; x++) {
-        int a = s[x * 4 + 3];
-        if (a == 255) {
-          memcpy(d + x * 4, s + x * 4, 4);
-        } else if (a == 0) {
-          d[x * 4] = d[x * 4 + 1] = d[x * 4 + 2] = d[x * 4 + 3] = 0;
-        } else {
-          // c * a / 255 redondeado, sin division
-          for (int c = 0; c < 3; c++) {
-            int v = s[x * 4 + c] * a + 128;
-            d[x * 4 + c] = (uint8_t)((v + (v >> 8)) >> 8);
-          }
-          d[x * 4 + 3] = (uint8_t)a;
-        }
-      }
-    } else {
+    if (!w->premultiply) {
       memcpy(d, s, row);
+      continue;
     }
+    premultiply_row(d, s, width);
   }
   return out;
 }
@@ -1149,7 +1246,7 @@ static int gpu_canvas_copy(JSContext *ctx, WebGLCtx *w, JSValueConst v, GLenum t
 static int source_pixels(JSContext *ctx, JSValueConst v, const uint8_t **px, int *width, int *height) {
   CanvasData *cd = js_canvas_get(ctx, v);
   if (cd && cd->webgl) webgl_canvas_sync(cd);
-  const Surface *s = js_get_image_source(ctx, v);
+  const Surface *s = cd ? js_get_image_source(ctx, v) : js_image_get_surface_gpu(ctx, v);
   if (s) {
     *px = s->px;
     *width = s->w;
@@ -1190,6 +1287,7 @@ static void texture_size(WebGLCtx *w, GLenum target, GLint level, long width, lo
 }
 
 static JSValue js_gl_texImage2D(ARGS) {
+  backend_loading_poke();   // un trabajo largo: el aviso de carga, si toca
   CTX();
   GLenum target = u(0);
   GLint level = n(1);
@@ -1200,14 +1298,19 @@ static JSValue js_gl_texImage2D(ARGS) {
     const uint8_t *px;
     int width, height;
     if (source_pixels(ctx, argv[5], &px, &width, &height) != 0) return JS_UNDEFINED;
+    TRACE_START(tc);
     uint8_t *conv = prepare_pixels(w, px, width, height);
+    TRACE_END(tc, 0.5, "texImage2D %dx%d premultiply", width, height);
+    TRACE_START(tu);
     GLint align = 4;
     qgl.GetIntegerv(GL_UNPACK_ALIGNMENT, &align);
     qgl.PixelStorei(GL_UNPACK_ALIGNMENT, 4);
     qgl.TexImage2D(target, level, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, conv ? conv : px);
     qgl.PixelStorei(GL_UNPACK_ALIGNMENT, align);
-    free(conv);
+    TRACE_END(tu, 0.5, "texImage2D %dx%d %s upload", width, height, js_canvas_get(ctx, argv[5]) ? "canvas" : "image");
+    prepare_done(conv);
     texture_size(w, target, level, width, height);
+    js_image_uploaded(ctx, argv[5]);
   } else if (argc >= 8) {
     // texImage2D(target, level, internalformat, width, height, border, format, type, pixels)
     if (target == GL_TEXTURE_2D) copy_cache_forget(bound_texture_2d());
@@ -1220,6 +1323,7 @@ static JSValue js_gl_texImage2D(ARGS) {
 }
 
 static JSValue js_gl_texSubImage2D(ARGS) {
+  backend_loading_poke();   // un trabajo largo: el aviso de carga, si toca
   CTX();
   if (argc == 7) {
     // texSubImage2D(target, level, x, y, format, type, source)
@@ -1227,13 +1331,18 @@ static JSValue js_gl_texSubImage2D(ARGS) {
     const uint8_t *px;
     int width, height;
     if (source_pixels(ctx, argv[6], &px, &width, &height) != 0) return JS_UNDEFINED;
+    TRACE_START(tc);
     uint8_t *conv = prepare_pixels(w, px, width, height);
+    TRACE_END(tc, 0.5, "texSubImage2D %dx%d premultiply", width, height);
+    TRACE_START(tt);
     GLint align = 4;
     qgl.GetIntegerv(GL_UNPACK_ALIGNMENT, &align);
     qgl.PixelStorei(GL_UNPACK_ALIGNMENT, 4);
     qgl.TexSubImage2D(u(0), n(1), n(2), n(3), width, height, GL_RGBA, GL_UNSIGNED_BYTE, conv ? conv : px);
     qgl.PixelStorei(GL_UNPACK_ALIGNMENT, align);
-    free(conv);
+    TRACE_END(tt, 1.0, "texSubImage2D %dx%d", width, height);
+    prepare_done(conv);
+    js_image_uploaded(ctx, argv[6]);
   } else if (argc >= 9) {
     size_t len = 0;
     uint8_t *p = JS_IsObject(argv[8]) ? bytes_of(ctx, argv[8], &len) : NULL;
@@ -1252,7 +1361,9 @@ static JSValue js_gl_readPixels(ARGS) {
   if (argc < 7) return JS_UNDEFINED;
   size_t len = 0;
   uint8_t *p = bytes_of(ctx, argv[6], &len);
+  TRACE_START(tr);
   if (p && len >= (size_t)n(2) * n(3) * 4) qgl.ReadPixels(n(0), n(1), n(2), n(3), u(4), u(5), p);
+  TRACE_END(tr, 1.0, "readPixels %dx%d", (int)n(2), (int)n(3));
   return JS_UNDEFINED;
 }
 

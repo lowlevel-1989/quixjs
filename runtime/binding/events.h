@@ -1,5 +1,5 @@
 /*
- * QuixJS - A lightweight JS runtime using SDL2 and JavaScriptCore
+ * quixjs - A lightweight JS runtime using SDL2 and JavaScriptCore
  * Copyright (C) 2025  Vinicio Valbuena (lowlevel.1989)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -38,6 +38,6 @@ JSValue events_new_keyboard(JSContext *ctx, const char *type, JSValueConst init)
 // una excepcion (ya se ha mostrado por stderr).
 int events_dispatch(JSContext *ctx, JSValueConst target, JSValueConst event);
 
-// Despacha un Event(type) en el siguiente ciclo del bucle (setTimeout 0),
+// Despacha un Event(type) en el siguiente ciclo del loop (setTimeout 0),
 // como los eventos load/error de Image y XMLHttpRequest.
 void events_dispatch_later(JSContext *ctx, JSValueConst target, const char *type);

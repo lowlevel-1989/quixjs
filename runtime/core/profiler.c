@@ -1,5 +1,5 @@
 /*
- * QuixJS - A lightweight JS runtime using SDL2 and JavaScriptCore
+ * quixjs - A lightweight JS runtime using SDL2 and JavaScriptCore
  * Copyright (C) 2025  Vinicio Valbuena (lowlevel.1989)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -18,9 +18,9 @@
 
 // Profiler de muestreo. Ver profiler.h.
 //
-// Las muestras las toma el profiler de JavaScriptCore: un hilo suyo mira la
+// Las muestras las toma el profiler de JavaScriptCore: un thread suyo mira la
 // pila de JS cada 10 ms (JSC_sampleInterval, en main.c; de forma segura: JSC
-// para el hilo principal un instante en un punto conocido).
+// para el thread principal un instante en un punto conocido).
 //
 // Se recogen una vez por segundo (profiler_drain) y se resumen por funcion en
 // JS (__quixProf, mas abajo): con el JIT es rapido, y leer cada muestra campo
@@ -60,7 +60,21 @@ static const char prof_js[] =
   "(function () {\n"
   "  var funs = {};\n"
   "  var P = { samples: 0, ms: 0, tiers: {}, allocs: {}, allocTotal: 0 };\n"
-  "  P.reset = function () { funs = {}; P.samples = 0; P.ms = 0; P.tiers = {}; P.allocs = {}; P.allocTotal = 0; };\n"
+  "  P.reset = function () { funs = {}; P.samples = 0; P.ms = 0; P.tiers = {}; P.allocs = {}; P.allocTotal = 0; P.frameReset(); };\n"
+  "  var fm = {}, frMs = 0, frN = 0;\n"
+  "  P.frameReset = function () { fm = {}; frMs = 0; frN = 0; };\n"
+  "  var where = function (e) { var f = e.url.split('/').pop(); return (e.name || '(anonymous)') + (e.native || !f || !(e.line > 0 && e.line < 1e8) ? '' : ' (' + f + ':' + e.line + ')'); };\n"
+  "  // las funciones de las muestras desde frameReset: las de mas tiempo propio y\n"
+  "  // las que estaban en la pila, sin las que estan en todas (el loop)\n"
+  "  P.frameTop = function (n) {\n"
+  "    var a = [], k;\n"
+  "    for (k in fm) a.push(fm[k]);\n"
+  "    if (!a.length) return '';\n"
+  "    var self = a.filter(function (x) { return x.self > 0; }).sort(function (x, y) { return y.self - x.self; }).slice(0, n);\n"
+  "    var tot = a.filter(function (x) { return x.total < frN; }).sort(function (x, y) { return y.total - x.total || y.depth - x.depth; }).slice(0, n);\n"
+  "    var f = function (x, field) { return Math.round(x[field] * frMs / frN) + ' ms ' + where(x.e); };\n"
+  "    return '  self: ' + self.map(function (x) { return f(x, 'self'); }).join(', ') + '\\n  in: ' + tot.map(function (x) { return f(x, 'total'); }).join(', ');\n"
+  "  };\n"
   "  P.addAlloc = function (txt) {\n"
   "    var lines = String(txt).split('\\n');\n"
   "    for (var i = 0; i < lines.length; i++) {\n"
@@ -99,6 +113,13 @@ static const char prof_js[] =
   "        es.push(e);\n"
   "      }\n"
   "      es[0].self += interval;\n"
+  "      frN++; frMs += interval;\n"
+  "      for (var q = 0; q < es.length; q++) {\n"
+  "        var fk = es[q].name + '|' + es[q].url + '|' + es[q].line, fe = fm[fk];\n"
+  "        if (!fe) fe = fm[fk] = { e: es[q], self: 0, total: 0, seen: -1, depth: q };\n"
+  "        if (q === 0) fe.self++;\n"
+  "        if (fe.seen !== frN) { fe.seen = frN; fe.total++; }\n"
+  "      }\n"
   "      var tl = fr[0].location || '', tier = es[0].native ? 'native' : (tl.split(':')[1] || '?');\n"
   "      P.tiers[tier] = (P.tiers[tier] || 0) + interval;\n"
   "      if (es[0].native) {\n"
@@ -190,6 +211,33 @@ void profiler_drain(JSContext *ctx) {
     JS_FreeValue(ctx, txt);
     free(alloc);
   }
+}
+
+// Al acabar cada frame (con el profiler en marcha): si desde el anterior
+// pasaron mas de 100 ms (o QUIXJS_SLOW_FRAME_MS), escribe que funciones de
+// JS corrieron en el (las muestras de ese tiempo); despues empieza la cuenta
+// del siguiente
+void profiler_frame_end(JSContext *ctx) {
+  static double last = 0, slow_ms = 0;
+  if (!running) return;
+  if (slow_ms <= 0) {
+    const char *e = getenv("QUIXJS_SLOW_FRAME_MS");
+    slow_ms = e && atof(e) > 0 ? atof(e) : 100;
+  }
+  double now = real_ms_prof();
+  if (last > 0 && now - last > slow_ms) {
+    profiler_drain(ctx);
+    JSValue nv = JS_NewInt32(ctx, 6);
+    JSValue r = prof_call(ctx, "frameTop", 1, &nv);
+    const char *t = JS_IsString(r) ? JS_ToCString(ctx, r) : NULL;
+    if (t && *t) printf("[slow frame js] %.0f ms\n%s\n", now - last, t);
+    if (t) JS_FreeCString(ctx, t);
+    JS_FreeValue(ctx, r);
+  } else {
+    profiler_drain(ctx);
+  }
+  JS_FreeValue(ctx, prof_call(ctx, "frameReset", 0, NULL));
+  last = now;
 }
 
 static double num_of(JSContext *ctx, JSValueConst o, const char *name) {

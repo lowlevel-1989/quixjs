@@ -29,7 +29,7 @@ de `binding/polyfill.c` ([binding](../binding/README.es.md)).
   se copia a los dos canales y se quita el pre-skip de la cabecera Opus.
 - La imagen sigue el reloj del audio (lo que el mezclador ha sonado). Sin
   audio, o sin dispositivo de audio, sigue el reloj del runtime.
-- La imagen se decodifica en un hilo propio, que también la pasa de YUV
+- La imagen se decodifica en un thread propio, que también la pasa de YUV
   (I420, I422, I444; BT.601, rango limitado) a RGBA en la CPU con enteros.
   Deja hasta 3 imágenes listas por delante; cada imagen del juego enseña la
   que ya toca.

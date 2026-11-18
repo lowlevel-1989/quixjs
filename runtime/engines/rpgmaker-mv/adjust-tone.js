@@ -1,6 +1,6 @@
 // adjust-tone: para Bitmap.prototype.adjustTone (RPG Maker MV).
 //
-// adjustTone cambia el tono de toda una imagen: getImageData, un bucle en JS
+// adjustTone cambia el tono de toda una imagen: getImageData, un loop en JS
 // que suma r, g, b a cada pixel y putImageData. Al cargar una partida de
 // Fear & Hunger era el 29% del tiempo. Con el hook, la suma la hace C
 // (adjust_tone.c: adjustTone) directamente sobre los pixeles del canvas, con el

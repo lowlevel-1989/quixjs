@@ -1,5 +1,5 @@
 /*
- * QuixJS - A lightweight JS runtime using SDL2 and JavaScriptCore
+ * quixjs - A lightweight JS runtime using SDL2 and JavaScriptCore
  * Copyright (C) 2025  Vinicio Valbuena (lowlevel.1989)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -70,6 +70,6 @@ void platform_system_name(char *out, size_t room);
 
 // El ultimo refresco de la pantalla: cuando fue (ms, CLOCK_MONOTONIC) y lo que
 // dura uno (ms). No espera. Para que cada imagen apunte a un refresco y dure
-// siempre los mismos. -1 si el sistema no lo dice (entonces el bucle va con
+// siempre los mismos. -1 si el sistema no lo dice (entonces el loop va con
 // su reloj)
 int platform_vblank(double *last_ms, double *period_ms);

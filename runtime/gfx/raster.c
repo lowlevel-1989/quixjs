@@ -1,5 +1,5 @@
 /*
- * QuixJS - A lightweight JS runtime using SDL2 and JavaScriptCore
+ * quixjs - A lightweight JS runtime using SDL2 and JavaScriptCore
  * Copyright (C) 2025  Vinicio Valbuena (lowlevel.1989)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -616,7 +616,7 @@ void raster_fill_rect(Surface *dst, double x, double y, double w, double h,
       return;
     }
 
-    // gradiente lineal o radial concentrico sin clip: bucle propio, con las
+    // gradiente lineal o radial concentrico sin clip: loop propio, con las
     // coordenadas de usuario incrementales y la tabla de colores
     const Gradient *gr = ps->paint->gradient;
     if (ps->paint->type == PAINT_GRADIENT && gr && ps->has_lut && ps->invertible && !dp->clip &&

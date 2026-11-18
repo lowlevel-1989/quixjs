@@ -2,12 +2,12 @@
 // cifrados o no).
 //
 // RPG Maker lee el ogg con XHR, lo copia para quitarle la cabecera si esta
-// cifrado, recorre sus bytes en JS buscando los comentarios del bucle
+// cifrado, recorre sus bytes en JS buscando los comentarios del loop
 // (LOOPSTART, LOOPLENGTH) y se lo pasa a decodeAudioData: buffers del tamano
 // del archivo en el JS por cada sonido (una musica son varios MB), que
-// disparaban recolecciones de memoria a mitad de una imagen. Con el hook,
+// disparaban GC a mitad de una imagen. Con el hook,
 // quixjs lee el archivo, lo descifra (la clave de $dataSystem) y lo abre en
-// segundo plano (AudioContext.quixLoadFile), con los comentarios del bucle
+// segundo plano (AudioContext.quixLoadFile), con los comentarios del loop
 // leidos en C: los bytes no pasan por el JS. Lo demas queda igual que en
 // WebAudio._onXhrLoad. Sin quixLoadFile o sin la clave, la original.
 //

@@ -74,6 +74,14 @@ T.test('gamepads', function () {
   T.ok(pads && typeof pads.length === 'number', 'getGamepads() returns a list');
 });
 
+// document.title: el [game] title del toml hasta que el juego pone otro (que
+// cambia el titulo de la ventana: "quixjs | <titulo>")
+T.test('document.title', function () {
+  T.equal(document.title, 'DOM test', 'starts as [game] title');
+  document.title = 'Other title';
+  T.equal(document.title, 'Other title', 'the game can change it');
+});
+
 // readyState pasa a "complete" con window.onload
 window.addEventListener('load', function () {
   T.equal(document.readyState, 'complete', 'readyState after load');

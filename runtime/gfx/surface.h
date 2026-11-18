@@ -1,5 +1,5 @@
 /*
- * QuixJS - A lightweight JS runtime using SDL2 and JavaScriptCore
+ * quixjs - A lightweight JS runtime using SDL2 and JavaScriptCore
  * Copyright (C) 2025  Vinicio Valbuena (lowlevel.1989)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -98,7 +98,7 @@ static inline void blend_pixel(uint8_t *dst, int r, int g, int b, int a, Composi
     if (da == 255) {
       // destino opaco (una mascara de luces): suma con tope, sin divisiones
       int ka = a + (a >> 7);   // a/255 como a/256 aproximado
-      int v0 = dst[0] + ((r * ka) >> 8), v1 = dst[1] + ((g * ka) >> 8), v2 = dst[2] + ((b * ka) >> 8);
+      int v0 = dst[0] + ((r * ka + 128) >> 8), v1 = dst[1] + ((g * ka + 128) >> 8), v2 = dst[2] + ((b * ka + 128) >> 8);
       dst[0] = (uint8_t)(v0 > 255 ? 255 : v0);
       dst[1] = (uint8_t)(v1 > 255 ? 255 : v1);
       dst[2] = (uint8_t)(v2 > 255 ? 255 : v2);

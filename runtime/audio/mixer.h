@@ -1,5 +1,5 @@
 /*
- * QuixJS - A lightweight JS runtime using SDL2 and JavaScriptCore
+ * quixjs - A lightweight JS runtime using SDL2 and JavaScriptCore
  * Copyright (C) 2025  Vinicio Valbuena (lowlevel.1989)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -19,13 +19,13 @@
 #pragma once
 
 // Mezclador de audio para portatiles: ogg vorbis decodificado en streaming
-// (stb_vorbis) mientras suena, y mezclado en el hilo de audio de SDL.
+// (stb_vorbis) mientras suena, y mezclado en el thread de audio de SDL.
 //
 // - Un AudioClip es el ogg comprimido (lo que da decodeAudioData). No se
 //   decodifica entero: una musica de 3 min ocupa sus ~3 MB, no ~30 MB de PCM.
 // - Cada voz que suena tiene su decodificador y su posicion.
 // - Sin dispositivo de audio (backend dummy, tests) las voces avanzan con el
-//   reloj del runtime, sin decodificar: onended y los bucles funcionan igual.
+//   reloj del runtime, sin decodificar: onended y los loops funcionan igual.
 
 #include <stddef.h>
 #include <stdint.h>
@@ -34,7 +34,7 @@ typedef struct AudioClip AudioClip;
 
 // Copia los datos. NULL si no es un ogg vorbis valido.
 AudioClip *clip_from_ogg(const uint8_t *data, size_t len);
-// Igual, pero se queda con data (malloc) sin copiarlo; vale desde el hilo de
+// Igual, pero se queda con data (malloc) sin copiarlo; vale desde el thread de
 // trabajo (core/worker.h). Si falla, libera data
 AudioClip *clip_from_ogg_owned(uint8_t *data, size_t len);
 void       clip_retain(AudioClip *c);
@@ -58,13 +58,13 @@ void voice_stop(int id);
 int  voice_playing(int id);   // 0 cuando termino (o no existe)
 double voice_time(int id);    // segundos reproducidos dentro del clip
 
-// Voces sonando: el bucle principal avanza frame a frame mientras haya.
+// Voces sonando: el loop principal avanza frame a frame mientras haya.
 int  mixer_active(void);
 
-// Libera las voces que terminaron (hilo principal, cada frame).
+// Libera las voces que terminaron (thread principal, cada frame).
 void mixer_update(void);
 
-// Un flujo de PCM ya decodificado (el audio de un video): el hilo principal
+// Un flujo de PCM ya decodificado (el audio de un video): el thread principal
 // lo va llenando y el de audio lo mezcla. Uno a la vez.
 int    mixer_stream_open(int rate);
 // frames estereo intercalados (float). Devuelve cuantos caben (los de mas se pierden)

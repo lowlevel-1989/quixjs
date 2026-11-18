@@ -1,5 +1,5 @@
 /*
- * QuixJS - A lightweight JS runtime using SDL2 and JavaScriptCore
+ * quixjs - A lightweight JS runtime using SDL2 and JavaScriptCore
  * Copyright (C) 2025  Vinicio Valbuena (lowlevel.1989)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -16,7 +16,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-// quixjs --gen-config: escribir un toml para un juego. Ver init.h.
+// quixjs --gen-config: escribir un toml para un juego. Ver gen_config.h.
 
 #include <ctype.h>
 #include <stdio.h>
@@ -27,7 +27,7 @@
 #include "js/js.h"
 #include "config_loader.h"
 #include "url.h"
-#include "init.h"
+#include "gen_config.h"
 
 #define MAX_ITEMS 128
 
@@ -247,13 +247,45 @@ static void read_html(GameInfo *gi) {
   for (char *p = html; (p = strcasestr(p, "<script")) != NULL; p += 7) {
     char *end = strchr(p, '>');
     if (!end) break;
-    char src[512];
+    char src[512], type[64];
     if (tag_attr(p, end, "src", src, sizeof(src)) && src[0] && !is_remote(src) && gi->script_count < MAX_ITEMS) {
       char *q = strpbrk(src, "?#");
       if (q) *q = 0;
       normalize(src);
       gi->scripts[gi->script_count++] = strdup(src);
+      continue;
     }
+    // un <script> con el codigo dentro: una data: URL con ese codigo, en su
+    // orden (solo JavaScript normal: ni modulos ni plantillas o JSON)
+    if (tag_attr(p, end, "src", src, sizeof(src))) continue;
+    if (tag_attr(p, end, "type", type, sizeof(type)) && type[0] && strcasecmp(type, "text/javascript") != 0 &&
+        strcasecmp(type, "application/javascript") != 0) {
+      continue;
+    }
+    char *close = strcasestr(end + 1, "</script");
+    if (!close || gi->script_count >= MAX_ITEMS) continue;
+    const char *code = end + 1;
+    size_t n = (size_t)(close - code);
+    int blank = 1;
+    for (size_t i = 0; i < n && blank; i++) blank = isspace((unsigned char)code[i]) != 0;
+    if (blank) continue;
+    // "data:text/javascript," y el codigo con % como %25 (lo unico que
+    // url_decode_data cambia)
+    size_t pct = 0;
+    for (size_t i = 0; i < n; i++) pct += code[i] == '%';
+    char *url = malloc(n + 2 * pct + 32);
+    if (!url) continue;
+    size_t o = (size_t)sprintf(url, "data:text/javascript,");
+    for (size_t i = 0; i < n; i++) {
+      if (code[i] == '%') {
+        memcpy(url + o, "%25", 3);
+        o += 3;
+      } else {
+        url[o++] = code[i];
+      }
+    }
+    url[o] = 0;
+    gi->scripts[gi->script_count++] = url;
   }
 
   for (char *p = html; (p = strcasestr(p, "<link")) != NULL; p += 5) {
@@ -383,6 +415,11 @@ static void detect_engine(GameInfo *gi) {
 static void toml_str(FILE *out, const char *s) {
   fputc('"', out);
   for (; *s; s++) {
+    // los saltos de linea y tabuladores como escapes de TOML (el codigo de
+    // un <script> los necesita); el resto de controles, fuera
+    if (*s == '\n') { fputs("\\n", out); continue; }
+    if (*s == '\t') { fputs("\\t", out); continue; }
+    if (*s == '\r') { fputs("\\r", out); continue; }
     if (*s == '"' || *s == '\\') fputc('\\', out);
     if ((unsigned char)*s < 0x20) continue;
     fputc(*s, out);
@@ -513,7 +550,7 @@ static void print_config(FILE *out, const char *dir, GameInfo *gi) {
   fprintf(out, "\n");
 }
 
-int init_generate(const char *dir) {
+int gen_config(const char *dir) {
   GameInfo gi;
   memset(&gi, 0, sizeof(gi));
 
@@ -521,10 +558,15 @@ int init_generate(const char *dir) {
   JSContext *ctx = rt ? JS_NewContext(rt) : NULL;
   if (!ctx) return 1;
 
+  // 0. un .html concreto (una pagina que no es index.html): ese
+  size_t dl = strlen(dir);
+  int html_file = file_exists(dir) && ((dl > 5 && strcasecmp(dir + dl - 5, ".html") == 0) ||
+                                       (dl > 4 && strcasecmp(dir + dl - 4, ".htm") == 0));
+  if (html_file) snprintf(gi.html, sizeof(gi.html), "%s", dir);
   // 1. package.json de nw.js en la carpeta o en www/
   char www[1024];
   join(www, sizeof(www), dir, "www");
-  if (!read_manifest(ctx, dir, &gi) && !read_manifest(ctx, www, &gi)) {
+  if (!html_file && !read_manifest(ctx, dir, &gi) && !read_manifest(ctx, www, &gi)) {
     // 2. sin manifiesto: index.html en la carpeta o en www/
     char p[1024];
     join(p, sizeof(p), dir, "index.html");
@@ -538,7 +580,7 @@ int init_generate(const char *dir) {
   JS_FreeRuntime(rt);
 
   if (!gi.html[0] || !file_exists(gi.html)) {
-    fprintf(stderr, "quixjs --gen-config: no index.html in %s (nor in %s/www)\n", dir, dir);
+    fprintf(stderr, "quixjs --gen-config: no index.html in %s (nor in %s/www), and it is not an .html file\n", dir, dir);
     return 1;
   }
   dir_of(gi.base, sizeof(gi.base), gi.html);

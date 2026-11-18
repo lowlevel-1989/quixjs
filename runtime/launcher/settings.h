@@ -1,5 +1,5 @@
 /*
- * QuixJS - A lightweight JS runtime using SDL2 and JavaScriptCore
+ * quixjs - A lightweight JS runtime using SDL2 and JavaScriptCore
  * Copyright (C) 2025  Vinicio Valbuena (lowlevel.1989)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -18,9 +18,9 @@
 
 #pragma once
 
-// Los ajustes que el jugador cambia en el lanzador (Options): se guardan en
+// Los ajustes que el jugador cambia en el launcher (Options): se guardan en
 // quixjs-settings.toml, junto al toml del juego, y valen tambien sin
-// lanzador.
+// launcher.
 //
 //   show_fps = true    el contador de fps arriba a la derecha (como --fps)
 //   profile  = true    el profiler: quixjs-profile.txt cada 10 s (como --profile)

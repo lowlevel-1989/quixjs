@@ -1,5 +1,5 @@
 /*
- * QuixJS - A lightweight JS runtime using SDL2 and JavaScriptCore
+ * quixjs - A lightweight JS runtime using SDL2 and JavaScriptCore
  * Copyright (C) 2025  Vinicio Valbuena (lowlevel.1989)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -32,8 +32,9 @@
 #include "document.h"
 #include "events.h"
 #include "image.h"
+#include "core/trace.h"
 
-typedef struct {
+typedef struct ImageData {
   Surface surface;
   int     loaded;
   int     fired;     // ya se envio el evento load (complete = true)
@@ -41,7 +42,23 @@ typedef struct {
   int     height;
   char   *src;
   unsigned gen;      // cambia con cada src: un resultado de un src anterior se descarta
+  int     nat_w;     // el tamano de la imagen (sigue igual si se sueltan sus pixeles)
+  int     nat_h;
+  int     used_2d;   // se dibujo en un canvas 2d: sus pixeles se quedan
+  int     uploaded;  // ya esta en una textura de WebGL
+  int     dropped;   // pixeles soltados (se decodifica otra vez si hace falta)
+  uint8_t *enc;      // la imagen sin decodificar si vino de un Blob (el Blob se puede revocar)
+  size_t  enc_len;
+  struct ImageData *prev, *next;   // todas las imagenes vivas
 } ImageData;
+
+// Una imagen que ya esta en una textura de WebGL y nunca se dibujo en 2d tiene
+// sus pixeles dos veces (en las portatiles la GPU usa la misma RAM). Cuando al
+// sistema le falta RAM, js_image_release_uploaded suelta los de la CPU de las
+// de este tamano o mas; si vuelven a hacer falta, se decodifican otra vez (eso
+// cuesta: por eso solo con poca RAM, no siempre)
+#define IMAGE_DROP_MIN_BYTES (128 * 1024)
+static ImageData *all_images;
 
 static JSClassID js_image_class_id;
 
@@ -50,7 +67,34 @@ static void js_image_finalizer(JSRuntime *rt, JSValue val) {
   if (!img) return;
   surface_free(&img->surface);
   free(img->src);
+  free(img->enc);
+  if (img->prev) img->prev->next = img->next;
+  else all_images = img->next;
+  if (img->next) img->next->prev = img->prev;
   js_free_rt(rt, img);
+}
+
+static double now_ms(void) {
+  struct timespec ts;
+  clock_gettime(CLOCK_MONOTONIC, &ts);
+  return ts.tv_sec * 1000.0 + ts.tv_nsec / 1e6;
+}
+
+static int image_decode(JSContext *ctx, ImageData *img, const char *src);
+
+// Los pixeles otra vez, si se soltaron (desde el Blob guardado o desde src)
+static int image_reload(JSContext *ctx, ImageData *img) {
+  if (!img->dropped) return 0;
+  double t = now_ms();
+  int r = img->enc ? image_load_memory(img->enc, img->enc_len, &img->surface)
+                   : (img->src ? image_decode(ctx, img, img->src) : -1);
+  if (r != 0) {
+    fprintf(stderr, "[Image] cannot decode again: %.120s\n", img->src ? img->src : "?");
+    return -1;
+  }
+  img->dropped = 0;
+  printf("[Image] decoded again (%.1f ms): %.120s\n", now_ms() - t, img->src ? img->src : "?");
+  return 0;
 }
 
 static JSClassDef js_image_class = {
@@ -61,36 +105,63 @@ static JSClassDef js_image_class = {
 const Surface *js_image_get_surface(JSContext *ctx, JSValueConst val) {
   ImageData *img = JS_GetOpaque(val, js_image_class_id);
   if (!img || !img->loaded) return NULL;
+  img->used_2d = 1;
+  if (image_reload(ctx, img) != 0) return NULL;
   return &img->surface;
+}
+
+const Surface *js_image_get_surface_gpu(JSContext *ctx, JSValueConst val) {
+  ImageData *img = JS_GetOpaque(val, js_image_class_id);
+  if (!img || !img->loaded) return NULL;
+  if (image_reload(ctx, img) != 0) return NULL;
+  return &img->surface;
+}
+
+void js_image_uploaded(JSContext *ctx, JSValueConst val) {
+  (void)ctx;
+  ImageData *img = JS_GetOpaque(val, js_image_class_id);
+  if (img && img->loaded) img->uploaded = 1;
+}
+
+size_t js_image_release_uploaded(int *count) {
+  size_t bytes = 0;
+  int n = 0;
+  for (ImageData *img = all_images; img; img = img->next) {
+    if (!img->loaded || !img->uploaded || img->used_2d || img->dropped || !img->surface.px) continue;
+    size_t b = (size_t)img->surface.w * (size_t)img->surface.h * 4;
+    if (b < IMAGE_DROP_MIN_BYTES) continue;
+    surface_free(&img->surface);
+    img->dropped = 1;
+    bytes += b;
+    n++;
+  }
+  if (count) *count = n;
+  return bytes;
 }
 
 // ---------- decodificar en segundo plano ----------
 //
-// Las imagenes de archivo o de Blob (las del juego) se decodifican en un hilo
-// aparte: un PNG grande son decenas de ms en una portatil, y en el hilo
-// principal eran una caida (aparece un enemigo, cambia el mapa). El hilo solo
-// toca bytes y pixeles; image_poll, en el hilo principal, pone la imagen como
+// Las imagenes de archivo o de Blob (las del juego) se decodifican en un thread
+// aparte: un PNG grande son decenas de ms en una portatil, y en el thread
+// principal eran una caida (aparece un enemigo, cambia el mapa). El thread solo
+// toca bytes y pixeles; image_poll, en el thread principal, pone la imagen como
 // cargada y lanza load. Las data: URIs (pequenas; PIXI las dibuja sin esperar
 // a load) siguen siendo inmediatas.
 
 typedef struct {
-  JSValue   obj;      // la imagen (no se toca fuera del hilo principal)
+  JSValue   obj;      // la imagen (no se toca fuera del thread principal)
   unsigned  gen;
   uint8_t  *data;     // los bytes (copia) o
   size_t    len;
   char     *path;     // el archivo (con su transformacion, si tiene: descifrar)
+  int       blob;     // data son los bytes de un Blob
   uint8_t  *px;       // el resultado
   int       w, h, ok;
   double    ms;
 } ImageJob;
 
-static double now_ms(void) {
-  struct timespec ts;
-  clock_gettime(CLOCK_MONOTONIC, &ts);
-  return ts.tv_sec * 1000.0 + ts.tv_nsec / 1e6;
-}
 
-// en el hilo de trabajo
+// en el thread de trabajo
 static void image_work(void *arg) {
   ImageJob *j = arg;
   double t = now_ms();
@@ -101,11 +172,16 @@ static void image_work(void *arg) {
   }
   j->ok = (j->data || j->path) && image_decode_pixels(j->data, j->len, j->path, &j->px, &j->w, &j->h) == 0;
   j->ms = now_ms() - t;
-  free(j->data);
-  j->data = NULL;
+  TRACE_END(t, 5.0, "image decode %dx%d (worker)", j->w, j->h);
+  // los bytes de un Blob se guardan (por si hay que decodificar otra vez);
+  // los de un archivo cifrado, no: se vuelve a leer el archivo
+  if (!j->blob) {
+    free(j->data);
+    j->data = NULL;
+  }
 }
 
-// en el hilo principal
+// en el thread principal
 static void image_done(JSContext *ctx, void *arg) {
   ImageJob *j = arg;
   ImageData *img = JS_GetOpaque(j->obj, js_image_class_id);
@@ -114,6 +190,14 @@ static void image_done(JSContext *ctx, void *arg) {
     if (j->ok) {
       surface_adopt(&img->surface, j->px, j->w, j->h);
       j->px = NULL;
+      img->nat_w = j->w;
+      img->nat_h = j->h;
+      if (j->blob) {
+        img->enc = j->data;
+        img->enc_len = j->len;
+        j->data = NULL;
+      }
+      JS_ReportExtraMemory(ctx, (size_t)j->w * (size_t)j->h * 4);
       img->loaded = 1;
       img->fired = 1;
       memstats_decode(j->ms);
@@ -127,6 +211,7 @@ static void image_done(JSContext *ctx, void *arg) {
   }
   free(j->px);
   free(j->path);
+  free(j->data);
   JS_FreeValue(ctx, j->obj);
   free(j);
 }
@@ -146,6 +231,7 @@ static int image_decode_async(JSContext *ctx, JSValueConst obj, ImageData *img, 
     }
     memcpy(j->data, data, len);   // el Blob se puede revocar antes de terminar
     j->len = len;
+    j->blob = 1;
   } else {
     char path[1024];
     int kind = url_resolve(app->cfg->game.game_dir, src, path, sizeof(path));
@@ -162,7 +248,7 @@ static int image_decode_async(JSContext *ctx, JSValueConst obj, ImageData *img, 
     free(j->data);
     free(j->path);
     free(j);
-    return 1;   // sin hilo: al momento
+    return 1;   // sin thread: al momento
   }
   return 0;
 }
@@ -187,6 +273,14 @@ static int image_decode(JSContext *ctx, ImageData *img, const char *src) {
       return r;
     }
     case URL_FILE:
+      if (url_has_transform(path)) {   // un archivo cifrado
+        size_t len = 0;
+        uint8_t *data = url_read_file_transformed(path, &len);
+        if (!data) return -1;
+        int r = image_load_memory(data, len, &img->surface);
+        free(data);
+        return r;
+      }
       return image_load_file(path, &img->surface);
     default:
       return -1;
@@ -222,6 +316,13 @@ static JSValue js_image_set_src(JSContext *ctx, JSValueConst this_val, JSValueCo
   img->src = strdup(src);
   surface_free(&img->surface);
   img->loaded = 0;
+  img->dropped = 0;
+  img->used_2d = 0;
+  img->uploaded = 0;
+  img->nat_w = img->nat_h = 0;
+  free(img->enc);
+  img->enc = NULL;
+  img->enc_len = 0;
 
   if (!*src) {
     JS_FreeCString(ctx, src);
@@ -239,6 +340,16 @@ static JSValue js_image_set_src(JSContext *ctx, JSValueConst this_val, JSValueCo
     // ya se puede dibujar (PIXI lo hace con data URIs sin esperar a load),
     // pero complete no es true hasta el evento load, como en el navegador
     img->loaded = 1;
+    img->nat_w = img->surface.w;
+    img->nat_h = img->surface.h;
+    if (strncmp(src, "blob:", 5) == 0) {
+      size_t len = 0;
+      const uint8_t *data = blob_lookup(src, &len);
+      if (data && (img->enc = malloc(len ? len : 1))) {
+        memcpy(img->enc, data, len);
+        img->enc_len = len;
+      }
+    }
     JSValue data[1] = { JS_DupValue(ctx, this_val) };
     JSValue fn = JS_NewCFunctionData(ctx, js_image_fire_load, 0, 0, 1, data);
     timer_set(ctx, fn, 0, 0, 0, NULL);
@@ -256,7 +367,7 @@ static JSValue js_image_set_src(JSContext *ctx, JSValueConst this_val, JSValueCo
 static JSValue js_image_get_size(JSContext *ctx, JSValueConst this_val, int magic) {
   ImageData *img = JS_GetOpaque2(ctx, this_val, js_image_class_id);
   if (!img) return JS_EXCEPTION;
-  int natural = magic == 0 || magic == 2 ? img->surface.w : img->surface.h;
+  int natural = magic == 0 || magic == 2 ? img->nat_w : img->nat_h;
   if (!img->loaded) natural = 0;
   if (magic == 0 && img->width >= 0) return JS_NewInt32(ctx, img->width);
   if (magic == 1 && img->height >= 0) return JS_NewInt32(ctx, img->height);
@@ -312,6 +423,9 @@ static JSValue image_new(JSContext *ctx, JSValueConst proto) {
   }
   img->width = -1;
   img->height = -1;
+  img->next = all_images;
+  if (all_images) all_images->prev = img;
+  all_images = img;
   JS_SetOpaque(obj, img);
 
   element_setup(ctx, obj, "img");

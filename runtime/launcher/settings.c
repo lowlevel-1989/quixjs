@@ -1,5 +1,5 @@
 /*
- * QuixJS - A lightweight JS runtime using SDL2 and JavaScriptCore
+ * quixjs - A lightweight JS runtime using SDL2 and JavaScriptCore
  * Copyright (C) 2025  Vinicio Valbuena (lowlevel.1989)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -73,7 +73,7 @@ int settings_save(const Settings *s, const char *config_path) {
     fprintf(stderr, "[settings] cannot write %s\n", path);
     return -1;
   }
-  fprintf(f, "# quixjs-settings.toml: lo que se cambia en el lanzador (Options)\n");
+  fprintf(f, "# quixjs-settings.toml: lo que se cambia en el launcher (Options)\n");
   fprintf(f, "show_fps = %s\n", s->show_fps ? "true" : "false");
   fprintf(f, "profile  = %s\n", s->profile ? "true" : "false");
   if (s->fullscreen) fprintf(f, "fullscreen = true\n");
