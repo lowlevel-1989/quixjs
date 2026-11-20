@@ -1,0 +1,8 @@
+# big-text: el texto mas grande en los dialogos y los menus (en la pantalla
+# de 640x480 de muchas handhelds el juego, de 960x720, se ve a dos
+# tercios). Ver README.md.
+scripts = ["windows.js"]   # que ventanas y cuanto
+
+[hooks]
+"Window_Base.prototype.resetFontSettings" = "font.js"   # el tamano de la letra
+"Game_System.prototype.wordWrap"          = "wrap.js"   # los dialogos, ajustados

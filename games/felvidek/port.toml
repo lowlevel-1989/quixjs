@@ -1,0 +1,98 @@
+# port.toml: el port de Felvidék a quixjs.
+#
+# Es el archivo que describe el juego: quixjs -c port.toml. La primera parte
+# ([engine], [game], [saves], [fonts], [scripts]) salio de quixjs
+# --gen-config sobre Felvidék 1.04 (GOG), revisada a mano. Sirve en cualquier
+# sitio donde corre quixjs, con el juego copiado en gamedata/. [portmaster]
+# es lo que pide PortMaster (make PLATFORM=portmaster PORT=felvidek genera con
+# ella su port.json, su gameinfo.xml y el script .sh del port).
+#
+# [game] title es el de su data/System.json ("Felvidek", sin tilde: la app
+# de Android reconoce asi el juego de un .zip); el de PortMaster lleva tilde.
+
+[engine]
+name    = "rpgmaker-mv"
+version = "1.6.1"
+pixi    = "4.5.4"
+nwjs    = true   # package.json de nw.js: require('fs'), process...
+# en una portatil, 30 imagenes por segundo (RPG Maker sigue con 60 pasos)
+fps     = 30
+# como Fear & Hunger: el GC antes, el heap no crece de mas (1 GB de RAM)
+js_memory = 128
+
+[engine.pc]
+fps = 60
+
+[game]
+title     = "Felvidek"
+version   = "0.1.0"           # la del port
+id        = "felvidek"
+game_dir  = "gamedata/www"    # la carpeta www/ del juego, copiada en gamedata/
+cache_dir = "cache/gamedata"
+# el juego cambia la pantalla a 960x720 (package.json dice 816x624)
+width     = 960
+height    = 720
+mods      = ["big-text"]   # mods/: big-text (el texto de las ventanas mas grande) viene activo
+developer = "Jan Malík"
+genres    = ["rpg"]
+desc      = "Felvidek (RPG Maker MV) running on quixjs, a JS runtime in C with SDL2 and OpenGL ES 2."
+
+[saves]
+dir   = "save"
+files = ["*.rpgsave"]
+
+# fuentes de los @font-face de su CSS
+[fonts]
+"GameFont" = "fonts/ArgestaHeadline-Regular.otf"
+
+# los <script> del index.html, en el mismo orden
+[scripts]
+libs     = [
+  "js/libs/pixi.js",
+  "js/libs/pixi-tilemap.js",
+  "js/libs/pixi-picture.js",
+  "js/libs/fpsmeter.js",
+  "js/libs/lz-string.js",
+  "js/libs/iphone-inline-video.browser.js"
+]
+includes = [
+  "js/rpg_core.js",
+  "js/rpg_managers.js",
+  "js/rpg_objects.js",
+  "js/rpg_scenes.js",
+  "js/rpg_sprites.js",
+  "js/rpg_windows.js",
+  "js/plugins.js"
+]
+entry    = "js/main.js"
+
+# ---------- PortMaster ----------
+[portmaster]
+title        = "Felvidék"
+script       = "Felvidek.sh"
+porter       = ["lowlevel.1989"]
+inst         = "Needs Felvidek for Windows (GOG or Steam). Copy its folder www/ into ports/felvidek/gamedata/ (it must end up as gamedata/www/). Game.exe and the .dll files are not needed."
+store        = { name = "GOG", url = "https://www.gog.com/game/felvidek" }
+availability = "paid"
+
+# ---------- hooks ----------
+# Los de RPG Maker MV (runtime/engines/rpgmaker-mv/hooks.toml)
+[hooks]
+engine = "rpgmaker-mv"
+
+[controls]
+gamepad = true
+
+# los botones que usa el juego, con los nombres de su GamepadConfig: Controls
+# los pide por su nombre (y siempre las dos palancas)
+[controls.buttons]
+dpup    = "Move up"
+dpdown  = "Move down"
+dpleft  = "Move left"
+dpright = "Move right"
+a       = "OK / Talk"
+b       = "Cancel"
+x       = "Dash"
+y       = "Menu"
+l1      = "Previous (menu)"
+r1      = "Next (menu)"

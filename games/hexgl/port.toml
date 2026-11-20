@@ -1,0 +1,100 @@
+# port.toml: el port de HexGL a quixjs.
+#
+# Es el archivo que describe el juego: quixjs -c port.toml. HexGL es libre
+# (https://github.com/BKcore/HexGL), pero no va en el port: el jugador lo
+# baja de su GitHub y copia su carpeta en gamedata/ (README.md).
+#
+# Su menu es HTML (index.html y launch.js): quixjs no dibuja HTML. El del
+# port es menu.js, en un canvas, junto a este archivo; los demas scripts son
+# los <script> del index.html, en el mismo orden (sin los que no se usan:
+# Google Analytics, Leap Motion, Stats y DAT.GUI).
+
+[engine]
+name    = "html5"
+nwjs    = false
+fps     = 60
+
+[game]
+title     = "HexGL"
+version   = "0.1.0"           # la del port
+id        = "hexgl"
+game_dir  = "gamedata"
+cache_dir = "cache/gamedata"
+# 4:3 como la pantalla de muchas portatiles; HexGL dibuja al tamano de la
+# ventana (window.innerWidth/innerHeight)
+width     = 640
+height    = 480
+mods      = ["volume", "multiplayer"]   # mods/, activos: volume (Music y Effects en el
+                                      # menu) y multiplayer (carreras entre handhelds)
+developer = "Thibaut Despoulain (BKcore)"
+releasedate = "20121101T000000"
+genres    = ["racing"]
+desc      = "HexGL, the futuristic racing game, running on quixjs, a JS runtime in C with SDL2 and OpenGL ES 2."
+
+# la fuente del HUD y del menu (css/fonts.css)
+[fonts]
+"BebasNeueRegular" = "css/BebasNeue-webfont.ttf"
+
+[scripts]
+libs     = [
+  "libs/Three.dev.js",
+  "libs/ShaderExtras.js",
+  "libs/postprocessing/EffectComposer.js",
+  "libs/postprocessing/RenderPass.js",
+  "libs/postprocessing/BloomPass.js",
+  "libs/postprocessing/ShaderPass.js",
+  "libs/postprocessing/MaskPass.js",
+  "libs/Detector.js"
+]
+includes = [
+  "bkcore.coffee/controllers/TouchController.js",
+  "bkcore.coffee/controllers/OrientationController.js",
+  "bkcore.coffee/controllers/GamepadController.js",
+  "bkcore.coffee/Timer.js",
+  "bkcore.coffee/ImageData.js",
+  "bkcore.coffee/Utils.js",
+  "bkcore/threejs/RenderManager.js",
+  "bkcore/threejs/Shaders.js",
+  "bkcore/threejs/Particles.js",
+  "bkcore/threejs/Loader.js",
+  "bkcore/Audio.js",
+  "bkcore/hexgl/HUD.js",
+  "bkcore/hexgl/RaceData.js",
+  "bkcore/hexgl/ShipControls.js",
+  "bkcore/hexgl/ShipEffects.js",
+  "bkcore/hexgl/CameraChase.js",
+  "bkcore/hexgl/Gameplay.js",
+  "bkcore/hexgl/tracks/Cityscape.js",
+  "bkcore/hexgl/HexGL.js"
+]
+entry    = "../menu.js"   # games/hexgl/menu.js (en el zip, junto a port.toml)
+
+[controls]
+gamepad = true
+
+# los botones de HexGL (bkcore.coffee/controllers/GamepadController.js); la
+# cruceta gira igual que la palanca (menu.js)
+[controls.buttons]
+dpleft       = "Turn left"
+dpright      = "Turn right"
+a            = "Accelerate"
+lefttrigger  = "Air brake left"
+righttrigger = "Air brake right"
+
+# el truco de la opcion Cheats (HexGL no tiene logros: se aplica sin mas)
+[symbols]
+shield_damage = "path:hexGL.components.shipControls.shieldDamage"
+
+[[cheat]]
+id          = "no_damage"
+name        = "No damage"
+description = "Crashes do not take shield: the ship is never destroyed."
+set         = { shield_damage = 0 }
+
+# ---------- PortMaster ----------
+[portmaster]
+script       = "HexGL.sh"
+porter       = ["lowlevel.1989"]
+inst         = "Needs HexGL, free: download https://github.com/BKcore/HexGL/archive/refs/heads/master.zip, unzip it and copy what is inside its folder HexGL-master/ into ports/hexgl/gamedata/ (it must end up as gamedata/bkcore/, gamedata/textures/...)."
+store        = { name = "GitHub", url = "https://github.com/BKcore/HexGL" }
+availability = "free"

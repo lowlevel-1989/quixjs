@@ -1,8 +1,8 @@
-# quixjs 0.3.0
+# quixjs 0.4.0
 
 English | [Español](README.es.md)
 
-quixjs runs JavaScript games (RPG Maker MV, PixiJS v4, vanilla JS) on Linux
+quixjs runs JavaScript games (RPG Maker MV and MZ, PixiJS v4, three.js, vanilla JS) on Linux
 handhelds, without a browser and without X11. It uses JavaScriptCore, SDL2 and
 OpenGL ES 2, and the browser APIs the games need are written in C.
 
@@ -20,6 +20,10 @@ the player copies them from their own copy.
 | port | engine | how to install it |
 |------|--------|-------------------|
 | Fear & Hunger 1.4.1 | RPG Maker MV | [games/fearandhunger](games/fearandhunger/README.md) |
+| Firework | RPG Maker MV | [games/firework-shiying](games/firework-shiying/README.md) |
+| Look Outside | RPG Maker MZ | [games/lookoutside](games/lookoutside/README.md) |
+| Felvidék | RPG Maker MV | [games/felvidek](games/felvidek/README.md) |
+| HexGL (races between handhelds on the same network) | three.js | [games/hexgl](games/hexgl/README.md) |
 
 ## Play a game on Linux
 
@@ -49,6 +53,7 @@ Using a toml file to configure each game is inspired by bogodroid
 | [JavaScript engine](docs/javascript-engine.md) | why JavaScriptCore |
 | [Benchmark](docs/benchmark.md) | h5bench (`make bench`) and how to profile a game |
 | [Code](runtime/README.md) | what each folder and file of the runtime does |
+| [The JS inside quixjs](docs/embedded-js.md) | how the `.js` files of quixjs go into the binary and who runs them; adding one |
 | [Changes](CHANGELOG) | what changed in each version |
 
 ## Thanks
@@ -58,6 +63,11 @@ Using a toml file to configure each game is inspired by bogodroid
 - [Knifethrower](https://github.com/Knifethrower): for sharing
   [h5bench](https://github.com/Knifethrower/h5bench), the benchmark of HTML5
   runtimes
+- KADOKAWA: the core of RPG Maker MV is MIT
+  ([corescript](https://github.com/rpgtkoolmv/corescript)); the RPG Maker MV
+  hooks reproduce parts of it, and of some plugins (Yanfly, Fallen Angel
+  Olivia, Terrax, Tor Damian Design): the
+  [references](runtime/engines/rpgmaker-mv/README.md#references)
 
 ## License
 

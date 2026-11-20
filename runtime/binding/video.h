@@ -19,7 +19,7 @@
 #pragma once
 
 // __quixVideo: lo nativo del elemento <video> (el resto, en JS, esta en
-// polyfill.c). Los videos que suenan se decodifican una vez por imagen
+// polyfill/media.js). Los videos que suenan se decodifican una vez por imagen
 // (video_tick) y el visible se muestra encima de los canvas.
 
 #include "js/js.h"

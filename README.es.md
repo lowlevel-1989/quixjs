@@ -1,8 +1,8 @@
-# quixjs 0.3.0
+# quixjs 0.4.0
 
 [English](README.md) | Español
 
-quixjs ejecuta juegos de JavaScript (RPG Maker MV, PixiJS v4, JS sin motor) en
+quixjs ejecuta juegos de JavaScript (RPG Maker MV y MZ, PixiJS v4, three.js, JS sin motor) en
 portatiles con Linux, sin navegador y sin X11. Usa JavaScriptCore, SDL2 y
 OpenGL ES 2, y las APIs del navegador que necesitan los juegos estan escritas
 en C.
@@ -21,6 +21,10 @@ juego no van incluidos: el jugador los copia de su propia copia.
 | port | motor | como instalarlo |
 |------|-------|-----------------|
 | Fear & Hunger 1.4.1 | RPG Maker MV | [games/fearandhunger](games/fearandhunger/README.es.md) |
+| Firework | RPG Maker MV | [games/firework-shiying](games/firework-shiying/README.es.md) |
+| Look Outside | RPG Maker MZ | [games/lookoutside](games/lookoutside/README.es.md) |
+| Felvidék | RPG Maker MV | [games/felvidek](games/felvidek/README.es.md) |
+| HexGL (carreras entre handhelds de la misma red) | three.js | [games/hexgl](games/hexgl/README.es.md) |
 
 ## Jugar un juego en Linux
 
@@ -50,6 +54,7 @@ Usar un archivo toml para configurar cada juego esta inspirado en bogodroid
 | [Motor de JavaScript](docs/javascript-engine.es.md) | por que JavaScriptCore |
 | [Benchmark](docs/benchmark.es.md) | h5bench (`make bench`) y como perfilar un juego |
 | [Codigo](runtime/README.es.md) | que hace cada carpeta y archivo del runtime |
+| [El JS dentro de quixjs](docs/embedded-js.es.md) | como van al binario los `.js` de quixjs y quien los ejecuta; agregar uno |
 | [Cambios](CHANGELOG) | que cambio en cada version |
 
 ## Gracias
@@ -59,6 +64,11 @@ Usar un archivo toml para configurar cada juego esta inspirado en bogodroid
 - [Knifethrower](https://github.com/Knifethrower): por compartir
   [h5bench](https://github.com/Knifethrower/h5bench), el benchmark de
   runtimes de HTML5
+- KADOKAWA: el nucleo de RPG Maker MV es MIT
+  ([corescript](https://github.com/rpgtkoolmv/corescript)); los hooks de RPG
+  Maker MV reproducen partes de el, y de algunos plugins (Yanfly, Fallen Angel
+  Olivia, Terrax, Tor Damian Design): las
+  [referencias](runtime/engines/rpgmaker-mv/README.es.md#referencias)
 
 ## Licencia
 

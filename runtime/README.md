@@ -53,11 +53,11 @@ core/main (main loop) --present--> backend/ (sdl: window, keys, pads | dummy: no
 |---------------|--------------|
 | `core/`       | main loop, options, config, script loading, clock and timers, keys, urls ([README](core/README.md)) |
 | `gfx/`        | drawing by software, without JS: surfaces, colors, paths, images, fonts; GL for WebGL ([README](gfx/README.md)) |
-| `js/`         | the engine layer: the API the bindings use, on top of the C API of JavaScriptCore (`js.h`, `js_jsc.c`) |
+| `js/`         | the engine layer: the API the bindings use, on top of the C API of JavaScriptCore (`js.h`, `jsc/`) |
 | `binding/`    | the browser APIs for JS (classes and functions on `js/js.h`) ([README](binding/README.md)) |
 | `binding/canvas/2d/` | CanvasRenderingContext2D, one file per topic ([README](binding/canvas/2d/README.md)) |
 | `audio/`      | audio mixer: ogg vorbis decoded while it plays, and the audio stream of a video ([README](audio/README.md)) |
-| `video/`      | WebM video for `<video>`: nestegg, libvpx (VP8/VP9) and libopus ([README](video/README.md)) |
+| `video/`      | WebM and MP4 video for `<video>`: nestegg, libvpx (VP8/VP9) and libopus; minimp4 and FFmpeg (H.264, AAC) ([README](video/README.md)) |
 | `hooks/`      | `[hooks]` of the toml of the game: change how a function of the game runs (`gpu-canvas`, `skip`, `once-per-frame`, engine hooks, `engine = "rpgmaker-mv"`) ([README](hooks/README.md)) |
 | `engines/`    | the engine hooks (RPG Maker MV...): `.js` files embedded in the binary and their natives in C ([README](engines/README.md)) |
 | `shaders/`    | the GLSL shaders, embedded in the binary at build time ([README](shaders/README.md)) |
@@ -65,10 +65,11 @@ core/main (main loop) --present--> backend/ (sdl: window, keys, pads | dummy: no
 | `platform/`   | what depends on the operating system: memory, default font, local network, user ([README](platform/README.md)) |
 | `launcher/`   | launcher menu (`--launcher`): play, achievements, transfer save, controls, options, cheats (inherited from tamatama) ([README](launcher/README.md)) |
 | `transfer/`   | Transfer Save: send saves to another device on the same network (inherited from tamatama) ([README](transfer/README.md)) |
+| `lan/`        | the local network for games (`quix.lan`): the devices with the same game and short messages between them, over the network of Transfer Save ([README](lan/README.md)) |
 | `achievements/` | achievements for ports, defined in the toml of the game ([README](achievements/README.md)) |
 | `symbols/`    | `[symbols]`: names for the state of the game, read by the achievements and written by the cheats ([README](symbols/README.md)) |
 | `cheats/`     | cheats for ports (`[[cheat]]`), turned on in the launcher; a playthrough with cheats gets no achievements ([README](cheats/README.md)) |
-| `thirdparty/` | code from other projects: tomlc17 and stb (stb_vorbis, stb_easy_font), not modified; nestegg; and `webkit/` (JavaScriptCore, built apart by `tools/build-jsc.sh`, [README](thirdparty/webkit/README.md)) |
+| `thirdparty/` | code from other projects: tomlc17 and stb (stb_vorbis, stb_easy_font), not modified; nestegg; and `webkit/` (JavaScriptCore, built apart by `tools/build-jsc.sh`, [README](thirdparty/webkit/README.md)); what each library is used for ([README](thirdparty/README.md)) |
 | `thirdparty/nestegg/` | nestegg from Mozilla: reads WebM files; built only with video (`VERSION` has its commit) |
 
 ## Files
@@ -77,7 +78,7 @@ The main files. The README of each folder has the rest.
 
 | file                        | what it does |
 |-----------------------------|--------------|
-| `core/main.c`               | start, main loop, input to KeyboardEvent, composition of the screen, screenshot, exit code |
+| `core/main.c`               | `main()`: start, main loop, exit code; the steps are in `core/main/` (index file) |
 | `core/args.c`               | command line options |
 | `core/config_loader.c`      | reads the toml of the game |
 | `core/compiler.c`           | reads the scripts and checks their syntax |
@@ -107,9 +108,9 @@ The main files. The README of each folder has the rest.
 | `binding/navigator.c`       | navigator and getGamepads |
 | `binding/quix.c`            | the `quix` object (exit, pressKey, fonts, achievements...) |
 | `binding/console.c`         | `console` and `print` |
-| `binding/webgl.c`           | WebGL 1 on OpenGL ES 2.0 |
+| `binding/webgl.c`           | WebGL 1 on OpenGL ES 2.0 (joins the parts of `binding/webgl/`) |
 | `binding/nwjs.c`            | nw.js mode: `require('fs')`, `process`... |
-| `binding/polyfill.c`        | APIs written in JS: console aliases, localStorage, FontFace, document.fonts, `<video>`... |
+| `binding/polyfill.c`        | runs the APIs written in JS (`binding/polyfill/*.js`: console aliases, localStorage, FontFace, document.fonts, `<video>`...) |
 | `binding/video.c`           | `__quixVideo`: the videos of `<video>` and the one on screen |
 | `binding/canvas/2d/context2d.c` | the context class and its list of methods |
 | `binding/canvas/2d/state.c` | save / restore |
@@ -120,7 +121,7 @@ The main files. The README of each folder has the rest.
 | `binding/canvas/2d/image.c` | drawImage, ImageData |
 | `binding/canvas/2d/text.c`  | font, measureText, fillText |
 | `backend/backend.c`         | common backend interface and input queue |
-| `backend/sdl/backend.c`     | SDL window, keyboard, gamepads, present |
+| `backend/sdl.c`             | SDL window, keyboard, gamepads, present (joins the parts of `backend/sdl/`) |
 | `backend/sdl/mapper.c`      | Controls of the launcher: map the buttons of a gamepad |
 | `backend/dummy/backend.c`   | no window: keeps the last frame |
 | `hooks/hooks.c`             | reads `[hooks]` and wraps the functions of the game when they exist |

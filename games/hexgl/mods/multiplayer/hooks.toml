@@ -1,0 +1,13 @@
+# multiplayer: carreras entre handhelds de la misma red; las naves de los
+# demas son fantasmas. Ver README.md.
+#
+# Los scripts corren en orden, una vez; despues el hook pone la opcion
+# Multiplayer en el menu del port (menu.js).
+scripts = [
+  "net.js",       # la red: quien esta, la salida y los tiempos
+  "ghosts.js",    # las naves de los demas
+  "screens.js",   # la sala, los resultados y la carrera
+]
+
+[hooks]
+"PortMenu.items" = "option.js"

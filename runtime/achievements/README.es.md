@@ -85,7 +85,7 @@ a leer (`ach_reload`), así el siguiente logro no pisa los que han llegado.
 ## Dentro del juego
 
 En RPG Maker MV el hook `rpgmaker-mv/achievements-menu` (de los del motor)
-añade una opción "Achievements" al menú del juego: la lista, la fecha de los
+agrega una opción "Achievements" al menú del juego: la lista, la fecha de los
 conseguidos y la descripción. Su icono es uno del IconSet:
 
 ```

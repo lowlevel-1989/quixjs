@@ -22,6 +22,7 @@
 #include <string.h>
 #include "context2d.h"
 #include "backend/backend.h"
+#include "binding/image.h"
 
 static JSValue imagedata_proto = { 0 };
 static int     imagedata_ready = 0;
@@ -140,8 +141,12 @@ JSValue js_ctx2d_drawImage(JSContext *ctx, JSValueConst this_val, int argc, JSVa
   if (r < 0) return JS_EXCEPTION;
   if (r > 0) return JS_UNDEFINED;
 
-  double sx = 0, sy = 0, sw = src->w, sh = src->h;
-  double dx, dy, dw = src->w, dh = src->h;
+  // el tamano para el juego: el de una imagen reducida ([game] image_scale)
+  // es el de siempre, y sus pixeles, menos
+  int lw = src->w, lh = src->h;
+  js_image_natural_size(ctx, argv[0], &lw, &lh);
+  double sx = 0, sy = 0, sw = lw, sh = lh;
+  double dx, dy, dw = lw, dh = lh;
   if (argc == 3) {
     dx = v[0]; dy = v[1];
   } else if (argc == 5) {
@@ -149,6 +154,15 @@ JSValue js_ctx2d_drawImage(JSContext *ctx, JSValueConst this_val, int argc, JSVa
   } else {
     sx = v[0]; sy = v[1]; sw = v[2]; sh = v[3];
     dx = v[4]; dy = v[5]; dw = v[6]; dh = v[7];
+  }
+
+  if (lw != src->w || lh != src->h) {
+    // el rectangulo de origen, a los pixeles de la imagen reducida
+    double kx = (double)src->w / lw, ky = (double)src->h / lh;
+    sx *= kx;
+    sw *= kx;
+    sy *= ky;
+    sh *= ky;
   }
 
   DrawParams dp;

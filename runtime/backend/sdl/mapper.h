@@ -24,7 +24,14 @@
 #include <SDL2/SDL.h>
 #include <stddef.h>
 
-void mapper_load(const char *path);         // controller.map, al arrancar
+void mapper_load(const char *path);         // controller.map, antes de SDL_Init
+void mapper_reload(const char *path);       // despues de guardar (CAPTURE_STOP)
+int  mapper_from_file(SDL_JoystickGUID guid); // ese mando tiene linea en controller.map?
 void mapper_event(const SDL_Event *e);      // cada evento, mientras se asigna
 int  mapper_capture(int step, char *out, size_t room);
+// pairs: "a:b0,dpup:h0.1,..." (controller.map) y, con @ delante, las
+// acciones de [controls.keys] ("@Torch:b11"), que van a controller.keys
 int  mapper_save(const char *path, const char *pairs);
+// [controls.keys]: con cada evento de un mando, las acciones de
+// controller.keys que pulsa (down 1) o suelta (down 0)
+void mapper_key_event(const SDL_Event *e, void (*cb)(void *ctx, const char *name, int down), void *ctx);

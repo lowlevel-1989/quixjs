@@ -11,8 +11,10 @@ are not part of the runtime.
 | `portmaster.py` | makes the files PortMaster asks for from `games/<port>/port.toml`: the `.sh` script of the port (from `portmaster/portmaster.sh`), `port.json` and `gameinfo.xml`; it merges `[portmaster]` (PortMaster only) over `[game]` (`title`, `id`, `developer`, `genres`, `desc`): `[portmaster]` wins when both have a key; used by `make PLATFORM=portmaster` |
 | `build-jsc.sh` | builds JavaScriptCore as a static library, for the PC (`host`) or for the handhelds against Debian buster (aarch64, armhf), with libc++ and ICU; `make` runs it when it is missing |
 | `embed_engines.py` | puts the hooks of `runtime/engines/<engine>/*.js` (and its `hooks.toml`) in the binary, in `obj/gen/engines.h`; run by the `Makefile` ([engines](../runtime/engines/README.md)) |
+| `embed_js.py` | puts the JS of quixjs (`runtime/binding/*.js`, `polyfill/`, `core/profiler.js`, `engines/same-code.js`) in the binary as C strings, in `obj/gen/`; run by the `Makefile`. Why: the JS is edited as JS and quixjs stays a single program ([the JS inside quixjs](../docs/embedded-js.md)) |
 | `embed_shaders.py` | turns `runtime/shaders/*.vert` and `*.frag` into C strings in `obj/gen/shaders.h`; run by the `Makefile` before compiling ([shaders](../runtime/shaders/README.md)) |
 | `h5bench.sh` | `make bench`: runs h5bench (JavaScript, WebGL, canvas 2d, memory) with quixjs, results in `results/h5bench/` ([benchmark](../docs/benchmark.md)) |
+| `rpgmaker_mv_model.py` | gets an original function of a RPG Maker MV game (or MZ: `rmmz_*.js` and its PixiJS), as it is, for the `MODEL` of a hook ([Adding a hook](../runtime/engines/rpgmaker-mv/README.md#adding-a-hook)) |
 | `gen_gl.py`  | generates `runtime/gfx/gl_funcs.h` (OpenGL ES 2.0 functions) and `runtime/binding/webgl_constants.h` (WebGL 1 constants) from the GLES2 header of SDL2 |
 
 ## console.py

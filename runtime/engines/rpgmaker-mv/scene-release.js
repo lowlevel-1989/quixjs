@@ -20,9 +20,15 @@
 // Uso (config.toml o port.toml):
 //   [hooks]
 //   "Scene_Base.prototype.terminate" = "rpgmaker-mv/scene-release"
+//
+// El archivo es una funcion que recibe la original y devuelve la nueva. La
+// llama runtime/hooks/hooks.c (hooks_install) al instalar el hook, cuando el
+// juego ya cargo sus scripts. Ver runtime/engines/README.md.
 function (original) {
   if (typeof PIXI !== 'object' || !PIXI.DisplayObject) return original;
-  var isDisplay = function (v) { return v instanceof PIXI.DisplayObject; };
+  var isDisplay = function (v) {
+    return v instanceof PIXI.DisplayObject;
+  };
   // los niveles de la pila de filtros por encima del que esta en uso
   var clearFilterStack = function (fd) {
     if (!fd || !Array.isArray(fd.stack)) return;
@@ -37,7 +43,8 @@ function (original) {
   };
   return function () {
     var r = original.apply(this, arguments);
-    var renderer = typeof Graphics === 'function' || typeof Graphics === 'object' ? Graphics._renderer : null;
+    var renderer =
+      typeof Graphics === 'function' || typeof Graphics === 'object' ? Graphics._renderer : null;
     if (renderer) {
       var plugins = renderer.plugins || {};
       Object.keys(plugins).forEach(function (k) {
@@ -53,7 +60,11 @@ function (original) {
     var globals = Object.keys(globalThis);
     for (var j = 0; j < globals.length; j++) {
       var o;
-      try { o = globalThis[globals[j]]; } catch (e) { continue; }
+      try {
+        o = globalThis[globals[j]];
+      } catch (e) {
+        continue;
+      }
       if (!isDisplay(o)) continue;
       while (o.parent) o = o.parent;
       if (o === scene) globalThis[globals[j]] = null;

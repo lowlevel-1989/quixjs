@@ -45,8 +45,25 @@
 
 // Lee [hooks]. Devuelve cuantos hay, o -1 si alguno esta mal escrito.
 int  hooks_load(const char *config_path);
+// Los hooks de los mods activos (despues de hooks_load): mods/<nombre>/
+// hooks.toml, con la ruta de la funcion y un archivo .js del mod, como los de
+// motor (una funcion que recibe la original y devuelve la nueva):
+//
+//   scripts = ["net.js"]                   # opcional: corren antes, en orden
+//   [hooks]
+//   "BattleManager.setup" = "rumble.js"    # mods/<nombre>/rumble.js
+//
+// Los scripts son el resto del codigo del mod (lo que comparten sus hooks):
+// corren una vez, la primera vez que se ponen hooks. Van encima de los del juego y del motor en la misma ruta. Devuelve cuantos
+// agrego, o -1 si alguno esta mal escrito o no se puede leer.
+int  hooks_load_mods(const char *root, const char (*names)[64], int n);
 // Las funciones nativas que usan los hooks (__quixGpuScope)
 void hooks_add_api(JSContext *ctx);
+// __quixEngine.lib(nombre): el modulo runtime/engines/lib/<nombre>.js (un
+// archivo que es una funcion y devuelve lo que exporta), evaluado la primera
+// vez que se pide y el mismo despues; undefined si no existe. La pone
+// engine_api.c en __quixEngine
+JSValue hooks_lib_function(JSContext *ctx);
 // Pone los que aun no estan; 1 cuando estan todos
 int  hooks_install(JSContext *ctx);
 int  hooks_pending(void);

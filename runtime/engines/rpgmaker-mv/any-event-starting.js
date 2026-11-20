@@ -21,31 +21,63 @@
 // Solo se usa si events() e isStarting() son los de RPG Maker MV y nadie mas
 // define _starting; si no, la original.
 //
+// Referencias (el codigo que reproduce o reescribe; gracias a sus autores):
+//   nucleo de RPG Maker MV (corescript, KADOKAWA, MIT), commit 182e314:
+//   https://github.com/rpgtkoolmv/corescript/blob/182e31449707ba7e406db0485c44c2a9d11e2dcd/js/rpg_objects/Game_Event.js#L153-L155 (isStarting)
+//   https://github.com/rpgtkoolmv/corescript/blob/182e31449707ba7e406db0485c44c2a9d11e2dcd/js/rpg_objects/Game_Map.js#L163-L167 (events)
+//
 // Uso (config.toml o port.toml):
 //   [hooks]
 //   "Game_Map.prototype.isAnyEventStarting" = "rpgmaker-mv/any-event-starting"
 //
-// El archivo es una funcion que recibe la original y devuelve la nueva.
+// El archivo es una funcion que recibe la original y devuelve la nueva. La
+// llama runtime/hooks/hooks.c (hooks_install) al instalar el hook, cuando el
+// juego ya cargo sus scripts. Ver runtime/engines/README.md.
 function (original) {
-  var ready = null;          // se mira la primera vez (ya con los plugins)
+  // MODEL: las funciones que espera el hook, tal cual (las de RPG Maker MV o
+  // las del plugin; ver Referencias arriba), copiadas del juego con
+  // tools/rpgmaker_mv_model.py. No se ejecutan: son el modelo con el que se
+  // compara.
+  var MODEL = {
+    'Game_Event.isStarting': function() {
+        return this._starting;
+    },
+    'Game_Map.events': function() {
+        return this._events.filter(function(event) {
+            return !!event;
+        });
+    }
+  };
+  // sameCode (runtime/engines/same-code.js): la funcion del juego es igual que
+  // el modelo, sin contar espacios? Si un plugin la cambio, el hook deja la
+  // suya y no hace nada
+  var sameCode = __quixEngine.sameCode;
+  var ready = null; // se mira la primera vez (ya con los plugins)
   var mvEvents = null;
-  var starting = new Set();  // los eventos con _starting puesto
-  var lastList = null, lastLen = -1;
-  function src(f) { return String(f).replace(/\s+/g, ''); }
+  var starting = new Set(); // los eventos con _starting puesto
+  var lastList = null,
+    lastLen = -1;
 
   function prepare() {
     var E = typeof Game_Event === 'function' && Game_Event.prototype;
-    if (!E || src(E.isStarting) !== 'function(){returnthis._starting;}') return false;
+    if (!E || !sameCode(E.isStarting, MODEL['Game_Event.isStarting'])) return false;
     if (Object.getOwnPropertyDescriptor(E, '_starting')) return false;
     mvEvents = Game_Map.prototype.events;
     // events-cached devuelve lo mismo que el de RPG Maker: se mira su original
-    var base = mvEvents && mvEvents.__quixHook === 'rpgmaker-mv/events-cached' && mvEvents.__quixOriginal ?
-      mvEvents.__quixOriginal : mvEvents;
-    if (src(base) !== 'function(){returnthis._events.filter(function(event){return!!event;});}') return false;
+    var base =
+      mvEvents && mvEvents.__quixHook === 'rpgmaker-mv/events-cached' && mvEvents.__quixOriginal
+        ? mvEvents.__quixOriginal
+        : mvEvents;
+    if (!sameCode(base, MODEL['Game_Map.events'])) return false;
     Object.defineProperty(E, '_starting', {
       configurable: true,
-      get: function () { return starting.has(this); },
-      set: function (v) { if (v) starting.add(this); else starting.delete(this); }
+      get: function () {
+        return starting.has(this);
+      },
+      set: function (v) {
+        if (v) starting.add(this);
+        else starting.delete(this);
+      }
     });
     return true;
   }
@@ -64,10 +96,12 @@ function (original) {
 
   // el recorrido de starting, definido una vez (una funcion nueva en cada
   // llamada era basura para el GC)
-  var found = false, current = null;
+  var found = false,
+    current = null;
   function check(e) {
     if (current[e._eventId] === e) found = true;
-    else if (current.indexOf(e) < 0) starting.delete(e);   // de otro mapa
+    else if (current.indexOf(e) < 0)
+      starting.delete(e); // de otro mapa
     else found = true;
   }
 

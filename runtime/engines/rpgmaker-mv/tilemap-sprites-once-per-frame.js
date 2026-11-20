@@ -16,11 +16,16 @@
 //   [hooks]
 //   "Tilemap.prototype.update" = "rpgmaker-mv/tilemap-sprites-once-per-frame"
 //
-// El archivo es una funcion que recibe la original y devuelve la nueva.
+// El archivo es una funcion que recibe la original y devuelve la nueva. La
+// llama runtime/hooks/hooks.c (hooks_install) al instalar el hook, cuando el
+// juego ya cargo sus scripts. Ver runtime/engines/README.md.
 function (original) {
   function busy(c) {
-    return (c._animationSprites && c._animationSprites.length > 0) ||
-           (c._balloonSprite && c._balloonSprite.parent) || false;
+    return (
+      (c._animationSprites && c._animationSprites.length > 0) ||
+      (c._balloonSprite && c._balloonSprite.parent) ||
+      false
+    );
   }
   return function () {
     var fr = typeof quix === 'object' ? quix.frame : undefined;

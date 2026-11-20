@@ -39,6 +39,9 @@ aunque luego se apague el truco. Las demás partidas los siguen consiguiendo.
   al valor de antes del truco (se guarda con la partida).
 - Con un motor sin `playthrough.js`, los trucos no se aplican: no habría forma
   de proteger los logros.
+- Un juego sin logros (sin `[[achievements]]`, como HexGL) no tiene nada que
+  proteger: sus trucos se aplican sin saber la partida, en cualquier motor. Un
+  símbolo cuyo objeto aún no existe se fija en cuanto existe.
 
 Los trucos encendidos van en `quixjs-settings.toml` (`cheats = [...]`), junto
 al `port.toml`. `ach` en `tools/console.py` los lista y dice si la partida en

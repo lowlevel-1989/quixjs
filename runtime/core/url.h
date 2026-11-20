@@ -53,6 +53,9 @@ void url_add_transform(const char *ext, UrlTransform fn);
 int  url_has_transform(const char *path);
 // Como url_read_file, y con la transformacion de su extension aplicada
 uint8_t *url_read_file_transformed(const char *path, size_t *len);
+// Los primeros n bytes del archivo, con la transformacion aplicada (para leer
+// la cabecera de una imagen sin leerla entera); NULL si no se puede
+uint8_t *url_read_head_transformed(const char *path, size_t n, size_t *len);
 
 // Los mods activos ([game] mods): url_resolve da el archivo del mod si un
 // archivo de la carpeta del juego (data_dir) esta tambien en root/<nombre>/;

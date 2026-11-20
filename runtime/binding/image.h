@@ -36,6 +36,10 @@ JSValue js_create_image(JSContext *ctx);
 const Surface *js_image_get_surface(JSContext *ctx, JSValueConst val);
 // Para subirla a WebGL (no la marca como usada en 2d)
 const Surface *js_image_get_surface_gpu(JSContext *ctx, JSValueConst val);
+// El tamano de la imagen para el juego (naturalWidth/naturalHeight): con
+// [game] image_scale sus pixeles pueden ser menos (gfx/image_scale.h). 0 si
+// val es una imagen cargada
+int js_image_natural_size(JSContext *ctx, JSValueConst val, int *w, int *h);
 // Ya esta en una textura de WebGL
 void js_image_uploaded(JSContext *ctx, JSValueConst val);
 // Con poca RAM: suelta los pixeles de la CPU de las imagenes que ya estan en

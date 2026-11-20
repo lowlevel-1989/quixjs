@@ -1,3 +1,75 @@
+0.4.0
+- added: app de Android (make PLATFORM=android): menu nativo, importa la carpeta del port en un .zip
+- added: motor rpgmaker-mz (Look Outside) con sus hooks: arranca sin WebAssembly, mapa y menu mas
+  rapidos y la RAM estable en batalla (RGB30: mapa de ~19 a ~15 ms de JS, menu de ~20 a ~13 ms)
+- added: ports firework-shiying, lookoutside, felvidek y hexgl, con su zip de PortMaster; make release los
+  saca todos
+- added: Felvidek, con el mod big-text (activo): el texto de los dialogos y los menus un 25% mas grande,
+  con ajuste de linea
+- added: HexGL con menu propio para el mando y carreras entre handhelds de la misma red (mod
+  multiplayer): las naves de los demas son fantasmas (hasta 8 jugadores)
+- added: quix.lan: la red local para juegos (runtime/lan), sobre la de Transfer Save
+- added: HexGL: pausa con Start (seguir, reiniciar, volver al menu), el truco No damage y los mods
+  multiplayer y volume (Music y Effects en el menu), los dos activos
+- added: <video> MP4 (H.264 + AAC) con minimp4 y el FFmpeg recortado de runtime/thirdparty; los de
+  1080p a la mitad (Felvidek). En la RX6S el video va a tiempo real: si no llega, se saltan imagenes
+  y el audio sigue sin cortes
+- added: trucos en juegos sin logros, con cualquier motor (no hay logros que proteger)
+- added: los mods pueden tener varios archivos: scripts = [...] en su hooks.toml
+- added: el aviso de carga desde que se pulsa Play en el launcher
+- added: [game] render_scale: dibujar a la resolucion de la pantalla ("auto"); Firework en la
+  RG CubeXX caminando a 30 fps estables
+- added: [game] image_scale: imagenes grandes reducidas y guardadas en la cache ("auto")
+- added: [controls.buttons]: Controls pide cada boton por lo que hace en el juego
+- added: [controls.keys]: acciones que pulsan una tecla (la antorcha de Fear & Hunger) con el boton
+  que se elija en Controls
+- added: --controls: solo la pantalla Controls
+- added: fuentes de fonts/gamefont.css, tambien desde mods, y otra fuente si a la del juego le
+  faltan letras
+- added: hook find-path-index: los eventos que persiguen buscan el camino mas rapido (Fear & Hunger
+  en la RX6S, un guardia persiguiendo: de ~103 a ~74 ms de JS)
+- added: hooks black-mask-once y save-picture-small (Firework) y render-scale
+- added: runtime/engines/rpgmaker/ (comun a MV y MZ) y runtime/engines/lib/ (modulos para hooks)
+- added: tools/rpgmaker_mv_model.py: copia del juego la funcion que espera un hook
+- added: quix.pressPad (tests)
+- added: vibracion (de tamatama): navigator.vibrate y gamepad.vibrationActuator, en el mando o, en
+  Android, el telefono; efectos con forma en lib/rumble (heartbeat, impact, fade...); el port la pide
+  con [controls] vibration y se apaga en Options > Vibration
+- added: hooks en los mods (mods/<nombre>/hooks.toml) y el mod rumble de Fear & Hunger (activo): un latido
+  al empezar una batalla, un golpe al recibir dano, un temblor que se apaga al caer alguien
+- changed: en las portatiles la salida de audio con mas margen (2048 muestras)
+- changed: refresh-on-net-change y pure-common-events cubren mas casos (Fear & Hunger en la RX6S,
+  Level8_A: de ~21 a ~23,6 fps)
+- added: hook any-event-starting-quick (YEP_StopMapMovement) y pure-common-events sin crear
+  arrays: Fear & Hunger en la RX6S con un guardia persiguiendo de ~86 a ~77 ms de JS
+- changed: gpu-canvas no repinta lo que no cambio y pinta en el contexto de WebGL
+- changed: los mandos se leen una vez por imagen
+- changed: Controls pide siempre Start y Select, y las palancas al final
+- changed: el codigo partido por temas (polyfill, webgl, backend sdl, main, config, consola de
+  debug) y el JS de quixjs en archivos .js; el mismo binario
+- changed: los hooks de rpgmaker-mv comparan la funcion original legible (MODEL, sameCode)
+- fixed: pure-common-events podia saltarse una ejecucion que cambiaba algo
+- fixed: las capturas no incluian un <video> visible
+- fixed: un <video> al que le quitan el src (removeAttribute) se cierra
+- fixed: fillRect de tamano 0 sacaba un gpu-canvas de la GPU (la luz de Firework)
+- fixed: Firework se paraba al arrancar (window.moveBy) y Look Outside se quedaba en negro
+- fixed: lo asignado en Controls no se usaba al abrir desde PortMaster
+- fixed: con sway el launcher se veia recortado unos segundos al abrir
+- fixed: port.json con "runtime": null hacia fallar la instalacion en ROCKNIX 20250517
+- fixed: los avisos encima del juego (fps, "Loading...", un logro) y el texto del juego usaban las
+  fuentes a la vez desde dos threads: el juego podia cerrarse
+- fixed: "Loading..." salia 30 s sobre el titulo: setupNewGame al arrancar (Scene_Boot, logos)
+  ya no lo enciende, solo New Game desde el titulo
+- fixed: un texto leido de un archivo se cortaba en el primer cero: Continue de RPG Maker MZ no veia
+  las partidas (Look Outside)
+- fixed: al desconectar un mando, el thread de Select + Start gastaba medio nucleo
+- fixed: getElementById no encontraba un elemento con el id puesto como el.id = ...
+- fixed: las capturas (consola de debug, --screenshot) con canvas de distinto tamano salian cortadas
+- fixed: con libmali (RGB30) a 60 fps el thread de present_ahead dejaba ~18 fps: ahora solo hasta 30
+- removed: profiler_phase y __quixParseFontFace, sin uso
+- docs: docs/embedded-js.md, usage con las opciones de pruebas, runtime/thirdparty/README y la
+  seccion Android de cada port
+
 0.3.0
 - added: --gen-config acepta un .html concreto; sus <script> en linea van en [scripts]
 - added: titulo de ventana "quixjs | <[game] title>" (o el document.title)

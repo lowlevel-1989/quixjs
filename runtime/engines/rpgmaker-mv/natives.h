@@ -30,8 +30,6 @@ JSValue rpgmaker_mv_adjust_tone(JSContext *ctx, JSValueConst this_val, int argc,
 // blur.c (hook blur-native.js)
 JSValue rpgmaker_mv_blur(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv);
 
-// decrypt.c (hooks decrypt-image-native.js y load-audio-native.js)
-JSValue rpgmaker_mv_set_decrypt_key(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv);
 
 // lazy_data.c (hook lazy-data.js)
 JSValue rpgmaker_mv_split_json_array(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv);

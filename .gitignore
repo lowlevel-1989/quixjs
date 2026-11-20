@@ -9,6 +9,7 @@ cache/
 
 # juegos de terceros para probar en local: nunca van al repositorio
 tmp/
+games/*/gamedata
 
 # editores
 .idea/
@@ -23,3 +24,7 @@ obj/
 release/
 # make bench (tools/h5bench.sh)
 results/
+# make PLATFORM=android: el .apk y las fuentes de SDL que descarga
+*.apk
+*.apk.idsig
+/android/deps/

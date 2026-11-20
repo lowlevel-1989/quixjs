@@ -45,6 +45,8 @@ typedef struct {
   // (drv_wait_gpu o drv_wait_cpu, drivers/common.h). NULL: este driver no
   // usa el thread (present_ahead), todo va por present
   void      (*thread_wait)(void *fence);
+  // con mas fps que estos, el thread no se usa (0: sin limite)
+  int         thread_max_fps;
   // presentar una imagen sin el thread de present_ahead (drv_present_now,
   // drv_present_previous...). Puede guardarse la imagen para mostrarla en la
   // siguiente llamada (solo esa: el backend reutiliza las demas)

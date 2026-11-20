@@ -277,8 +277,13 @@ static void mix_voice(Voice *v, float *out, int frames) {
   }
 }
 
+// lo que ha pedido la salida (mixer_output_time): si va a menos que el
+// reloj, la salida no llega a tiempo
+static long output_frames = 0;
+
 static void audio_callback(void *userdata, Uint8 *stream, int len) {
   int frames = len / (int)(sizeof(int16_t) * 2);
+  output_frames += frames;
   float mix[4096 * 2];
   if (frames > 4096) frames = 4096;
   memset(mix, 0, sizeof(float) * frames * 2);
@@ -348,7 +353,13 @@ int mixer_init(int with_device) {
   want.freq = 44100;
   want.format = AUDIO_S16SYS;
   want.channels = 2;
+  // en una portatil, mas margen: con la CPU llena (un video) la salida
+  // pedia audio tarde y se oian cortes
+#ifdef QUIX_HANDHELD
+  want.samples = 2048;
+#else
   want.samples = 1024;
+#endif
   want.callback = audio_callback;
   device = SDL_OpenAudioDevice(NULL, 0, &want, &have, SDL_AUDIO_ALLOW_FREQUENCY_CHANGE);
   if (!device) {
@@ -552,6 +563,10 @@ int mixer_stream_queued(void) {
     stream_mix.head = played;
   }
   return (int)(stream_mix.tail - stream_mix.head);
+}
+
+double mixer_output_time(void) {
+  return device ? (double)output_frames / out_rate : 0;
 }
 
 double mixer_stream_time(void) {

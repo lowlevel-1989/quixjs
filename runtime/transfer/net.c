@@ -120,6 +120,13 @@ void net_close(Net *n) {
   n->fd = -1;
 }
 
+// los que van muchas veces por segundo: no se escriben en el log (GAME: los
+// mensajes de los juegos, lan/lan.c)
+static int quiet(const char *kind) {
+  return strcmp(kind, "HELLO") == 0 || strcmp(kind, "HERE") == 0 || strcmp(kind, "DATA") == 0 ||
+         strcmp(kind, "ACK") == 0 || strcmp(kind, "GAME") == 0;
+}
+
 void net_send(Net *n, const struct sockaddr_in *to, const char *kind, const char *words,
               const void *body, size_t size) {
   static uint8_t packet[NET_CHUNK + 1024];
@@ -128,8 +135,7 @@ void net_send(Net *n, const struct sockaddr_in *to, const char *kind, const char
   if (head < 0 || head >= 512 || size > sizeof packet - (size_t)head) return;
   if (size) memcpy(packet + head, body, size);
   ssize_t sent = sendto(n->fd, packet, (size_t)head + size, 0, (const struct sockaddr *)to, sizeof *to);
-  if (strcmp(kind, "HELLO") != 0 && strcmp(kind, "HERE") != 0 && strcmp(kind, "DATA") != 0 &&
-      strcmp(kind, "ACK") != 0) {
+  if (!quiet(kind)) {
     printf("[transfer] -> %s %s:%d%s\n", kind, inet_ntoa(to->sin_addr), ntohs(to->sin_port),
            sent < 0 ? " (failed)" : "");
   }
@@ -244,8 +250,7 @@ int net_next(Net *n, Packet *p) {
     ssize_t got = recvfrom(n->fd, n->buffer, sizeof n->buffer - 1, 0, (struct sockaddr *)&p->from, &length);
     if (got <= 0) return 0;
     if (!parse(n->buffer, (size_t)got, p) || strcmp(p->signature, n->signature) == 0) continue;
-    if (strcmp(p->kind, "HELLO") != 0 && strcmp(p->kind, "HERE") != 0 && strcmp(p->kind, "DATA") != 0 &&
-        strcmp(p->kind, "ACK") != 0) {
+    if (!quiet(p->kind)) {
       printf("[transfer] <- %s %s:%d\n", p->kind, inet_ntoa(p->from.sin_addr), ntohs(p->from.sin_port));
     }
     if (strcmp(p->kind, "HELLO") == 0) net_send(n, &p->from, "HERE", words, NULL, 0);

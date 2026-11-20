@@ -1,0 +1,27 @@
+# hooks.toml: los hooks de RPG Maker MZ que usa cualquier juego del motor con
+#   [hooks]
+#   engine = "rpgmaker-mz"
+# en su toml (config.toml o port.toml). El juego manda: en su [hooks] puede
+# poner otro en la misma ruta, o "off". Lo que hace cada uno, en su archivo
+# (runtime/engines/rpgmaker-mz/<hook>.js).
+[hooks]
+# sin WebAssembly, Effekseer no arranca y el juego se quedaba en negro
+"effekseer.initRuntime" = "rpgmaker-mz/effekseer-no-wasm"
+# dibujo: sin los filtros de color en neutro, el desenfoque del fondo de los
+# menus una vez, y PixiJS sin VAO sin rehacer la geometria en cada bind
+"ColorFilter.prototype.initialize" = "rpgmaker-mz/color-filter-identity-off"
+"Scene_MenuBase.prototype.createBackground" = "rpgmaker-mz/menu-blur-once"
+"PIXI.systems.GeometrySystem.prototype.bind" = "rpgmaker-mz/no-vao-bind"
+# sin pantalla tactil, la opcion Touch UI apagada salvo que el jugador la
+# encienda (la de un config.rmmzsave del PC no cuenta)
+"ConfigManager.readFlag" = "rpgmaker-mz/touch-ui-off"
+"ConfigManager.save" = "rpgmaker-mz/touch-ui-off"
+# las imagenes cifradas (.png_) las lee y descifra quixjs en C, por su ruta
+# (asi [game] image_scale las ve)
+"Bitmap.prototype._startDecrypting" = "rpgmaker-mz/decrypt-image-native"
+# RAM en las batallas: lo que una batalla carga se suelta al terminarla, y un
+# GC completo al crear el mapa o la batalla (con la pantalla en negro; el
+# hook es comun a MV y MZ: runtime/engines/rpgmaker)
+"SceneManager.onSceneTerminate" = "rpgmaker-mz/battle-images-release"
+"Scene_Map.prototype.create" = "rpgmaker/gc-on-transition"
+"Scene_Battle.prototype.create" = "rpgmaker/gc-on-transition"

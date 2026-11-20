@@ -156,15 +156,17 @@ static JSValue draw_text(JSContext *ctx, JSValueConst this_val, int argc, JSValu
   int outline = stroke ? (int)ceil(s->line_width / 2) : 0;
   if (stroke && outline < 1) outline = 1;
 
+  // las medidas antes de dibujar: al dibujar, la cache de fuentes puede
+  // cambiar (otra fuente para letras que faltan, el contorno) y f ya no ser
+  // la misma
+  FontMetrics m;
+  font_metrics(f, &m);
   Surface glyphs;
   if (font_render(f, text, col.r, col.g, col.b, col.a, outline, &glyphs) != 0) {
     free(text);
     return JS_UNDEFINED;
   }
   free(text);
-
-  FontMetrics m;
-  font_metrics(f, &m);
   double w = glyphs.w - 2 * outline;
   double dw = glyphs.w;
   if (max_width > 0 && w > max_width) {

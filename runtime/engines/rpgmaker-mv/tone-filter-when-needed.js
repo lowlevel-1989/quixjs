@@ -14,19 +14,34 @@
 // plugins como FilterController, se quedan). En cuanto el tono cambia se
 // vuelve a poner delante, donde lo pone RPG Maker. Lo que se ve es lo mismo.
 //
+// Referencias (el codigo que reproduce o reescribe; gracias a sus autores):
+//   nucleo de RPG Maker MV (corescript, KADOKAWA, MIT), commit 182e314:
+//   https://github.com/rpgtkoolmv/corescript/blob/182e31449707ba7e406db0485c44c2a9d11e2dcd/js/rpg_sprites/Spriteset_Base.js#L105-L115 (updateToneChanger)
+//
 // Uso (config.toml o port.toml):
 //   [hooks]
 //   "Spriteset_Base.prototype.updateToneChanger" = "rpgmaker-mv/tone-filter-when-needed"
 //
-// El archivo es una funcion que recibe la original y devuelve la nueva.
+// El archivo es una funcion que recibe la original y devuelve la nueva. La
+// llama runtime/hooks/hooks.c (hooks_install) al instalar el hook, cuando el
+// juego ya cargo sus scripts. Ver runtime/engines/README.md.
 function (original) {
   return function () {
     var r = original.apply(this, arguments);
-    var b = this._baseSprite, tf = this._toneFilter, t = this._tone;
+    var b = this._baseSprite,
+      tf = this._toneFilter,
+      t = this._tone;
     // Graphics es una funcion en RPG Maker (una clase estatica)
-    if (!b || !tf || !t || typeof Graphics === 'undefined' || typeof Graphics.isWebGL !== 'function' ||
-        !Graphics.isWebGL()) return r;
-    var list = b._filters || null;   // la lista de PIXI (el getter da una copia)
+    if (
+      !b ||
+      !tf ||
+      !t ||
+      typeof Graphics === 'undefined' ||
+      typeof Graphics.isWebGL !== 'function' ||
+      !Graphics.isWebGL()
+    )
+      return r;
+    var list = b._filters || null; // la lista de PIXI (el getter da una copia)
     var has = !!list && list.indexOf(tf) >= 0;
     var neutral = !(t[0] || t[1] || t[2] || t[3]);
     if (neutral && has) {

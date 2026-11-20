@@ -40,15 +40,25 @@ make release
 
 It builds what is missing and leaves in `release/` the files of a GitHub
 release: quixjs alone for x86_64 and aarch64
-(`quixjs-VERSION-linux-ARCH.tar.gz`), the port for PortMaster
-(`PORT-VERSION-portmaster.zip`, installed with its autoinstall) and the port
-for the PC (`PORT-VERSION-linux-x86_64.tar.gz`). `PORT=fearandhunger` by default.
+(`quixjs-VERSION-linux-ARCH.tar.gz`), and, for every port in `games/` with
+`[portmaster]` in its `port.toml` (today `fearandhunger`, `firework-shiying`
+and `lookoutside`), the port for PortMaster (`PORT-VERSION-portmaster.zip`,
+installed with its autoinstall) and the port for the PC
+(`PORT-VERSION-linux-x86_64.tar.gz`); and the Android app
+(`quixjs-VERSION-android-arm64.apk`, needs the Android SDK and NDK), and
+`SHA256SUMS` with the sums of all of them.
+
+```
+PORTS="lookoutside" tools/release.sh   # only these ports
+tools/release.sh --ports                # only the ports (no Android app nor quixjs alone)
+```
 
 ## PortMaster
 
 ```
 make PLATFORM=portmaster                     # PORT=fearandhunger by default
 make PLATFORM=portmaster PORT=fearandhunger
+make PLATFORM=portmaster PORT=lookoutside   # any port of games/ with [portmaster]
 ```
 
 It builds `<PORT>.zip` (here `fearandhunger.zip`) for aarch64 with
@@ -68,8 +78,47 @@ The game does not go inside: the user copies it into `gamedata/`, and the
 | file                   | what it does |
 |------------------------|--------------|
 | `portmaster/`          | PortMaster: `portmaster.mk` (the `PLATFORM=portmaster` build, included by the `Makefile`) and `portmaster.sh` (template of the `.sh` script of the port) |
-| `tools/portmaster.py`  | makes the `.sh`, `port.json` and `gameinfo.xml` from `games/<port>/port.toml` when the zip is built (they are not in the repository) |
+| `tools/portmaster.py`  | makes the `.sh`, `port.json` and `gameinfo.xml` from `games/<port>/port.toml` when the zip is built (they are not in the repository); `[portmaster] title`, if there is one, is the name in PortMaster instead of `[game] title` (`firework-shiying`: "Firework (Shiying Studio)") |
 | `games/<port>/`        | the port: `port.toml`, its `README.md` and `README.es.md` (how to install it), `screenshot.jpg` (the image in EmulationStation) and `cover.png` (the cover in PortMaster) |
+
+## Index files
+
+Some big files are split into a folder so they can be read, but are still
+compiled as one: `runtime/js/jsc.c`, `runtime/binding/webgl.c`,
+`runtime/backend/sdl.c` and `runtime/core/main.c`. Each one is an index file:
+it only `#include`s, in order, the parts of the folder with its name (`jsc/`,
+`webgl/`, `sdl/`, `main/`), and the `Makefile` compiles the index file, not
+the parts.
+
+```c
+// runtime/binding/webgl.c
+#include "webgl/common.h"
+#include "webgl/canvas.c"
+#include "webgl/classes.c"
+...
+```
+
+Why: these are the hot paths of quixjs (each call from JS to C, each WebGL
+method, each frame to the screen). The compiler can only put a small
+function inside another (inline) when both are in the file it compiles.
+Compiled as separate files, the calls from JS to C were ~4 % slower; joined
+like this, the compiler sees the same text as with the old single file and
+generates the same code (`webgl.o` and `sdl.o` are byte-for-byte the
+same).
+
+Rules:
+
+- A new part is added to the index file, after what it uses.
+- Each part includes the shared header of its folder (`#pragma once`), so it
+  can be read in an editor by itself.
+- The `.o` of an index file is rebuilt when a part changes (`INDEX_FILES` in
+  the `Makefile`).
+- Each folder has a README with its parts and what they have.
+
+The JS of quixjs (`runtime/binding/*.js`, `runtime/binding/polyfill/`,
+`runtime/core/profiler.js`) works in a similar way: it is edited as `.js`
+and `tools/embed_js.py` turns it into a C string at build time, so quixjs
+stays a single program ([The JS inside quixjs](embedded-js.md)).
 
 ## Folders
 

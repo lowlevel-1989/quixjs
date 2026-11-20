@@ -12,15 +12,22 @@
 //   orig    el valor de cada simbolo antes de que un truco lo cambiara (para
 //           devolverlo si el truco se desactiva)
 ({
-  live: null,   // el $gameSystem con el que ya se ha jugado en el mapa
+  live: null, // el $gameSystem con el que ya se ha jugado en el mapa
   detect: function () {
-    return (typeof Utils === 'function' || typeof Utils === 'object') && Utils !== null &&
-           Utils.RPGMAKER_NAME === 'MV';
+    return (
+      (typeof Utils === 'function' || typeof Utils === 'object') &&
+      Utils !== null &&
+      Utils.RPGMAKER_NAME === 'MV'
+    );
   },
   current: function () {
     if (typeof $gameSystem !== 'object' || !$gameSystem) return null;
-    var scene = typeof SceneManager === 'object' || typeof SceneManager === 'function' ? SceneManager._scene : null;
-    if (scene && typeof Scene_Map === 'function' && scene.constructor === Scene_Map) this.live = $gameSystem;
+    var scene =
+      typeof SceneManager === 'object' || typeof SceneManager === 'function'
+        ? SceneManager._scene
+        : null;
+    if (scene && typeof Scene_Map === 'function' && scene.constructor === Scene_Map)
+      this.live = $gameSystem;
     return this.live === $gameSystem ? $gameSystem : null;
   },
   get: function (key) {
@@ -34,4 +41,4 @@
     s._quix[key] = value;
     return true;
   }
-})
+});

@@ -1,0 +1,15 @@
+[game]
+cache_dir = "cache/tests/core/find-path-index"
+game_dir  = "games/tests/core/find-path-index"
+width     = 64
+height    = 64
+
+[scripts]
+libs     = []
+includes = ["../../lib/assert.js"]
+entry    = "main.js"
+
+# rpgmaker-mv/find-path-index: findDirectionTo con los eventos indexados por
+# casilla da las mismas direcciones que el original
+[hooks]
+"Game_Character.prototype.findDirectionTo" = "rpgmaker-mv/find-path-index"

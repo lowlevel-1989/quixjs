@@ -1,0 +1,127 @@
+# port.toml: el port de Firework a quixjs.
+#
+# Es el archivo que describe el juego: quixjs -c port.toml. La primera parte
+# ([engine], [game], [saves], [fonts], [scripts]) salio de quixjs
+# --gen-config sobre Firework 1.0.4 (GOG), revisada a mano; despues, los
+# hooks. Sirve en cualquier sitio donde corre quixjs, con el juego copiado en
+# gamedata/. [portmaster] es lo que pide PortMaster (make PLATFORM=portmaster
+# PORT=firework-shiying genera con ella su port.json, su gameinfo.xml y el
+# script .sh del port).
+#
+# El nombre del port es firework-shiying (el estudio): en PortMaster ya hay
+# un "firework" (FIREWORK, otro juego). [game] title sigue siendo "Firework",
+# el de su data/System.json (la app de Android reconoce asi el juego de un
+# .zip); el de PortMaster es [portmaster] title: "Firework (Shiying
+# Studio)".
+
+[engine]
+name    = "rpgmaker-mv"
+version = "1.6.1"
+pixi    = "4.5.4"
+nwjs    = true   # package.json de nw.js: require('fs'), process...
+# en una portatil, 30 imagenes por segundo (RPG Maker sigue con 60 pasos)
+fps     = 30
+# como Fear & Hunger: el GC antes, el heap no crece de mas (1 GB de RAM)
+js_memory = 128
+
+[engine.pc]
+fps = 60
+
+[game]
+title     = "Firework"
+version   = "0.1.0"           # la del port
+id        = "firework"
+game_dir  = "gamedata/www"    # la carpeta www/ del juego, copiada en gamedata/
+cache_dir = "cache/gamedata"
+# el juego cambia la pantalla a 1280x720 (Community_Basic); package.json dice
+# 816x624
+width     = 1280
+height    = 720
+mods      = ["fast-start", "big-text"]
+developer = "Shiying Studio"
+publisher = "Shiying Studio"
+releasedate = "20210203T000000"   # el 3 de febrero de 2021, en Steam
+genres    = ["adventure"]
+desc      = "Firework (RPG Maker MV) running on quixjs, a JS runtime in C with SDL2 and OpenGL ES 2."
+# Las ilustraciones y fondos a la resolucion de la pantalla (gfx/
+# image_scale.h): ~1,5 GB decodificados a 1280x720; con "auto", en una
+# pantalla de 720x720 van al 56 % (un tercio de la memoria, mas de lo que la
+# pantalla no ensena) y se guardan reducidas en cache_dir. En una pantalla
+# grande no se reducen.
+image_scale      = "auto"
+image_scale_dirs = ["img/pictures", "img/parallaxes", "img/titles1", "img/titles2", "img/fogs"]
+# El juego se dibuja a la resolucion con la que se ve en la pantalla (hook
+# rpgmaker-mv/render-scale): en una de 720x720, a 720x405. La GPU pinta ~10
+# capas de pantalla completa por imagen; asi, un tercio de los pixeles. En
+# una pantalla igual o mas grande que 1280x720 no cambia nada.
+render_scale     = "auto"
+
+# Transfer Save: que archivos pasa a otro dispositivo
+[saves]
+dir   = "save"
+files = ["*.rpgsave"]
+
+# fuentes de los @font-face de su CSS
+[fonts]
+"GameFont" = "fonts/GenYoMinTW-Medium.ttf"
+"UIFont-Heavy" = "fonts/SourceHanSerifCN-Bold.otf"
+"UIFont-Medium" = "fonts/SourceHanSerifCN-Regular.otf"
+
+# los <script> del index.html, en el mismo orden
+[scripts]
+libs     = [
+  "js/libs/pixi.js",
+  "js/libs/pixi-tilemap.js",
+  "js/libs/pixi-picture.js",
+  "js/libs/fpsmeter.js",
+  "js/libs/lz-string.js",
+  "js/libs/iphone-inline-video.browser.js"
+]
+includes = [
+  "js/rpg_core.js",
+  "js/rpg_managers.js",
+  "js/rpg_objects.js",
+  "js/rpg_scenes.js",
+  "js/rpg_sprites.js",
+  "js/rpg_windows.js",
+  "js/plugins.js"
+]
+entry    = "js/main.js"
+
+# ---------- PortMaster ----------
+[portmaster]
+title        = "Firework (Shiying Studio)"   # en PortMaster ya hay un "Firework" (otro juego)
+script       = "Firework (Shiying Studio).sh"
+porter       = ["lowlevel.1989"]
+inst         = "Needs Firework for Windows (GOG or Steam). Copy its folder www/ into ports/firework-shiying/gamedata/ (it must end up as gamedata/www/). Game.exe and the .dll files are not needed."
+store        = { name = "GOG", url = "https://www.gog.com/game/firework" }
+availability = "paid"
+
+# ---------- hooks ----------
+# Los de RPG Maker MV (runtime/engines/rpgmaker-mv/hooks.toml) y los de este
+# juego; lo que hace cada uno, en runtime/engines/rpgmaker-mv:
+#   - TerraxLighting: su mascara de luces en la GPU (por software, en un PC
+#     iba a 9 fps)
+#   - ScreenEffect: las franjas negras de arriba y abajo se difuminan una vez
+#   - KJ_Menu: la foto que guarda con cada partida, a un cuarto de la
+#     resolucion (en cada cambio de mapa, menu y guardado automatico)
+[hooks]
+engine = "rpgmaker-mv"
+"Spriteset_Map.prototype.createLightmask" = "gpu-canvas"
+"Spriteset_Map.prototype.createBlackMask" = "rpgmaker-mv/black-mask-once"
+"SceneManager.snapForSave" = "rpgmaker-mv/save-picture-small"
+
+[controls]
+gamepad = true
+
+# los botones que usa el juego, con los nombres de su pantalla de controles
+# (img/titles2/Splash_4): correr esta apagado en casi todos los mapas y no
+# usa L1 ni R1. Controls los pide por su nombre (y siempre las dos palancas)
+[controls.buttons]
+dpup    = "Move up"
+dpdown  = "Move down"
+dpleft  = "Move left"
+dpright = "Move right"
+a       = "Select"
+b       = "Cancel"
+y       = "Menu"

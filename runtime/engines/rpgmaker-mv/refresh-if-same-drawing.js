@@ -27,10 +27,31 @@
 //   "Window_BattleEnemy.prototype.refresh" = "rpgmaker-mv/refresh-if-same-drawing"
 //   "Window_BattleStatus.prototype.refresh" = "rpgmaker-mv/refresh-if-same-drawing"
 //
-// El archivo es una funcion que recibe la original y devuelve la nueva.
+// El archivo es una funcion que recibe la original y devuelve la nueva. La
+// llama runtime/hooks/hooks.c (hooks_install) al instalar el hook, cuando el
+// juego ya cargo sus scripts. Ver runtime/engines/README.md.
 function (original) {
-  var OPS = ['clear', 'clearRect', 'fillRect', 'fillAll', 'gradientFillRect', 'drawCircle', 'drawText', 'blt', 'bltImage'];
-  var PROPS = ['fontFace', 'fontSize', 'fontItalic', 'textColor', 'outlineColor', 'outlineWidth', 'paintOpacity', 'smooth'];
+  var OPS = [
+    'clear',
+    'clearRect',
+    'fillRect',
+    'fillAll',
+    'gradientFillRect',
+    'drawCircle',
+    'drawText',
+    'blt',
+    'bltImage'
+  ];
+  var PROPS = [
+    'fontFace',
+    'fontSize',
+    'fontItalic',
+    'textColor',
+    'outlineColor',
+    'outlineWidth',
+    'paintOpacity',
+    'smooth'
+  ];
   var uid = 0;
   function arg(a) {
     if (a && typeof a === 'object') {
@@ -55,9 +76,13 @@ function (original) {
   }
   return function () {
     var bmp = this.contents;
-    if (!bmp || this._quixDrawOff || typeof bmp._setDirty !== 'function') return original.apply(this, arguments);
+    if (!bmp || this._quixDrawOff || typeof bmp._setDirty !== 'function')
+      return original.apply(this, arguments);
     watch(bmp);
-    var calls = [], keys = [], real = {}, own = {};
+    var calls = [],
+      keys = [],
+      real = {},
+      own = {};
     OPS.forEach(function (name) {
       if (typeof bmp[name] !== 'function') return;
       real[name] = bmp[name];
@@ -89,7 +114,12 @@ function (original) {
     }
     var key = keys.join('\n');
     // lo mismo, en el mismo bitmap y sin dibujos de por medio: ya esta dibujado
-    if (key === this._quixDrawKey && bmp === this._quixDrawBitmap && bmp._quixDraws === this._quixDrawCount) return r;
+    if (
+      key === this._quixDrawKey &&
+      bmp === this._quixDrawBitmap &&
+      bmp._quixDraws === this._quixDrawCount
+    )
+      return r;
     for (var c = 0; c < calls.length; c++) real[calls[c][0]].apply(bmp, calls[c][1]);
     this._quixDrawKey = key;
     this._quixDrawBitmap = bmp;

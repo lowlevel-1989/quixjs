@@ -14,13 +14,21 @@
 // que se paso: asi vale tambien con plugins que redondean o convierten el
 // valor (FilterController redondea las variables con decimales).
 //
+// Referencias (el codigo que reproduce o reescribe; gracias a sus autores):
+//   nucleo de RPG Maker MV (corescript, KADOKAWA, MIT), commit 182e314:
+//   https://github.com/rpgtkoolmv/corescript/blob/182e31449707ba7e406db0485c44c2a9d11e2dcd/js/rpg_objects/Game_Switches.js#L22-L27
+//   https://github.com/rpgtkoolmv/corescript/blob/182e31449707ba7e406db0485c44c2a9d11e2dcd/js/rpg_objects/Game_Variables.js#L22-L30
+//   https://github.com/rpgtkoolmv/corescript/blob/182e31449707ba7e406db0485c44c2a9d11e2dcd/js/rpg_objects/Game_SelfSwitches.js#L22-L29 (setValue)
+//
 // Uso (config.toml o port.toml):
 //   [hooks]
 //   "Game_Switches.prototype.setValue" = "rpgmaker-mv/refresh-if-changed"
 //   "Game_Variables.prototype.setValue" = "rpgmaker-mv/refresh-if-changed"
 //   "Game_SelfSwitches.prototype.setValue" = "rpgmaker-mv/refresh-if-changed"
 //
-// El archivo es una funcion que recibe la original y devuelve la nueva.
+// El archivo es una funcion que recibe la original y devuelve la nueva. La
+// llama runtime/hooks/hooks.c (hooks_install) al instalar el hook, cuando el
+// juego ya cargo sus scripts. Ver runtime/engines/README.md.
 function (original) {
   function quiet() {}
   return function (key) {
@@ -28,13 +36,13 @@ function (original) {
     if (!data) return original.apply(this, arguments);
     var had = Object.prototype.hasOwnProperty.call(data, key);
     var before = data[key];
-    this.onChange = quiet;   // la original no pide el refresco...
+    this.onChange = quiet; // la original no pide el refresco...
     try {
       original.apply(this, arguments);
     } finally {
-      delete this.onChange;   // ...vuelve el onChange del prototipo
+      delete this.onChange; // ...vuelve el onChange del prototipo
     }
     var has = Object.prototype.hasOwnProperty.call(data, key);
-    if (has !== had || data[key] !== before) this.onChange();   // solo si cambio
+    if (has !== had || data[key] !== before) this.onChange(); // solo si cambio
   };
 }

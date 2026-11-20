@@ -30,6 +30,7 @@
 //   quix.version, quix.frameTime, quix.achievements(), quix.achievementUnlocked(id),
 //   quix.achievementsIcon(), quix.isGpuCanvas(c), quix.collectGarbage(),
 //   quix.gcPressure(): ver quix.c y la tabla de docs/usage.md
+//   quix.lan: la red local para juegos, en binding/lan.c
 
 #include "js/js.h"
 
@@ -38,3 +39,7 @@
 #include "version.h"
 
 void js_api_add_quix(JSContext *ctx);
+
+// [game] render_scale ya resuelto (1: a la resolucion del juego); lo lee
+// quix.renderScale()
+void quix_set_render_scale(double scale);

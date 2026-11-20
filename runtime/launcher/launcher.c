@@ -18,11 +18,9 @@
 
 // El menu de --launcher. La pantalla y como se elige son las de ui.c.
 
-#include <dirent.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
-#include <sys/stat.h>
+#include <strings.h>
 #include "achievements/achievements.h"
 #include "binding/quix.h"
 #include "gfx/color.h"
@@ -125,7 +123,7 @@ static int reset_achievements(const char *logo) {
 // Options: cada opcion cambia al elegirla y se guarda enseguida
 static int options_screen(Backend *backend, const char *logo, const Config *cfg, const char *config_path,
                           Settings *st) {
-  enum { OPT_FPS_SHOW, OPT_PROFILE, OPT_FULLSCREEN, OPT_RESET, OPT_BACK };
+  enum { OPT_FPS_SHOW, OPT_PROFILE, OPT_VIBRATION, OPT_FULLSCREEN, OPT_RESET, OPT_BACK };
   Screen s;
   ui_reset(&s, logo, "options");
   ui_line(&s, ui_colors()->muted, "the profiler writes quixjs-profile.txt");
@@ -133,15 +131,21 @@ static int options_screen(Backend *backend, const char *logo, const Config *cfg,
   s.rows = 6;
   for (;;) {
     int actions[8], n = 0;
-    char a[64], p[64], f[64];
+    char a[64], p[64], v[64], f[64];
     snprintf(a, sizeof(a), "Show FPS: %s", st->show_fps ? "On" : "Off");
     snprintf(p, sizeof(p), "Profiler: %s", st->profile ? "On" : "Off");
+    snprintf(v, sizeof(v), "Vibration: %s", st->no_vibration ? "Off" : "On");
     snprintf(f, sizeof(f), "Fullscreen: %s", backend->fullscreen ? "On" : "Off");
     s.count = 0;
     ui_item(&s, a);
     actions[n++] = OPT_FPS_SHOW;
     ui_item(&s, p);
     actions[n++] = OPT_PROFILE;
+    // solo si el juego vibra ([controls] vibration)
+    if (cfg->controls.vibration) {
+      ui_item(&s, v);
+      actions[n++] = OPT_VIBRATION;
+    }
 #ifndef QUIX_HANDHELD
     // en el PC (en una portatil el juego ya ocupa la pantalla)
     ui_item(&s, f);
@@ -159,6 +163,7 @@ static int options_screen(Backend *backend, const char *logo, const Config *cfg,
     int action = chosen >= 0 && chosen < n ? actions[chosen] : OPT_BACK;
     if (action == OPT_FPS_SHOW) st->show_fps = !st->show_fps;
     else if (action == OPT_PROFILE) st->profile = !st->profile;
+    else if (action == OPT_VIBRATION) st->no_vibration = !st->no_vibration;
     else if (action == OPT_FULLSCREEN) {
       st->fullscreen = !backend->fullscreen;
       backend_set_fullscreen(backend, st->fullscreen);
@@ -173,13 +178,6 @@ static int options_screen(Backend *backend, const char *logo, const Config *cfg,
 // Cheats: cada truco se enciende o se apaga al elegirlo y se guarda enseguida
 // (cheats en quixjs-settings.toml). Una partida jugada con uno activo pierde
 // los logros para siempre: lo dice arriba.
-static int settings_has_cheat(const Settings *st, const char *id) {
-  for (int i = 0; i < st->cheats_count; i++) {
-    if (strcmp(st->cheats[i], id) == 0) return i;
-  }
-  return -1;
-}
-
 static int cheats_screen(const char *logo, const char *config_path, Settings *st) {
   Screen s;
   ui_reset(&s, logo, "cheats");
@@ -193,7 +191,7 @@ static int cheats_screen(const char *logo, const char *config_path, Settings *st
     int n = cheats_count() < 32 ? cheats_count() : 32;
     s.count = 0;
     for (int i = 0; i < n; i++) {
-      snprintf(items[i], sizeof items[i], "%s: %s", cheats_name(i), settings_has_cheat(st, cheats_id(i)) >= 0 ? "On" : "Off");
+      snprintf(items[i], sizeof items[i], "%s: %s", cheats_name(i), settings_cheat_index(st, cheats_id(i)) >= 0 ? "On" : "Off");
       ui_item(&s, items[i]);
     }
     ui_item(&s, "Back");
@@ -201,13 +199,7 @@ static int cheats_screen(const char *logo, const char *config_path, Settings *st
     int chosen = ui_run(&s, NULL, NULL);
     if (chosen == SCREEN_QUIT) return SCREEN_QUIT;
     if (chosen < 0 || chosen >= n) return 0;
-    int k = settings_has_cheat(st, cheats_id(chosen));
-    if (k >= 0) {
-      memmove(st->cheats[k], st->cheats[k + 1], sizeof st->cheats[0] * (size_t)(st->cheats_count - k - 1));
-      st->cheats_count--;
-    } else if (st->cheats_count < MAX_SETTING_CHEATS) {
-      snprintf(st->cheats[st->cheats_count++], sizeof st->cheats[0], "%s", cheats_id(chosen));
-    }
+    settings_toggle_cheat(st, cheats_id(chosen));
     settings_save(st, config_path);
     settings_apply_cheats(st);
   }
@@ -217,38 +209,10 @@ static int cheats_screen(const char *logo, const char *config_path, Settings *st
 // Los activos llevan su numero: si dos traen el mismo archivo, gana el de
 // numero mas alto (el ultimo de la lista). Se guarda en quixjs-settings.toml
 // (mods) y vale al pulsar Play; hasta que se toca, los de [game] mods.
-#define MAX_MOD_DIRS 32
-
-static int mod_cmp(const void *a, const void *b) { return strcmp((const char *)a, (const char *)b); }
-
-static int mod_dirs(const char *root, char names[][64]) {
-  int n = 0;
-  DIR *d = opendir(root);
-  if (!d) return 0;
-  struct dirent *e;
-  while ((e = readdir(d)) != NULL && n < MAX_MOD_DIRS) {
-    if (e->d_name[0] == '.' || strlen(e->d_name) >= 64) continue;
-    char path[1024];
-    struct stat st;
-    snprintf(path, sizeof path, "%s/%s", root, e->d_name);
-    if (stat(path, &st) == 0 && S_ISDIR(st.st_mode)) snprintf(names[n++], 64, "%s", e->d_name);
-  }
-  closedir(d);
-  qsort(names, (size_t)n, 64, mod_cmp);
-  return n;
-}
-
-static int settings_mod_index(const Settings *st, const char *name) {
-  for (int i = 0; i < st->mods_count; i++) {
-    if (strcmp(st->mods[i], name) == 0) return i;
-  }
-  return -1;
-}
-
 static int mods_screen(const char *logo, const Config *cfg, const char *config_path, Settings *st) {
   char names[MAX_MOD_DIRS][64];
-  int n = mod_dirs(cfg->mods.root, names);
-  // la primera vez, los del toml del juego
+  int n = settings_mod_dirs(cfg->mods.root, names);
+  // hasta que se toca, los del toml del juego
   if (!st->mods_set) {
     st->mods_count = 0;
     for (int i = 0; i < cfg->mods.count && i < MAX_SETTING_MODS; i++) {
@@ -276,14 +240,7 @@ static int mods_screen(const char *logo, const Config *cfg, const char *config_p
     int chosen = ui_run(&s, NULL, NULL);
     if (chosen == SCREEN_QUIT) return SCREEN_QUIT;
     if (chosen < 0 || chosen >= n) return 0;
-    int k = settings_mod_index(st, names[chosen]);
-    if (k >= 0) {
-      memmove(st->mods[k], st->mods[k + 1], sizeof st->mods[0] * (size_t)(st->mods_count - k - 1));
-      st->mods_count--;
-    } else if (st->mods_count < MAX_SETTING_MODS) {
-      snprintf(st->mods[st->mods_count++], sizeof st->mods[0], "%s", names[chosen]);
-    }
-    st->mods_set = 1;
+    settings_toggle_mod(st, (const char (*)[64])cfg->mods.names, cfg->mods.count, names[chosen]);
     settings_save(st, config_path);
   }
 }
@@ -314,17 +271,110 @@ static const struct {
 #define WANTED (int)(sizeof wanted / sizeof wanted[0])
 #define START_STEP 0
 
+// lo que se pide: las entradas de wanted y, detras, las acciones de
+// [controls.keys] (indice WANTED + k)
+#define PLAN_MAX (WANTED + 8)
 typedef struct {
   Backend *backend;
-  int      step;
-  char     raw[WANTED][16];   // "" = saltada
+  const ControlsConfig *cc;
+  int      step, count;
+  int      idx[PLAN_MAX];          // lo que se pide, en orden
+  char     label[PLAN_MAX][72];    // como se pide: "Confirm (A)", "Torch"
+  char     raw[PLAN_MAX][16];      // "" = saltada
 } Capture;
+
+// las acciones de [controls.keys] siempre se pueden saltar
+static int plan_optional(const Capture *c, int step) {
+  return c->idx[step] >= WANTED || wanted[c->idx[step]].optional;
+}
+
+// en controller.map ("a") o, con @ delante, en controller.keys ("@Torch")
+static void plan_target(const Capture *c, int step, char *out, size_t room) {
+  int i = c->idx[step];
+  if (i >= WANTED) snprintf(out, room, "@%s", c->cc->key_button[i - WANTED]);
+  else snprintf(out, room, "%s", wanted[i].sdl);
+}
+
+// Un boton de [controls.buttons] en wanted: su nombre de SDL o el de la
+// etiqueta (select, l1, r2, l3...); -1 si no existe
+static int wanted_index(const char *button) {
+  static const char *alias[][2] = {
+    {"select", "back"},         {"l1", "leftshoulder"}, {"r1", "rightshoulder"},
+    {"l2", "lefttrigger"},      {"r2", "righttrigger"}, {"l3", "leftstick"},
+    {"r3", "rightstick"},
+  };
+  for (size_t i = 0; i < sizeof alias / sizeof alias[0]; i++) {
+    if (strcasecmp(button, alias[i][0]) == 0) button = alias[i][1];
+  }
+  for (int i = 0; i < WANTED; i++) {
+    if (strcasecmp(button, wanted[i].sdl) == 0) return i;
+  }
+  return -1;
+}
+
+static int is_stick(int i) {
+  return strstr(wanted[i].sdl, "stick") || strstr(wanted[i].sdl, "leftx") || strstr(wanted[i].sdl, "lefty") ||
+         strstr(wanted[i].sdl, "rightx") || strstr(wanted[i].sdl, "righty");
+}
+
+static void plan_add(Capture *c, int i, const char *name) {
+  for (int k = 0; k < c->count; k++) {
+    if (c->idx[k] == i) return;
+  }
+  c->idx[c->count] = i;
+  if (i >= WANTED) snprintf(c->label[c->count], sizeof c->label[0], "%s", name);
+  else if (name && name[0]) snprintf(c->label[c->count], sizeof c->label[0], "%s (%s)", name, wanted[i].label);
+  else snprintf(c->label[c->count], sizeof c->label[0], "%s", wanted[i].label);
+  c->count++;
+}
+
+// Lo que se pide: sin [controls.buttons], todo el mando estandar; con ella,
+// Start (con el se saltan las que no tenga el mando), los botones con nombre
+// en su orden y siempre las dos palancas
+static void capture_plan(Capture *c, const ControlsConfig *cc) {
+  c->count = 0;
+  c->cc = cc;
+  if (cc->names_count == 0) {
+    for (int i = 0; i < WANTED; i++) {
+      if (!is_stick(i)) plan_add(c, i, NULL);
+    }
+  } else {
+    // Start (con el se saltan las que no tenga el mando) y Select, siempre:
+    // Select + Start cierra el juego
+    const char *start_name = NULL, *select_name = NULL;
+    int select = wanted_index("back");
+    for (int k = 0; k < cc->names_count; k++) {
+      if (wanted_index(cc->button[k]) == START_STEP) start_name = cc->name[k];
+      if (wanted_index(cc->button[k]) == select) select_name = cc->name[k];
+    }
+    plan_add(c, START_STEP, start_name);
+    plan_add(c, select, select_name);
+    for (int k = 0; k < cc->names_count; k++) {
+      int i = wanted_index(cc->button[k]);
+      if (i < 0) printf("[controls] unknown button \"%s\" in [controls.buttons]\n", cc->button[k]);
+      else plan_add(c, i, cc->name[k]);
+    }
+  }
+  // las acciones de [controls.keys], por su nombre, y al final las palancas
+  // (se pueden saltar: el resto ya esta asignado)
+  for (int k = 0; k < cc->keys_count && k < 8; k++) plan_add(c, WANTED + k, cc->key_button[k]);
+  for (int i = 0; i < WANTED; i++) {
+    if (is_stick(i)) plan_add(c, i, NULL);
+  }
+}
 
 static void capture_lines(Screen *s, const Capture *c) {
   s->line_count = 0;
-  ui_line(s, ui_colors()->highlight, "Press %s", wanted[c->step].label);
-  ui_line(s, ui_colors()->muted, "%d of %d", c->step + 1, WANTED);
-  s->notice = wanted[c->step].optional ? "not on your controller? Start: skip   escape: cancel" : "escape: cancel";
+  ui_line(s, ui_colors()->highlight, "Press %s", c->label[c->step]);
+  ui_line(s, ui_colors()->muted, "%d of %d", c->step + 1, c->count);
+#ifdef __ANDROID__
+  // en Android se cancela con Atras (GameActivity cierra la pantalla)
+#define CANCEL_KEY "back"
+#else
+#define CANCEL_KEY "escape"
+#endif
+  s->notice = plan_optional(c, c->step) ? "not on your controller? Start: skip   " CANCEL_KEY ": cancel"
+                                       : CANCEL_KEY ": cancel";
 }
 
 // 1 al terminar, 2 si se cancela
@@ -338,25 +388,28 @@ static int capture_tick(Screen *s, void *context) {
   for (int i = 0; i < c->step; i++) {
     if (strcmp(c->raw[i], raw) == 0) taken = i;
   }
-  if (taken == START_STEP && wanted[c->step].optional) {
+  if (taken == 0 && plan_optional(c, c->step)) {
     c->raw[c->step][0] = 0;   // saltada
   } else if (taken >= 0) {
     return 0;                 // ya es de otra: se espera otra
   } else {
     snprintf(c->raw[c->step], sizeof c->raw[0], "%s", raw);
   }
-  printf("[controls] %s = %s\n", wanted[c->step].sdl, c->raw[c->step][0] ? c->raw[c->step] : "(skipped)");
-  if (++c->step == WANTED) return 1;
+  char target[64];
+  plan_target(c, c->step, target, sizeof target);
+  printf("[controls] %s = %s\n", target, c->raw[c->step][0] ? c->raw[c->step] : "(skipped)");
+  if (++c->step == c->count) return 1;
   capture_lines(s, c);
   return 0;
 }
 
-static int controls_screen(Backend *backend, const char *logo) {
+static int controls_screen(Backend *backend, const char *logo, const ControlsConfig *cc) {
   if (backend_capture_input(backend, CAPTURE_START, NULL, 0) < 0) {
     int r = ui_message(logo, "controls", "no controller found", "connect one and try again", NULL, NULL);
     return r == SCREEN_QUIT ? SCREEN_QUIT : 0;
   }
   Capture c = { .backend = backend };
+  capture_plan(&c, cc);
   Screen s;
   ui_reset(&s, logo, "controls");
   s.can_back = 0;    // B tambien se asigna: se cancela con Escape
@@ -368,9 +421,11 @@ static int controls_screen(Backend *backend, const char *logo) {
   if (r == SCREEN_EVENT + 1) {
     char pairs[1024];
     size_t n = 0;
-    for (int i = 0; i < WANTED && n < sizeof pairs; i++) {
+    for (int i = 0; i < c.count && n < sizeof pairs; i++) {
       if (!c.raw[i][0]) continue;
-      n += (size_t)snprintf(pairs + n, sizeof pairs - n, "%s%s:%s", n ? "," : "", wanted[i].sdl, c.raw[i]);
+      char target[64];
+      plan_target(&c, i, target, sizeof target);
+      n += (size_t)snprintf(pairs + n, sizeof pairs - n, "%s%s:%s", n ? "," : "", target, c.raw[i]);
     }
     saved = backend_save_controller(backend, pairs) == 0;
   }
@@ -381,9 +436,8 @@ static int controls_screen(Backend *backend, const char *logo) {
   return r == SCREEN_QUIT ? SCREEN_QUIT : 0;
 }
 
-int launcher_run(Backend *backend, const Config *cfg, const char *config_path, Settings *settings,
-                 int *exit_code) {
-  *exit_code = 0;
+// Las pantallas, con los colores de [launcher]
+static void open_screens(Backend *backend, const Config *cfg) {
   UiColors colors = {
     .background = rgb_of(cfg->launcher.background, 0x101014),
     .text       = rgb_of(cfg->launcher.text, 0xe8e8e8),
@@ -394,6 +448,20 @@ int launcher_run(Backend *backend, const Config *cfg, const char *config_path, S
     .highlight  = 0x7ab8ff,
   };
   ui_open(backend, cfg->game.width, cfg->game.height, &colors);
+}
+
+void launcher_controls(Backend *backend, const Config *cfg) {
+  open_screens(backend, cfg);
+  const char *title = cfg->launcher.title[0] ? cfg->launcher.title : cfg->engine.name;
+  printf("[launcher] controls: %s\n", title);
+  controls_screen(backend, title, &cfg->controls);
+  ui_close();
+}
+
+int launcher_run(Backend *backend, const Config *cfg, const char *config_path, Settings *settings,
+                 int *exit_code) {
+  *exit_code = 0;
+  open_screens(backend, cfg);
 
   const char *title = cfg->launcher.title[0] ? cfg->launcher.title : cfg->engine.name;
   enum { PLAY, TRANSFER, ACHIEVEMENTS, CONTROLS, MODS, CHEATS, OPTIONS, EXIT };
@@ -419,7 +487,7 @@ int launcher_run(Backend *backend, const Config *cfg, const char *config_path, S
   }
   {
     char mod_names[MAX_MOD_DIRS][64];
-    if (mod_dirs(cfg->mods.root, mod_names) > 0) {
+    if (settings_mod_dirs(cfg->mods.root, mod_names) > 0) {
       ui_item(&s, "Mods");
       actions[n++] = MODS;
     }
@@ -461,7 +529,7 @@ int launcher_run(Backend *backend, const Config *cfg, const char *config_path, S
             : action == OPTIONS ? options_screen(backend, title, cfg, config_path, settings)
             : action == CHEATS  ? cheats_screen(title, config_path, settings)
             : action == MODS    ? mods_screen(title, cfg, config_path, settings)
-            : action == CONTROLS ? controls_screen(backend, title)
+            : action == CONTROLS ? controls_screen(backend, title, &cfg->controls)
                                 : achievements_screen(title);
     // Receive Save y Restore Backup cambian el archivo de los logros
     if (action == TRANSFER) ach_reload();

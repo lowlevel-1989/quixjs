@@ -136,6 +136,20 @@ function run() {
     gl.bindTexture(gl.TEXTURE_2D, tex2);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, gpu);
     T.equal(texel(tex2, 20, 50), '0,0,255,255', 'and it follows the canvas after that');
+    // repintado entero e igual al anterior (no se vuelve a pintar), y luego otro distinto
+    function repaint(color) {
+      gctx.fillStyle = '#000000';
+      gctx.fillRect(0, 0, 100, 100);
+      gctx.fillStyle = color;
+      gctx.fillRect(0, 0, 50, 100);
+      gl.bindTexture(gl.TEXTURE_2D, tex2);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, gpu);
+    }
+    repaint('#0000ff');
+    repaint('#0000ff');
+    T.equal(texel(tex2, 20, 50) + ' ' + texel(tex2, 70, 50), '0,0,255,255 0,0,0,255', 'the same full repaint twice');
+    repaint('#ff0000');
+    T.equal(texel(tex2, 20, 50), '255,0,0,255', 'and a different one after it');
     paintMask(gctx);   // como estaba, para los tests de despues
   });
 

@@ -26,6 +26,9 @@ const GpuDriver gpu_driver_mali = {
   .name = "mali",
   // espera la CPU del thread: esperando la GPU, los menus pestaneaban
   .thread_wait = drv_wait_cpu,
+  // a 60 fps con el thread, cada imagen tardaba ~50 ms en verse (HexGL en la
+  // RGB30: ~18 fps; sin el thread, 60). A 30 va bien (Fear & Hunger)
+  .thread_max_fps = 30,
   // sin el thread, la imagen anterior (drv_present_previous, common.c):
   // la CPU esperaba a la GPU 5,7 ms de media antes de cada refresco. En la
   // RGB30, de ~240 a ~60 frames tardios en el mapa y de ~270 a ~85 en batalla

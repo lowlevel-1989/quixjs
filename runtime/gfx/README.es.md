@@ -15,9 +15,9 @@ cuando lo pide un hook `gpu-canvas`.
 | `paint.c`        | lo que va en fillStyle / strokeStyle: color, gradiente lineal y radial, patrón; se muestrea por pixel |
 | `raster.c`       | paths, relleno (nonzero / evenodd), trazo, máscaras de cobertura (también para `clip()`), fillRect, clearRect, drawImage |
 | `image_loader.c` | decodifica imágenes (PNG, JPG...) con SDL_image y guarda PNG para las capturas |
-| `font.c`         | fuentes TrueType con SDL_ttf: familias registradas, valor CSS de `font`, medir y dibujar texto |
+| `font.c`         | fuentes TrueType con SDL_ttf: familias registradas, valor CSS de `font`, medir y dibujar texto; un thread a la vez (el juego y los avisos encima de el, que dibuja el thread que presenta) |
 | `gl.h/.c`        | contexto OpenGL ES 2.0 para WebGL (ventana oculta de SDL, u offscreen sin ventana); funciones cargadas con `SDL_GL_GetProcAddress`; un segundo contexto que comparte texturas (`gl_aux_begin` / `gl_aux_end`) para `gpu2d.c` |
-| `gpu2d.h/.c`     | canvas 2d dibujado en la GPU (hook `gpu-canvas`): fillRect, clearRect, fill y stroke con color o gradiente; lo demás vuelve a la CPU |
+| `gpu2d.h/.c`     | canvas 2d dibujado en la GPU (hook `gpu-canvas`): fillRect, clearRect, fill y stroke con color o gradiente; lo demás vuelve a la CPU; un repintado entero igual al anterior (una máscara de luces con las luces y la pantalla quietas) no se vuelve a dibujar; pinta en el contexto de WebGL, guardando y devolviendo su estado (`QUIXJS_GPU2D_MAIN=0`: el contexto auxiliar) |
 | `shader_cache.h/.c` | los programas de WebGL ya enlazados, guardados en `<cache_dir>/shaders` (`GL_OES_get_program_binary`): la siguiente vez se cargan en unos ms en vez de compilarlos; si el driver ya no acepta uno, se enlaza y se guarda de nuevo |
 | `driver.h/.c`    | que driver de OpenGL ES se usa (panfrost, mali o default), leido una vez de `GL_RENDERER` y `GL_VERSION`; el resto del codigo pregunta a `gpu_driver()` en vez de mirar el nombre |
 | `drivers/*.c`    | un archivo por driver con lo que quixjs hace distinto con el, y por que (lo medido) |

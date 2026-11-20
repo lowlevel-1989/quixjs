@@ -38,7 +38,7 @@ typedef struct {
 int compile_scripts(JSContext *ctx, const Config *cfg, ScriptBundle *bundle);
 void free_script_bundle(ScriptBundle *bundle);
 
-// Lee y ejecuta un script del juego, como un <script src> anadido despues.
+// Lee y ejecuta un script del juego, como un <script src> agregado despues.
 // 0 bien, 1 error de sintaxis (ya escrito; el navegador da load igual),
 // -1: no existe, -2: excepcion al ejecutarlo (queda pendiente en ctx).
 int compiler_run_file(JSContext *ctx, const Config *cfg, const char *rel_path);

@@ -16,17 +16,18 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-// navigator: userAgent, platform, language y getGamepads() (la Gamepad API).
+// navigator: userAgent, platform, language, getGamepads() (la Gamepad API) y
+// vibrate() (la Vibration API).
 
 #include <stdio.h>
 #include "core/app_context.h"
 #include "core/timer.h"
 #include "navigator.h"
 
-// navigator.getGamepads() esta en JS (pad_js): pide aqui el estado de los
-// mandos en un Float64Array, de una vez. Construir los objetos desde C (17
-// botones con 3 propiedades cada uno) eran ~100 llamadas a la API de
-// JavaScriptCore: ~300 us por llamada en una RG CubeXX, y RPG Maker la llama
+// navigator.getGamepads() esta en JS (runtime/binding/gamepads.js): pide aqui
+// el estado de los mandos en un Float64Array, de una vez. Construir los objetos
+// desde C (17 botones con 3 propiedades cada uno) eran ~100 llamadas a la API
+// de JavaScriptCore: ~300 us por llamada en una RG CubeXX, y RPG Maker la llama
 // en cada actualizacion.
 //
 // Por mando, PAD_STRIDE numeros: conectado (0/1), los ejes, y por boton
@@ -75,38 +76,24 @@ static JSValue js_pad_id(JSContext *ctx, JSValueConst this_val, int argc, JSValu
   return JS_NewString(ctx, pads[i].id);
 }
 
-// getGamepads en JS: siempre 4 posiciones, null si no hay mando. Los objetos
-// de cada mando se guardan y se actualizan en su sitio (RPG Maker solo lee
-// buttons[i].pressed y axes); uno nuevo si cambia el mando de esa posicion.
-static const char pad_js[] =
-  "(function (nav, state, idOf, AXES, BUTTONS, clock) {\n"
-  "  var STRIDE = 1 + AXES + 2 * BUTTONS, buf = new Float64Array(STRIDE * 4), pads = [null, null, null, null];\n"
-  "  function make(i) {\n"
-  "    var b = [], a = [];\n"
-  "    for (var k = 0; k < BUTTONS; k++) b.push({ pressed: false, touched: false, value: 0 });\n"
-  "    for (var k = 0; k < AXES; k++) a.push(0);\n"
-  "    return { id: idOf(i), index: i, connected: true, mapping: 'standard', timestamp: 0, axes: a, buttons: b };\n"
-  "  }\n"
-  "  function getGamepads() {\n"
-  "    state(buf);\n"
-  "    var list = [null, null, null, null], now = clock.now();\n"
-  "    for (var i = 0; i < 4; i++) {\n"
-  "      var o = i * STRIDE;\n"
-  "      if (!buf[o]) { pads[i] = null; continue; }\n"
-  "      var p = pads[i] || (pads[i] = make(i));\n"
-  "      p.timestamp = now;\n"
-  "      for (var k = 0; k < AXES; k++) p.axes[k] = buf[o + 1 + k];\n"
-  "      for (var k = 0; k < BUTTONS; k++) {\n"
-  "        var bt = p.buttons[k], pr = buf[o + 1 + AXES + 2 * k] !== 0;\n"
-  "        bt.pressed = pr; bt.touched = pr; bt.value = buf[o + 2 + AXES + 2 * k];\n"
-  "      }\n"
-  "      list[i] = p;\n"
-  "    }\n"
-  "    return list;\n"
-  "  }\n"
-  "  nav.getGamepads = getGamepads;\n"
-  "  nav.webkitGetGamepads = getGamepads;\n"
-  "})";
+// rumble(strong, weak, ms): vibrar, cada motor con su fuerza (0 a 1; 0 ms
+// para). Lo usan navigator.vibrate y gamepad.vibrationActuator, en
+// runtime/binding/gamepads.js (los patrones y las esperas van en JS)
+static JSValue js_pad_rumble(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+  AppContext *app = JS_GetContextOpaque(ctx);
+  double strong = 0, weak = 0;
+  int32_t ms = 0;
+  if (argc > 0) JS_ToFloat64(ctx, &strong, argv[0]);
+  if (argc > 1) JS_ToFloat64(ctx, &weak, argv[1]);
+  if (argc > 2) JS_ToInt32(ctx, &ms, argv[2]);
+  backend_vibrate(app->backend, (float)strong, (float)weak, ms);
+  return JS_UNDEFINED;
+}
+
+// getGamepads esta en runtime/binding/gamepads.js. tools/embed_js.py lo mete en
+// el binario al compilar: js_gamepads.h (en obj/gen/) define GAMEPADS_JS, su
+// texto. Ver docs/embedded-js.md.
+#include "js_gamepads.h"
 
 JSValue js_create_navigator(JSContext *ctx) {
   JSValue navigator = JS_NewObject(ctx);
@@ -116,26 +103,29 @@ JSValue js_create_navigator(JSContext *ctx) {
   JS_SetPropertyStr(ctx, navigator, "maxTouchPoints", JS_NewInt32(ctx, 0));
   JS_SetPropertyStr(ctx, navigator, "onLine", JS_FALSE);
 
-  JSValue setup = JS_Eval(ctx, pad_js, sizeof(pad_js) - 1, "<quix-gamepads>", JS_EVAL_TYPE_GLOBAL);
-  if (JS_IsException(setup)) {
-    js_std_dump_error(ctx);
-  } else {
-    JSValue g = JS_GetGlobalObject(ctx);
-    JSValue perf = JS_GetPropertyStr(ctx, g, "performance");
-    JSValue clock = JS_IsObject(perf) ? perf : JS_NewObject(ctx);
-    if (!JS_IsObject(perf)) {
-      JS_FreeValue(ctx, perf);
-      JS_SetPropertyStr(ctx, clock, "now", JS_NewCFunction(ctx, js_pad_now, "now", 0));
-    }
-    JSValue args[6] = { navigator, JS_NewCFunction(ctx, js_pad_state, "padState", 1),
-                        JS_NewCFunction(ctx, js_pad_id, "padId", 1), JS_NewInt32(ctx, GAMEPAD_AXES),
-                        JS_NewInt32(ctx, GAMEPAD_BUTTONS), clock };
-    JSValue r = JS_Call(ctx, setup, JS_UNDEFINED, 6, args);
-    if (JS_IsException(r)) js_std_dump_error(ctx);
-    JS_FreeValue(ctx, r);
-    for (int i = 1; i < 6; i++) if (i < 3 || i == 5) JS_FreeValue(ctx, args[i]);
-    JS_FreeValue(ctx, g);
+  // runtime/binding/gamepads.js: lo que necesita, en la global temporal
+  // __quixPads; el archivo se llama a si mismo con ella al final y la borra
+  JSValue g = JS_GetGlobalObject(ctx);
+  JSValue pads = JS_NewObject(ctx);
+  JS_SetPropertyStr(ctx, pads, "navigator", JS_DupValue(ctx, navigator));
+  JS_SetPropertyStr(ctx, pads, "state", JS_NewCFunction(ctx, js_pad_state, "padState", 1));
+  JS_SetPropertyStr(ctx, pads, "id", JS_NewCFunction(ctx, js_pad_id, "padId", 1));
+  JS_SetPropertyStr(ctx, pads, "rumble", JS_NewCFunction(ctx, js_pad_rumble, "rumble", 3));
+  JS_SetPropertyStr(ctx, pads, "axes", JS_NewInt32(ctx, GAMEPAD_AXES));
+  JS_SetPropertyStr(ctx, pads, "buttons", JS_NewInt32(ctx, GAMEPAD_BUTTONS));
+  JS_SetPropertyStr(ctx, pads, "max", JS_NewInt32(ctx, GAMEPAD_MAX));
+  // el reloj de timestamp: performance, o uno propio si aun no existe
+  JSValue perf = JS_GetPropertyStr(ctx, g, "performance");
+  if (!JS_IsObject(perf)) {
+    JS_FreeValue(ctx, perf);
+    perf = JS_NewObject(ctx);
+    JS_SetPropertyStr(ctx, perf, "now", JS_NewCFunction(ctx, js_pad_now, "now", 0));
   }
-  JS_FreeValue(ctx, setup);
+  JS_SetPropertyStr(ctx, pads, "clock", perf);
+  JS_SetPropertyStr(ctx, g, "__quixPads", pads);
+  JSValue r = JS_Eval(ctx, GAMEPADS_JS, sizeof(GAMEPADS_JS) - 1, "<quix-gamepads>", JS_EVAL_TYPE_GLOBAL);
+  if (JS_IsException(r)) js_std_dump_error(ctx);
+  JS_FreeValue(ctx, r);
+  JS_FreeValue(ctx, g);
   return navigator;
 }

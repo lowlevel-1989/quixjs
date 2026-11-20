@@ -28,6 +28,7 @@ quitan o se añaden líneas.
 | `JavaScriptCore/heap/LocalAllocator.cpp` | llama a ese muestreo cuando un asignador pide más memoria |
 | `JavaScriptCore/runtime/VM.cpp`, `VM.h` | `quixIdleWork` (el barrido pendiente del recolector, hecho en el hueco libre entre imágenes), `quixGCPressure` (cuánto falta para la siguiente recolección) y `quixCollectNow` |
 | `JavaScriptCore/API/JSContextRef.cpp`, `JSContextRefPrivate.h` | esas tres en la API de C: `JSContextGroupPerformIdleWork`, `JSContextGroupGCPressure` y `JSContextGroupCollectNow` |
+| `WTF/wtf/PlatformJSCOnly.cmake` | Android usa las fuentes de Linux (`/proc`), como Linux; en el original iba a las genéricas, que esta copia no tiene |
 
 ## Licencias
 

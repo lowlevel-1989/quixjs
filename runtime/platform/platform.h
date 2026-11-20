@@ -66,6 +66,14 @@ int platform_neighbours(uint32_t *ips, int max);
 void platform_user_name(char *out, size_t room);
 void platform_system_name(char *out, size_t room);
 
+// ---------------------------------------------------------------- archivos
+
+// La ruta de un archivo para las librerias que lo abren ellas (SDL_image,
+// SDL_ttf). En Android SDL toma una ruta relativa por un archivo de dentro
+// del APK: alli se le pone delante la carpeta actual (en buf). En Linux,
+// path tal cual
+const char *platform_file_path(const char *path, char *buf, size_t size);
+
 // ----------------------------------------------------------------- pantalla
 
 // El ultimo refresco de la pantalla: cuando fue (ms, CLOCK_MONOTONIC) y lo que
@@ -73,3 +81,11 @@ void platform_system_name(char *out, size_t room);
 // siempre los mismos. -1 si el sistema no lo dice (entonces el loop va con
 // su reloj)
 int platform_vblank(double *last_ms, double *period_ms);
+
+// ------------------------------------------------------------------ vibrar
+
+// Vibra el aparato ms milisegundos con fuerza amplitude (1 a 255), cuando no
+// vibra ningun mando (lo mira el backend antes). 1 si vibro; 0 si la
+// plataforma no tiene vibrador propio (en Linux, siempre 0: vibran los
+// mandos). En Android, el telefono, como vibracion de un juego
+int platform_vibrate(int ms, int amplitude);

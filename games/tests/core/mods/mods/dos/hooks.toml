@@ -1,0 +1,4 @@
+# los hooks de un mod activo: encima del hook del juego en la misma ruta
+[hooks]
+"Game.hit" = "count.js"
+"Game.miss" = "count.js"

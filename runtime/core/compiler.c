@@ -26,6 +26,7 @@
 #include "config_loader.h"
 #include "compiler.h"
 #include "url.h"
+#include "backend/backend.h"
 
 // El archivo entero, terminado en 0 (NULL si no existe)
 static char *read_file(const char *path, size_t *plen) {
@@ -99,6 +100,7 @@ int compile_scripts(JSContext *ctx, const Config *cfg, ScriptBundle *bundle) {
   if (has_entry) list[n++] = cfg->scripts.entry;
   for (int i = 0; i < total; i++) {
     bundle->filenames[i] = strdup(list[i]);
+    backend_loading_poke();   // el aviso de carga, si se ve (Play en el launcher)
     if (load_script(ctx, cfg->game.game_dir, list[i], &bundle->sources[i], &bundle->sizes[i], &bundle->paths[i]) != 0) {
       fprintf(stderr, "Failed to load %s\n", list[i]);
     }

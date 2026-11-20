@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- El icono: una "q" pixelada en blanco, de 10x12 cuadrados de 5 unidades,
+     en el centro de 108x108 (la zona segura de los iconos adaptativos):
+     ..######..
+     .########.
+     ###....###
+     ##......##
+     ##......##
+     ##......##
+     ###....###
+     .#########
+     ..########
+     ........##
+     ........##
+     ........## -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path android:fillColor="#FFFFFFFF" android:pathData="M39,24h5v5h-5zM44,24h5v5h-5zM49,24h5v5h-5zM54,24h5v5h-5zM59,24h5v5h-5zM64,24h5v5h-5zM34,29h5v5h-5zM39,29h5v5h-5zM44,29h5v5h-5zM49,29h5v5h-5zM54,29h5v5h-5zM59,29h5v5h-5zM64,29h5v5h-5zM69,29h5v5h-5zM29,34h5v5h-5zM34,34h5v5h-5zM39,34h5v5h-5zM64,34h5v5h-5zM69,34h5v5h-5zM74,34h5v5h-5zM29,39h5v5h-5zM34,39h5v5h-5zM69,39h5v5h-5zM74,39h5v5h-5zM29,44h5v5h-5zM34,44h5v5h-5zM69,44h5v5h-5zM74,44h5v5h-5zM29,49h5v5h-5zM34,49h5v5h-5zM69,49h5v5h-5zM74,49h5v5h-5zM29,54h5v5h-5zM34,54h5v5h-5zM39,54h5v5h-5zM64,54h5v5h-5zM69,54h5v5h-5zM74,54h5v5h-5zM34,59h5v5h-5zM39,59h5v5h-5zM44,59h5v5h-5zM49,59h5v5h-5zM54,59h5v5h-5zM59,59h5v5h-5zM64,59h5v5h-5zM69,59h5v5h-5zM74,59h5v5h-5zM39,64h5v5h-5zM44,64h5v5h-5zM49,64h5v5h-5zM54,64h5v5h-5zM59,64h5v5h-5zM64,64h5v5h-5zM69,64h5v5h-5zM74,64h5v5h-5zM69,69h5v5h-5zM74,69h5v5h-5zM69,74h5v5h-5zM74,74h5v5h-5zM69,79h5v5h-5zM74,79h5v5h-5z" />
+</vector>

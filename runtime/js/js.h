@@ -18,7 +18,7 @@
 
 // La capa de motor de quixjs: la API con la que los bindings (canvas,
 // WebGL, DOM, audio, timers...) hablan con el motor de JS. Por debajo esta
-// JavaScriptCore (js_jsc.c, sobre su API en C).
+// JavaScriptCore (js/jsc/, sobre su API en C).
 //
 // La forma de la API viene de la primera version de quixjs, que usaba
 // QuickJS: los mismos nombres (JS_NewObject, JS_GetPropertyStr...) y las
@@ -394,7 +394,7 @@ int JS_ObjectTypeCounts(JSRuntime *rt, char names[][48], double *counts, int max
 void JS_RunGC(JSRuntime *rt);
 
 // El sampling profiler de JavaScriptCore (un thread suyo toma una muestra
-// de la pila cada 10 ms, JSC_sampleInterval en main.c; runtime/core/profiler.c
+// de la pila cada 10 ms, JSC_sampleInterval en core/main/start.c; runtime/core/profiler.c
 // lo resume). Las muestras se
 // recogen como el objeto de su JSON: { interval, traces: [{ timestamp,
 // frames: [{ name, sourceID, line, column, location }] }], sources: [{

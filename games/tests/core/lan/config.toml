@@ -1,0 +1,15 @@
+# quix.lan: la red local para juegos (runtime/lan). Una sola consola: abrir,
+# su firma y nombre, nadie mas en la red de este juego, enviar sin nadie y
+# cerrar
+[game]
+title     = "quixjs lan test"
+cache_dir = "cache/tests/core/lan"
+game_dir  = "games/tests/core/lan"
+width     = 64
+height    = 64
+id        = "quixjs-lan-test"
+
+[scripts]
+libs     = []
+includes = ["../../lib/assert.js"]
+entry    = "main.js"

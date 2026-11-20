@@ -34,5 +34,5 @@ void element_setup(JSContext *ctx, JSValueConst elem, const char *tag);
 void register_element_with_id(JSContext *ctx, JSValue obj, const char *id);
 void free_element_registry(JSContext *ctx);
 
-// Canvas visibles anadidos al documento, en orden (el primero va debajo).
+// Canvas visibles agregados al documento, en orden (el primero va debajo).
 int document_screen_canvases(JSContext *ctx, CanvasData **out, int max);

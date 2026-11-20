@@ -74,6 +74,10 @@ JSValue js_ctx2d_fillRect(JSContext *ctx, JSValueConst this_val, int argc, JSVal
   if (!c) return JS_EXCEPTION;
   double v[4];
   if (read_rect(ctx, argc, argv, v) != 0) return JS_UNDEFINED;
+  // ancho o alto 0: no dibuja nada (como en el navegador). Sin esto, un
+  // canvas en la GPU volvia a la CPU (el primer cono de la linterna de
+  // TerraxLighting en Firework mide 0)
+  if (v[2] == 0 || v[3] == 0) return JS_UNDEFINED;
   Context2DState *s = CTX2D_STATE(c);
   CanvasData *cd;
   Gpu2D *g = gpu_target(ctx, c, &cd);

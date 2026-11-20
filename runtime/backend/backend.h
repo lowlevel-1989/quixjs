@@ -98,12 +98,19 @@ typedef struct {
   // Asignar el mando (Controls del launcher): ver backend_capture_input
   int  (*capture_input)(Backend* backend, int step, char *out, size_t room);
   int  (*save_controller)(Backend* backend, const char *pairs);
+  // Un mando de prueba (tests): ver backend_test_pad. NULL si no hay
+  int  (*test_pad)(Backend* backend, int button, int type);
+  // Vibrar: ver backend_vibrate. NULL si no puede
+  void (*vibrate)(Backend* backend, float strong, float weak, int ms);
   // Pantalla completa (Options del launcher, en el PC), sin reiniciar
   void (*set_fullscreen)(Backend* backend, int on);
   // El titulo de la ventana (backend->title), ya
   void (*set_title)(Backend* backend);
   // Los refrescos por segundo de la pantalla de la ventana (0 si no se sabe)
   double (*refresh_rate)(Backend* backend);
+  // El tamano de la pantalla de la ventana, en pixeles (0 si bien; NULL o -1
+  // si no se sabe: sin ventana)
+  int  (*screen_size)(Backend* backend, int *w, int *h);
   // Con el thread que presenta: espera a que se haya mostrado la imagen
   // entregada (NULL si no hay thread)
   void (*present_wait)(Backend* backend);
@@ -122,16 +129,25 @@ struct Backend {
   int   fullscreen;   // se fija antes de backend_init
   int   resizable;    // ventana redimensionable (en un tiling WM no flota)
   int   no_vsync;     // presentar sin esperar al refresco (se fija antes de backend_init)
+  int   no_vibration; // Options > Vibration: Off (backend_vibrate no hace nada)
   char  overlay[32];  // texto encima de la ventana, arriba a la derecha (--fps)
   // controller.map: las asignaciones del mando hechas en el launcher (lineas
   // de SDL_GAMECONTROLLERCONFIG, como las de PortMaster). Se fija antes de
   // backend_init, que las carga
   char  controller_map[1024];
+  // [controls.keys]: acciones con nombre que pulsan una tecla, para lo que
+  // el juego solo escucha en el teclado (la antorcha de Fear & Hunger, la T).
+  // El boton de cada una se asigna en Controls y se guarda en
+  // controller.keys, junto a controller.map. code es KeyboardEvent.code. Se
+  // fija antes de backend_init
+  int   pad_keys_count;
+  struct { char name[48]; char code[24]; } pad_keys[8];
   char  title[256];   // el titulo de la ventana: "quixjs | <juego>" (backend_set_title)
   Toast toast;        // aviso de un logro (el backend lo anima y lo quita solo)
   // Una imagen de adelanto ([engine] present_ahead): las muestra otro thread y
   // el juego sigue con la siguiente sin esperar al refresco.
   int    present_ahead;    // permitido (se fija antes de backend_init)
+  int    fps;              // [engine] fps, el tope de imagenes por segundo (0: 60)
   int    present_thread;   // el backend lo pone a 1 cuando su thread va
   int    present_async;    // la siguiente imagen se entrega sin esperar a que se vea
   double present_at;       // y se muestra en ese momento (CLOCK_MONOTONIC, ms; 0: ya)
@@ -178,6 +194,21 @@ const char *backend_name(Backend* backend);
 enum { CAPTURE_START, CAPTURE_POLL, CAPTURE_STOP };
 int  backend_capture_input(Backend* backend, int step, char *out, size_t room);
 int  backend_save_controller(Backend* backend, const char *pairs);
+// Un mando de prueba para los tests (quix.pressPad): la primera vez conecta
+// un mando virtual (SDL_JoystickAttachVirtual) y le pulsa (TEST_PAD_DOWN) o
+// suelta (TEST_PAD_UP) el boton (indice del mapeo "standard"); con
+// TEST_PAD_PRESS lo pulsa y lo suelta antes de la siguiente imagen (sus dos
+// eventos llegan juntos). Devuelve la posicion del mando (navigator.getGamepads)
+// o -1 si el backend no puede (dummy, SDL de antes de 2.0.14).
+enum { TEST_PAD_UP, TEST_PAD_DOWN, TEST_PAD_PRESS };
+int  backend_test_pad(Backend* backend, int button, int type);
+// Vibra ms milisegundos (0 para) con la fuerza de cada motor, de 0 a 1:
+// strong el grande (golpe, grave), weak el pequeno (zumbido, agudo). Los
+// mandos que puedan y, si ninguno, el aparato (platform_vibrate, el telefono
+// en Android, con la mayor de las dos). Sin vibrador, o con no_vibration,
+// no hace nada. Lo usan
+// navigator.vibrate y gamepad.vibrationActuator (runtime/binding/gamepads.js)
+void backend_vibrate(Backend* backend, float strong, float weak, int ms);
 // La ventana a pantalla completa o no, ya (backend->fullscreen lo dice)
 void backend_set_fullscreen(Backend* backend, int on);
 // El titulo de la ventana: "quixjs | <juego>", o "quixjs" sin titulo. Antes de
@@ -185,6 +216,7 @@ void backend_set_fullscreen(Backend* backend, int on);
 void backend_set_title(Backend* backend, const char *game_title);
 // Los refrescos por segundo de la pantalla donde esta la ventana (0 si no se sabe)
 double backend_refresh_rate(Backend* backend);
+int    backend_screen_size(Backend* backend, int *w, int *h);   // -1 si no se sabe
 void   backend_present_wait(Backend* backend);
 int    backend_presented(Backend* backend, double *ms, int max);   // -1 si no lo sabe
 // El aviso de carga: on 1 al empezar a cargar (con after_ms, se ve solo si el
@@ -198,6 +230,9 @@ int    backend_loading_visible(Backend* backend);
 // el aviso se ve y hace rato que no se muestra nada, la ultima imagen otra
 // vez con el aviso (iface->repaint). Casi gratis si no hay aviso.
 void   backend_loading_poke(void);
+// El aviso ya, sin esperar (al pulsar Play en el launcher: el juego tarda en
+// arrancar y aun no ha dibujado nada); se quita como los demas
+void   backend_loading_now(Backend* backend);
 // Una vez por imagen presentada: quita el aviso cuando toca
 void   backend_loading_tick(Backend* backend);
 

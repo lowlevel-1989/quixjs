@@ -26,6 +26,7 @@
 #include "core/timer.h"
 #include "core/url.h"
 #include "events.h"
+#include "hooks/hooks.h"
 #include "script.h"
 
 static JSValue static_scripts = { 0 };   // <script> de [scripts] del toml del juego
@@ -182,6 +183,10 @@ void script_maybe_run(JSContext *ctx, JSValueConst el) {
 
 static JSValue js_document_loaded(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
   set_current_script(ctx, JS_NULL);
+  // los hooks de lo que crearon los <script> del arranque, antes de load: RPG
+  // Maker MZ llama en window load a effekseer.initRuntime, de un <script>
+  // (si no, el hook llegaba en la imagen siguiente, tarde)
+  if (hooks_pending()) hooks_install(ctx);
   JSValue global = JS_GetGlobalObject(ctx);
   JSValue document = JS_GetPropertyStr(ctx, global, "document");
   JS_SetPropertyStr(ctx, document, "readyState", JS_NewString(ctx, "interactive"));
@@ -195,7 +200,7 @@ static JSValue js_document_loaded(JSContext *ctx, JSValueConst this_val, int arg
 }
 
 void script_document_loaded(JSContext *ctx) {
-  // despues de los <script src> que se anadieron durante el arranque
+  // despues de los <script src> que se agregaron durante el arranque
   JSValue fn = JS_NewCFunction(ctx, js_document_loaded, "documentLoaded", 0);
   timer_set(ctx, fn, 0, 0, 0, NULL);
   JS_FreeValue(ctx, fn);

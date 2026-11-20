@@ -4,13 +4,38 @@
 
 La capa de motor: el único sitio de quixjs que conoce el motor de JavaScript.
 Los bindings (`binding/`), los hooks y el resto del runtime usan `js.h`;
-`js_jsc.c` lo implementa sobre la API en C de JavaScriptCore (WebKit),
+`jsc/` lo implementa sobre la API en C de JavaScriptCore (WebKit),
 compilado por nosotros como librería estática (`tools/build-jsc.sh`).
 
 | archivo    | qué hace |
 |------------|----------|
 | `js.h`     | la API: valores (`JSValue`), objetos y propiedades, funciones de C y clases con datos de C, errores, ejecutar código, ArrayBuffer y TypedArray, memoria y el sampling profiler |
-| `js_jsc.c` | la API sobre JavaScriptCore: un `JSValue` con un objeto o una cadena guarda su `JSValueRef`; las funciones de C y los objetos de las clases son objetos de JSC creados con una `JSClassRef` cuyo dato privado dice qué función de C llamar o qué puntero de C llevan |
+| `jsc.c` | archivo indice: incluye los archivos de `jsc/` y se compila como uno (ver abajo) |
+| `jsc/jsc.h` | lo que comparten los archivos de `jsc/`: las estructuras (`JSRuntime`, `JSContext`, `FnPriv`, `ObjPriv`) y las ayudas pequeñas (`wrap`, `ref_of`...) |
+| `jsc/context.c` | runtime y contextos |
+| `jsc/value.c` | valores: liberar, crear y convertir |
+| `jsc/property.c` | propiedades: la cache de nombres, átomos y propiedades ocultas (`JS_SetHidden`) |
+| `jsc/error.c` | excepciones |
+| `jsc/function.c` | funciones de C en JS: las llamadas desde JSC (`fn_call` y el camino rápido `fast_call`), `JS_Call`, listas de funciones |
+| `jsc/class.c` | clases con datos de C (`JS_NewClass`, `JS_SetOpaque`...) |
+| `jsc/eval.c` | ejecutar código (`JS_Eval`) |
+| `jsc/typedarray.c` | ArrayBuffer y TypedArray |
+| `jsc/profiler.c` | memoria, GC y profiler (la API privada de JSC y los parches de quixjs) |
+
+## Cómo está hecho
+
+Un `JSValue` con un objeto o una cadena guarda su `JSValueRef`; las funciones
+de C y los objetos de las clases son objetos de JSC creados con una
+`JSClassRef` cuyo dato privado dice qué función de C llamar o qué puntero de C
+llevan.
+
+Los archivos de `jsc/` se compilan juntos, como uno solo: `jsc.c` es un
+archivo indice que solo los incluye, y el `Makefile` compila `jsc.c`. Así el
+compilador mete dentro (inline) las funciones pequeñas de un archivo en otro,
+igual que cuando era un solo archivo. Compilados aparte, las llamadas de JS a
+C eran ~4 % más lentas. Un archivo nuevo en `jsc/` se agrega a `jsc.c`. Cada
+archivo incluye `jsc.h`, donde está declarado todo lo compartido, así que el
+orden de `jsc.c` no importa.
 
 ## Reglas
 

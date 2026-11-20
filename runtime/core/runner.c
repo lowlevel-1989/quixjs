@@ -21,6 +21,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "runner.h"
+#include "backend/backend.h"
 
 int runner_run_bundle(JSContext *ctx, const ScriptBundle *bundle, void (*before)(JSContext *ctx, int index)) {
   for (int i = 0; i < bundle->count; i++) {
@@ -31,6 +32,7 @@ int runner_run_bundle(JSContext *ctx, const ScriptBundle *bundle, void (*before)
       return -1;
     }
     if (before) before(ctx, i);
+    backend_loading_poke();   // el aviso de carga, si se ve (Play en el launcher)
     JSValue val = JS_Eval(ctx, bundle->sources[i], bundle->sizes[i], bundle->paths[i], JS_EVAL_TYPE_GLOBAL);
     if (JS_IsException(val)) {
       fprintf(stderr, "Error executing %s:\n", bundle->filenames[i]);

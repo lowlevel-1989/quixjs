@@ -25,9 +25,41 @@ urls and the test tools (`--script`, `--debug`).
 | `input_script.c`  | `--script <file>`: input script for tests, one action per line in a given frame (`press`, `down`, `up`, `shot`, `log`, `exit`) |
 | `debug_server.c`  | `--debug`: debug console on a Unix socket (`quixjs.sock`), used with `tools/console.py` |
 | `profiler.c`      | `--profile`: the sampling profiler of JavaScriptCore, a report every 10 s and on exit |
+| `profiler.js`     | the summary of the report in JS (groups the samples by function); in the binary through `tools/embed_js.py` |
 | `watchdog.c`      | emergency exit: a thread reads the gamepads from the kernel; Select + Start quits when the loop is stuck more than 1 s |
 | `worker.c`        | a worker thread for loading in the background (decode images, read and decrypt sounds) |
 | `memstats.c`      | memory of canvases, images and WebGL textures, for the `mem` command |
+
+## main()
+
+`main()` reads as an index: start, the loop of each frame and the end.
+
+```c
+if (!start_window(r)) return 1;        // the toml, the backend and the window
+if (!load_port(r)) return 1;           // saves, achievements, symbols, cheats, hooks, --script
+if (!launcher(r, &code)) return code;  // the menu (--launcher): play or exit
+if (!start_js(r)) return 1;            // mods, JS engine, APIs, fonts, scripts of the game
+start_tools(r);                        // --fps, --profile, --debug, the frame rate cap
+
+while (!r->failed) {
+  housekeeping(r);                     // memory and profiler, every few seconds
+  events(r, ...);                      // backend, debug console, --script
+  run_timers(r);                       // input, promises, timers
+  if (time for a frame) {
+    game_frame(r);                     // requestAnimationFrame, video, audio, achievements
+    pace_frame(r);                     // which refresh this frame goes to
+    present_frame(r);                  // show it and when the next one is due
+  }
+  wait_next(r);                        // anything left to do? wait for the next one
+}
+return finish(r);                      // --hold, --screenshot, reports, free everything
+```
+
+`main.c` is an index file: `main()` is there and the steps are in `main/`
+([README](main/README.md)). The steps share their state in `Run` and `Loop`.
+All the steps are `always_inline` (`STEP`): the compiler copies them inside
+`main()`, with no extra calls each frame, as when everything was written in
+`main()` (none of them exists as a separate function in `main.o`).
 
 ## The main loop
 

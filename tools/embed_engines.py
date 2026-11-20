@@ -11,6 +11,9 @@ recibe la funcion original del juego y devuelve la que la sustituye.
 
 El hooks.toml de cada motor (sus hooks de siempre, [hooks] como en el
 config.toml) va tambien: lo usa un juego con [hooks] engine = "<motor>".
+
+runtime/engines/lib/*.js no son hooks: son modulos que cualquier hook puede
+usar con __quixEngine.lib("<archivo sin .js>") (ENGINE_LIBS).
 """
 import os
 import sys
@@ -29,9 +32,16 @@ def main():
     root, out = sys.argv[1], sys.argv[2]
     hooks = []
     presets = []
+    libs = []
     for engine in sorted(os.listdir(root)):
         folder = os.path.join(root, engine)
         if not os.path.isdir(folder):
+            continue
+        if engine == "lib":
+            for name in sorted(os.listdir(folder)):
+                if name.endswith(".js"):
+                    with open(os.path.join(folder, name)) as f:
+                        libs.append((name[:-3], f.read()))
             continue
         preset = os.path.join(folder, "hooks.toml")
         if os.path.exists(preset):
@@ -54,6 +64,13 @@ def main():
     for engine, text in presets:
         lines.append('  { "' + engine + '",')
         lines.append(c_string(text) + " },")
+    lines.append("  { 0, 0 }")
+    lines.append("};")
+    lines += ["", "// runtime/engines/lib: los modulos de __quixEngine.lib (nombre y codigo)",
+              "static const EngineHook ENGINE_LIBS[] = {"]
+    for name, src in libs:
+        lines.append('  { "' + name + '",')
+        lines.append(c_string(src) + " },")
     lines.append("  { 0, 0 }")
     lines.append("};")
     data = "\n".join(lines) + "\n"

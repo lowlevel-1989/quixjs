@@ -21,18 +21,40 @@
 // nombre, como en el plugin). Si hay nombre, la original. Solo si la funcion
 // es la del plugin.
 //
+// Referencias (el codigo que reproduce o reescribe; gracias a sus autores):
+//   YEP_BattleEngineCore v1.39b, de Yanfly Engine Plugins (sus condiciones de uso):
+//   https://yanfly.moe/yep/ (Window_EnemyVisualSelect.refresh)
+//
 // Uso (config.toml o port.toml):
 //   [hooks]
 //   "Window_EnemyVisualSelect.prototype.refresh" = "rpgmaker-mv/yep-enemy-select-refresh"
 //
-// El archivo es una funcion que recibe la original y devuelve la nueva.
+// El archivo es una funcion que recibe la original y devuelve la nueva. La
+// llama runtime/hooks/hooks.c (hooks_install) al instalar el hook, cuando el
+// juego ya cargo sus scripts. Ver runtime/engines/README.md.
 function (original) {
-  var YEP = 'function(){this.contents.clear();if(!this._battler)return;if(!this._showEnemyName)return;' +
-    'if(this._battler.isHidden())return;this._requestRefresh=false;' +
-    'this.contents.fontSize=Yanfly.Param.BECEnemyFontSize;vartext=this._battler.name();' +
-    'varwy=this.contents.height-this.lineHeight();' +
-    "this.drawText(text,0,wy,this.contents.width,'center');}";
-  if (String(original).replace(/\s+/g, '') !== YEP) return original;
+  // MODEL: las funciones que espera el hook, tal cual (las de RPG Maker MV o
+  // las del plugin; ver Referencias arriba), copiadas del juego con
+  // tools/rpgmaker_mv_model.py. No se ejecutan: son el modelo con el que se
+  // compara.
+  var MODEL = {
+    'Window_EnemyVisualSelect.refresh': function() {
+        this.contents.clear();
+        if (!this._battler) return;
+        if (!this._showEnemyName) return;
+        if (this._battler.isHidden()) return;
+        this._requestRefresh = false;
+        this.contents.fontSize = Yanfly.Param.BECEnemyFontSize;
+        var text = this._battler.name();
+        var wy = this.contents.height - this.lineHeight();
+        this.drawText(text, 0, wy, this.contents.width, 'center');
+    }
+  };
+  // sameCode (runtime/engines/same-code.js): la funcion del juego es igual que
+  // el modelo, sin contar espacios? Si un plugin la cambio, el hook deja la
+  // suya y no hace nada
+  var sameCode = __quixEngine.sameCode;
+  if (!sameCode(original, MODEL['Window_EnemyVisualSelect.refresh'])) return original;
   return function () {
     var battler = this._battler;
     if (battler && this._showEnemyName && !battler.isHidden()) {

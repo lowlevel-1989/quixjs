@@ -54,6 +54,13 @@ struct Gpu2D {
   int       luts;
   int       opaque;          // todo el canvas es opaco (tras un relleno opaco entero)
   int       external;        // tex es la textura de WebGL a la que se subia (gpu2d_retarget)
+  // lo ultimo pintado entero (empieza con un relleno de todo el canvas): si
+  // lo siguiente es igual, la textura ya lo tiene (ver flush)
+  Cmd      *last;
+  int       last_n, last_cap, last_luts;
+  unsigned  last_tex;
+  uint8_t  *last_lut;
+  unsigned  mfbo, mfbo_tex;  // el framebuffer en el contexto de WebGL (ver flush)
 };
 
 // los canvas que dibujan en una textura de WebGL (para gpu2d_forget_texture)
@@ -245,6 +252,9 @@ void gpu2d_free(Gpu2D *g) {
   if (!g) return;
   drop_cmds(g);
   free(g->cmds);
+  free(g->last);
+  free(g->last_lut);
+  if (g->mfbo) qgl.DeleteFramebuffers(1, &g->mfbo);   // del contexto de WebGL (el actual)
   if (g->external) {   // la textura es de WebGL: no se borra
     external_set(g, 0);
     g->external = 0;
@@ -260,6 +270,8 @@ void gpu2d_free(Gpu2D *g) {
 
 int gpu2d_resize(Gpu2D *g, int w, int h) {
   drop_cmds(g);
+  g->last_n = 0;
+  g->mfbo_tex = 0;
   if (g->external) {   // la textura de WebGL se queda como esta; una propia nueva
     external_set(g, 0);
     g->external = 0;
@@ -293,9 +305,37 @@ static int op_supported(CompositeOp op) {
 }
 
 // Pinta lo apuntado. Con el contexto auxiliar actual.
-static void draw_pending(Gpu2D *g) {
+// Apunta lo que se va a pintar si repinta todo el canvas (el primero es un
+// relleno entero) y no lleva mascaras: el resultado depende solo de esto
+static void remember(Gpu2D *g) {
+  g->last_n = 0;
+  if (g->cmds[0].mode != MODE_CLEAR) return;
+  for (int i = 0; i < g->count; i++) if (g->cmds[i].mask) return;
+  if (g->last_cap < g->count) {
+    Cmd *n = realloc(g->last, sizeof(Cmd) * g->count);
+    if (!n) return;
+    g->last = n;
+    g->last_cap = g->count;
+  }
+  if (!g->last_lut && !(g->last_lut = malloc(sizeof g->lut))) return;
+  memcpy(g->last, g->cmds, sizeof(Cmd) * g->count);
+  memcpy(g->last_lut, g->lut, (size_t)g->luts * 256 * 4);
+  g->last_luts = g->luts;
+  g->last_tex = g->tex;
+  g->last_n = g->count;
+}
+
+// Lo pendiente es lo mismo que lo ultimo pintado entero, en la misma textura
+static int same_as_last(const Gpu2D *g) {
+  return g->last_n > 0 && g->last_n == g->count && g->last_tex == g->tex && g->last_luts == g->luts &&
+         memcmp(g->last, g->cmds, sizeof(Cmd) * g->count) == 0 &&
+         memcmp(g->last_lut, g->lut, (size_t)g->luts * 256 * 4) == 0;
+}
+
+static void draw_pending_to(Gpu2D *g, unsigned fbo) {
   if (!g->count) return;
-  qgl.BindFramebuffer(GL_FRAMEBUFFER, g->fbo);
+  remember(g);
+  qgl.BindFramebuffer(GL_FRAMEBUFFER, fbo);
   qgl.Viewport(0, 0, g->w, g->h);
   qgl.Disable(GL_SCISSOR_TEST);
   qgl.Disable(GL_DEPTH_TEST);
@@ -352,8 +392,125 @@ static void draw_pending(Gpu2D *g) {
   drop_cmds(g);
 }
 
+static void draw_pending(Gpu2D *g) {
+  draw_pending_to(g, g->fbo);
+}
+
+// Pintar en el contexto de WebGL (el del juego), guardando su estado y
+// devolviendolo despues, en lugar de en el contexto auxiliar. Cambiar de
+// contexto en cada imagen cortaba el dibujo de la imagen en curso: en la RG
+// CubeXX (panfrost), en Firework caminando, de ~680 a ~420 imagenes tardias
+// (45 ms o mas) por pasada de media, sin las tandas malas (3+3); Fear &
+// Hunger igual. QUIXJS_GPU2D_MAIN=0 vuelve al auxiliar.
+typedef struct {
+  GLint fb, vp[4], abuf, active, tex[2], prog, unpack;
+  GLint beq[2], bf[4];
+  GLboolean en[5], cmask[4];
+  GLfloat clear[4];
+  struct { GLint en, size, type, norm, stride, buf; void *ptr; } at[3];
+} SavedGL;
+
+static const GLenum caps[5] = { GL_SCISSOR_TEST, GL_DEPTH_TEST, GL_STENCIL_TEST, GL_CULL_FACE, GL_BLEND };
+
+static void save_gl(SavedGL *s) {
+  qgl.GetIntegerv(GL_FRAMEBUFFER_BINDING, &s->fb);
+  qgl.GetIntegerv(GL_VIEWPORT, s->vp);
+  qgl.GetIntegerv(GL_ARRAY_BUFFER_BINDING, &s->abuf);
+  qgl.GetIntegerv(GL_ACTIVE_TEXTURE, &s->active);
+  for (int i = 0; i < 2; i++) {
+    qgl.ActiveTexture(GL_TEXTURE0 + i);
+    qgl.GetIntegerv(GL_TEXTURE_BINDING_2D, &s->tex[i]);
+  }
+  qgl.GetIntegerv(GL_CURRENT_PROGRAM, &s->prog);
+  qgl.GetIntegerv(GL_UNPACK_ALIGNMENT, &s->unpack);
+  qgl.GetIntegerv(GL_BLEND_EQUATION_RGB, &s->beq[0]);
+  qgl.GetIntegerv(GL_BLEND_EQUATION_ALPHA, &s->beq[1]);
+  qgl.GetIntegerv(GL_BLEND_SRC_RGB, &s->bf[0]);
+  qgl.GetIntegerv(GL_BLEND_DST_RGB, &s->bf[1]);
+  qgl.GetIntegerv(GL_BLEND_SRC_ALPHA, &s->bf[2]);
+  qgl.GetIntegerv(GL_BLEND_DST_ALPHA, &s->bf[3]);
+  for (int i = 0; i < 5; i++) s->en[i] = qgl.IsEnabled(caps[i]);
+  qgl.GetBooleanv(GL_COLOR_WRITEMASK, s->cmask);
+  qgl.GetFloatv(GL_COLOR_CLEAR_VALUE, s->clear);
+  for (int a = 0; a < 3; a++) {
+    qgl.GetVertexAttribiv(a, GL_VERTEX_ATTRIB_ARRAY_ENABLED, &s->at[a].en);
+    qgl.GetVertexAttribiv(a, GL_VERTEX_ATTRIB_ARRAY_SIZE, &s->at[a].size);
+    qgl.GetVertexAttribiv(a, GL_VERTEX_ATTRIB_ARRAY_TYPE, &s->at[a].type);
+    qgl.GetVertexAttribiv(a, GL_VERTEX_ATTRIB_ARRAY_NORMALIZED, &s->at[a].norm);
+    qgl.GetVertexAttribiv(a, GL_VERTEX_ATTRIB_ARRAY_STRIDE, &s->at[a].stride);
+    qgl.GetVertexAttribiv(a, GL_VERTEX_ATTRIB_ARRAY_BUFFER_BINDING, &s->at[a].buf);
+    qgl.GetVertexAttribPointerv(a, GL_VERTEX_ATTRIB_ARRAY_POINTER, &s->at[a].ptr);
+  }
+}
+
+static void restore_gl(const SavedGL *s) {
+  for (int a = 0; a < 3; a++) {
+    qgl.BindBuffer(GL_ARRAY_BUFFER, s->at[a].buf);
+    if (s->at[a].buf || s->at[a].ptr)
+      qgl.VertexAttribPointer(a, s->at[a].size, s->at[a].type, (GLboolean)s->at[a].norm, s->at[a].stride, s->at[a].ptr);
+    if (s->at[a].en) qgl.EnableVertexAttribArray(a);
+    else qgl.DisableVertexAttribArray(a);
+  }
+  qgl.BindBuffer(GL_ARRAY_BUFFER, s->abuf);
+  qgl.BindFramebuffer(GL_FRAMEBUFFER, s->fb);
+  qgl.Viewport(s->vp[0], s->vp[1], s->vp[2], s->vp[3]);
+  for (int i = 0; i < 2; i++) {
+    qgl.ActiveTexture(GL_TEXTURE0 + i);
+    qgl.BindTexture(GL_TEXTURE_2D, s->tex[i]);
+  }
+  qgl.ActiveTexture(s->active);
+  qgl.UseProgram(s->prog);
+  qgl.PixelStorei(GL_UNPACK_ALIGNMENT, s->unpack);
+  qgl.BlendEquationSeparate(s->beq[0], s->beq[1]);
+  qgl.BlendFuncSeparate(s->bf[0], s->bf[1], s->bf[2], s->bf[3]);
+  for (int i = 0; i < 5; i++) {
+    if (s->en[i]) qgl.Enable(caps[i]);
+    else qgl.Disable(caps[i]);
+  }
+  qgl.ColorMask(s->cmask[0], s->cmask[1], s->cmask[2], s->cmask[3]);
+  qgl.ClearColor(s->clear[0], s->clear[1], s->clear[2], s->clear[3]);
+}
+
+static int main_ctx = -1;
+
+static int flush_main(Gpu2D *g) {
+  if (!g->mfbo || g->mfbo_tex != g->tex) {
+    GLint prev = 0;
+    qgl.GetIntegerv(GL_FRAMEBUFFER_BINDING, &prev);
+    if (!g->mfbo) qgl.GenFramebuffers(1, &g->mfbo);
+    qgl.BindFramebuffer(GL_FRAMEBUFFER, g->mfbo);
+    qgl.FramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, g->tex, 0);
+    int ok = qgl.CheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE;
+    qgl.BindFramebuffer(GL_FRAMEBUFFER, prev);
+    if (!ok) return -1;
+    g->mfbo_tex = g->tex;
+  }
+  SavedGL sv;
+  save_gl(&sv);
+  draw_pending_to(g, g->mfbo);
+  restore_gl(&sv);
+  return 0;
+}
+
 static int flush(Gpu2D *g) {
   if (!g->count) return 0;
+  // La mascara de luces de TerraxLighting se repinta entera en cada
+  // actualizacion; con las luces y la pantalla quietas sale igual: la textura
+  // ya lo tiene y no se vuelve a pintar (ni a cambiar de contexto, ni a subir
+  // los degradados)
+  if (same_as_last(g)) {
+    drop_cmds(g);
+    return 0;
+  }
+  if (main_ctx < 0) {
+    const char *e = getenv("QUIXJS_GPU2D_MAIN");
+    main_ctx = !(e && atoi(e) == 0);
+    if (!main_ctx) printf("[gpu-canvas] drawing in the auxiliary context\n");
+  }
+  if (main_ctx && ready && g->tex) {
+    gl_make_current();
+    if (flush_main(g) == 0) return 0;
+  }
   if (begin() != 0) return -1;
   draw_pending(g);
   gl_aux_end();
@@ -562,6 +719,8 @@ unsigned gpu2d_texture(Gpu2D *g, int *w, int *h) {
 // copiaba entera en cada imagen (866x630, ~1 ms en una RG CubeXX).
 int gpu2d_retarget(Gpu2D *g, unsigned dst) {
   if (!g || !dst) return -1;
+  g->mfbo_tex = 0;   // el framebuffer de WebGL se vuelve a enganchar (ver flush_main)
+  g->last_n = 0;     // y lo ultimo pintado no esta en la textura nueva
   if (g->external && g->tex == dst) return 0;
   if (begin() != 0) return -1;
   draw_pending(g);
@@ -593,6 +752,8 @@ void gpu2d_forget_texture(unsigned tex) {
   for (int i = 0; i < MAX_EXTERNAL; i++) {
     Gpu2D *g = external_list[i];
     if (!g || g->tex != tex) continue;
+    g->mfbo_tex = 0;
+    g->last_n = 0;
     external_set(g, 0);
     g->external = 0;
     if (begin() != 0) {

@@ -18,7 +18,7 @@
 
 #pragma once
 
-// El backend sdl: ventana con SDL2 y OpenGL ES 2 (ver sdl/backend.c).
+// El backend sdl: ventana con SDL2 y OpenGL ES 2 (ver ../sdl.c y README.md).
 
 #include "../backend.h"
 

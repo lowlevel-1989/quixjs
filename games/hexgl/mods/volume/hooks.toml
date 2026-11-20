@@ -1,0 +1,8 @@
+# volume: Music y Effects en el menu del port (HexGL pone todo al mismo
+# volumen y la musica casi no se oia). Ver README.md.
+scripts = ["levels.js"]   # los dos niveles y como se aplican
+
+[hooks]
+"PortMenu.items"      = "options.js"   # las dos opciones del menu
+"bkcore.Audio.play"   = "sounds.js"    # empieza un sonido (lo pone a 1)
+"bkcore.Audio.volume" = "sounds.js"    # el juego cambia el volumen de uno

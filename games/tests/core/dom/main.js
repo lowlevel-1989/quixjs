@@ -43,6 +43,15 @@ T.test('elements', function () {
   T.equal(div.getAttribute('id'), 'my-div', 'getAttribute');
   T.equal(document.getElementById('my-div'), div, 'getElementById');
   T.equal(document.getElementById('nothing'), null, 'getElementById missing -> null');
+
+  // con el.id (sin setAttribute), tambien dentro de otro elemento
+  var outer = document.createElement('div'), inner = document.createElement('div');
+  outer.id = 'outer';
+  inner.id = 'inner';
+  outer.appendChild(inner);
+  document.body.appendChild(outer);
+  T.equal(document.getElementById('outer'), outer, 'getElementById with el.id');
+  T.equal(document.getElementById('inner'), inner, 'getElementById with el.id, nested');
 });
 
 T.test('canvas', function () {

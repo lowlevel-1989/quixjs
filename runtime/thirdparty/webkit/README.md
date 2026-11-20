@@ -28,6 +28,7 @@ only removed or added.
 | `JavaScriptCore/heap/LocalAllocator.cpp` | calls that sampling when an allocator asks for more memory |
 | `JavaScriptCore/runtime/VM.cpp`, `VM.h` | `quixIdleWork` (the pending sweep of the garbage collector, done in the free time between frames), `quixGCPressure` (how close the next collection is) and `quixCollectNow` |
 | `JavaScriptCore/API/JSContextRef.cpp`, `JSContextRefPrivate.h` | those three in the C API: `JSContextGroupPerformIdleWork`, `JSContextGroupGCPressure` and `JSContextGroupCollectNow` |
+| `WTF/wtf/PlatformJSCOnly.cmake` | Android uses the Linux sources (`/proc`), like Linux; upstream it fell to the generic ones, which this copy does not have |
 
 ## Licenses
 

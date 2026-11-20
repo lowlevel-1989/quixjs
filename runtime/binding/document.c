@@ -29,7 +29,7 @@
 #include "core/app_context.h"
 
 // Un DOM minimo: lo justo para que las librerias encuentren body, puedan
-// crear elementos, anadir el canvas y registrar eventos. Solo los canvas
+// crear elementos, agregar el canvas y registrar eventos. Solo los canvas
 // tienen comportamiento real; el resto son objetos con las propiedades
 // habituales.
 
@@ -42,7 +42,7 @@ static ElementEntry *element_registry       = NULL;
 static int           element_registry_count = 0;
 
 static JSValue element_proto = { 0 };
-static JSValue screen_list   = { 0 };   // canvas anadidos al documento (en orden)
+static JSValue screen_list   = { 0 };   // canvas agregados al documento (en orden)
 static int     document_ready = 0;
 
 void register_element_with_id(JSContext *ctx, JSValue obj, const char *id) {
@@ -201,7 +201,7 @@ static JSValue js_element_removeChild(JSContext *ctx, JSValueConst this_val, int
 }
 
 static JSValue js_element_insertBefore(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
-  // el orden no importa para pintar: se anade al final
+  // el orden no importa para pintar: se agrega al final
   return js_element_appendChild(ctx, this_val, argc, argv);
 }
 
@@ -399,6 +399,27 @@ JSValue js_get_element_by_id(JSContext *ctx, JSValueConst this_val,
   return JS_NULL;
 }
 
+// el elemento de id dentro de node (sus childNodes, en orden), o JS_NULL:
+// para los que recibieron el id con el.id = "..." (no pasan por
+// setAttribute, que es lo que los registra)
+static JSValue find_by_id(JSContext *ctx, JSValueConst node, const char *id, int depth) {
+  JSValue kids = JS_GetPropertyStr(ctx, node, "childNodes");
+  uint32_t len = JS_IsObject(kids) && depth < 64 ? array_length(ctx, kids) : 0;
+  JSValue found = JS_NULL;
+  for (uint32_t i = 0; i < len && JS_IsNull(found); i++) {
+    JSValue kid = JS_GetPropertyUint32(ctx, kids, i);
+    JSValue kid_id = JS_GetPropertyStr(ctx, kid, "id");
+    const char *s = JS_IsString(kid_id) ? JS_ToCString(ctx, kid_id) : NULL;
+    if (s && strcmp(s, id) == 0) found = JS_DupValue(ctx, kid);
+    else if (JS_IsObject(kid)) found = find_by_id(ctx, kid, id, depth + 1);
+    if (s) JS_FreeCString(ctx, s);
+    JS_FreeValue(ctx, kid_id);
+    JS_FreeValue(ctx, kid);
+  }
+  JS_FreeValue(ctx, kids);
+  return found;
+}
+
 static JSValue js_getElementById(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
 
   if (argc < 1) {
@@ -412,6 +433,13 @@ static JSValue js_getElementById(JSContext *ctx, JSValueConst this_val, int argc
   AppContext *app = JS_GetContextOpaque(ctx);
 
   JSValue elem = js_get_element_by_id(ctx, this_val, argc, argv);
+  // con el.id = "...": se busca en el documento (y se registra)
+  if (JS_IsNull(elem)) {
+    JSValue body = JS_GetPropertyStr(ctx, this_val, "body");
+    if (JS_IsObject(body)) elem = find_by_id(ctx, body, id, 0);
+    JS_FreeValue(ctx, body);
+    if (!JS_IsNull(elem)) register_element_with_id(ctx, elem, id);
+  }
 
   // El canvas del juego (engine.canvas_id) existe siempre, como si estuviera
   // en el index.html
@@ -426,7 +454,7 @@ static JSValue js_getElementById(JSContext *ctx, JSValueConst this_val, int argc
   return elem;
 }
 
-// Recorre el arbol (en orden de documento) y anade a list los elementos con
+// Recorre el arbol (en orden de documento) y agrega a list los elementos con
 // ese tagName ("*" = todos)
 static void collect_by_tag(JSContext *ctx, JSValueConst node, const char *tag, JSValueConst list, uint32_t *n, int depth) {
   if (depth > 64) return;

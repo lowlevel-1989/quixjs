@@ -19,16 +19,16 @@
 // Profiler de muestreo. Ver profiler.h.
 //
 // Las muestras las toma el profiler de JavaScriptCore: un thread suyo mira la
-// pila de JS cada 10 ms (JSC_sampleInterval, en main.c; de forma segura: JSC
-// para el thread principal un instante en un punto conocido).
+// pila de JS cada 10 ms (JSC_sampleInterval, en runtime/core/main/start.c; de
+// forma segura: JSC para el thread principal un instante en un punto conocido).
 //
 // Se recogen una vez por segundo (profiler_drain) y se resumen por funcion en
-// JS (__quixProf, mas abajo): con el JIT es rapido, y leer cada muestra campo
-// a campo por la API en C costaba decenas de ms por imagen en una portatil.
-// De cada funcion: tiempo propio (la que se estaba ejecutando), incluido
-// (aparece en la pila) y codigo nativo (funciones de C: el tiempo va a la
-// funcion de JS que las llamo). C solo pide las listas para el informe y
-// nombra las funciones anonimas leyendo su cabecera en el codigo.
+// JS (__quixProf, en runtime/core/profiler.js): con el JIT es rapido, y leer
+// cada muestra campo a campo por la API en C costaba decenas de ms por imagen
+// en una portatil. De cada funcion: tiempo propio (la que se estaba
+// ejecutando), incluido (aparece en la pila) y codigo nativo (funciones de C:
+// el tiempo va a la funcion de JS que las llamo). C solo pide las listas para
+// el informe y nombra las funciones anonimas leyendo su cabecera en el codigo.
 //
 // (La primera version de quixjs, con QuickJS, muestreaba con su interrupt
 // handler: QuickJS no tiene profiler propio.)
@@ -50,100 +50,14 @@ static double real_ms_prof(void) {
 static JSRuntime *prof_rt = NULL;
 static JSContext *prof_ctx = NULL;
 
-void profiler_phase(const char *p) { (void)p; }   // JSC solo muestrea JS
 int profiler_running(void) { return running; }
 
 // El resumen, en JS. La identidad de una funcion es el hash de su bloque de
-// codigo ("#hash:nivel:indice" en location: igual en todos los niveles del
-// JIT) y su archivo; las nativas, su nombre.
-static const char prof_js[] =
-  "(function () {\n"
-  "  var funs = {};\n"
-  "  var P = { samples: 0, ms: 0, tiers: {}, allocs: {}, allocTotal: 0 };\n"
-  "  P.reset = function () { funs = {}; P.samples = 0; P.ms = 0; P.tiers = {}; P.allocs = {}; P.allocTotal = 0; P.frameReset(); };\n"
-  "  var fm = {}, frMs = 0, frN = 0;\n"
-  "  P.frameReset = function () { fm = {}; frMs = 0; frN = 0; };\n"
-  "  var where = function (e) { var f = e.url.split('/').pop(); return (e.name || '(anonymous)') + (e.native || !f || !(e.line > 0 && e.line < 1e8) ? '' : ' (' + f + ':' + e.line + ')'); };\n"
-  "  // las funciones de las muestras desde frameReset: las de mas tiempo propio y\n"
-  "  // las que estaban en la pila, sin las que estan en todas (el loop)\n"
-  "  P.frameTop = function (n) {\n"
-  "    var a = [], k;\n"
-  "    for (k in fm) a.push(fm[k]);\n"
-  "    if (!a.length) return '';\n"
-  "    var self = a.filter(function (x) { return x.self > 0; }).sort(function (x, y) { return y.self - x.self; }).slice(0, n);\n"
-  "    var tot = a.filter(function (x) { return x.total < frN; }).sort(function (x, y) { return y.total - x.total || y.depth - x.depth; }).slice(0, n);\n"
-  "    var f = function (x, field) { return Math.round(x[field] * frMs / frN) + ' ms ' + where(x.e); };\n"
-  "    return '  self: ' + self.map(function (x) { return f(x, 'self'); }).join(', ') + '\\n  in: ' + tot.map(function (x) { return f(x, 'total'); }).join(', ');\n"
-  "  };\n"
-  "  P.addAlloc = function (txt) {\n"
-  "    var lines = String(txt).split('\\n');\n"
-  "    for (var i = 0; i < lines.length; i++) {\n"
-  "      var tab = lines[i].indexOf('\\t');\n"
-  "      if (tab < 0) continue;\n"
-  "      var a = lines[i].slice(0, tab), b = lines[i].slice(tab + 1);\n"
-  "      if (a === 'total') { P.allocTotal += +b; continue; }\n"
-  "      P.allocs[b] = (P.allocs[b] || 0) + (+a);\n"
-  "    }\n"
-  "  };\n"
-  "  P.topAlloc = function (n) {\n"
-  "    var a = [];\n"
-  "    for (var k in P.allocs) a.push({ name: k, bytes: P.allocs[k] });\n"
-  "    a.sort(function (x, y) { return y.bytes - x.bytes; });\n"
-  "    return a.slice(0, n);\n"
-  "  };\n"
-  "  P.add = function (all) {\n"
-  "    if (!all || !all.traces) return;\n"
-  "    var interval = (all.interval || 0.01) * 1000, urls = {}, src = all.sources || [];\n"
-  "    for (var s = 0; s < src.length; s++) urls[src[s].sourceID] = src[s].url || '';\n"
-  "    var traces = all.traces;\n"
-  "    for (var t = 0; t < traces.length; t++) {\n"
-  "      var fr = traces[t].frames;\n"
-  "      if (!fr || !fr.length) continue;\n"
-  "      P.samples++; P.ms += interval;\n"
-  "      var es = [];\n"
-  "      for (var i = 0; i < fr.length && i < 64; i++) {\n"
-  "        var f = fr[i], native = f.category === 'Host' || f.category === 'C';\n"
-  "        var loc = f.location || '', colon = loc.indexOf(':');\n"
-  "        var hash = loc.charAt(0) === '#' && loc.indexOf('#<nil>') !== 0 ? loc.slice(0, colon < 0 ? loc.length : colon) : '';\n"
-  "        var url = urls[f.sourceID] || '';\n"
-  "        var key = native ? '[native] ' + (f.name || '') : (hash ? hash + ' ' + url : (f.name || '') + ' ' + url);\n"
-  "        var e = funs[key];\n"
-  "        if (!e) e = funs[key] = { name: f.name || '', url: url, line: 0, native: native, self: 0, total: 0, nat: 0, seen: -1 };\n"
-  "        if (f.line > 0 && (!e.line || f.line < e.line)) e.line = f.line;\n"
-  "        es.push(e);\n"
-  "      }\n"
-  "      es[0].self += interval;\n"
-  "      frN++; frMs += interval;\n"
-  "      for (var q = 0; q < es.length; q++) {\n"
-  "        var fk = es[q].name + '|' + es[q].url + '|' + es[q].line, fe = fm[fk];\n"
-  "        if (!fe) fe = fm[fk] = { e: es[q], self: 0, total: 0, seen: -1, depth: q };\n"
-  "        if (q === 0) fe.self++;\n"
-  "        if (fe.seen !== frN) { fe.seen = frN; fe.total++; }\n"
-  "      }\n"
-  "      var tl = fr[0].location || '', tier = es[0].native ? 'native' : (tl.split(':')[1] || '?');\n"
-  "      P.tiers[tier] = (P.tiers[tier] || 0) + interval;\n"
-  "      if (es[0].native) {\n"
-  "        for (var k = 1; k < es.length; k++) if (!es[k].native) { es[k].nat += interval; break; }\n"
-  "      }\n"
-  "      for (var j = 0; j < es.length; j++) {\n"
-  "        if (es[j].seen !== P.samples) { es[j].seen = P.samples; es[j].total += interval; }\n"
-  "      }\n"
-  "    }\n"
-  "  };\n"
-  "  P.top = function (field, n) {\n"
-  "    var a = [];\n"
-  "    for (var k in funs) if (funs[k][field] > 0) a.push(funs[k]);\n"
-  "    a.sort(function (x, y) { return y[field] - x[field]; });\n"
-  "    return a.slice(0, n);\n"
-  "  };\n"
-  "  P.tierLine = function () {\n"
-  "    var order = ['LLInt', 'Baseline', 'DFG', 'FTL', 'native'], out = [], k;\n"
-  "    for (k in P.tiers) if (order.indexOf(k) < 0) order.push(k);\n"
-  "    for (var i = 0; i < order.length; i++) if (P.tiers[order[i]]) out.push(order[i] + ' ' + (100 * P.tiers[order[i]] / P.ms).toFixed(1) + '%');\n"
-  "    return out.join(', ');\n"
-  "  };\n"
-  "  Object.defineProperty(globalThis, '__quixProf', { value: P, configurable: true });\n"
-  "})();\n";
+// codigo ("#hash:nivel:indice" en location: igual en todos los niveles del JIT)
+// y su archivo; las nativas, su nombre. runtime/core/profiler.js:
+// tools/embed_js.py lo mete en el binario al compilar; js_profiler.h (en
+// obj/gen/) define PROFILER_JS, su texto. Ver docs/embedded-js.md.
+#include "js_profiler.h"
 
 static JSValue prof_obj(JSContext *ctx) {
   JSValue g = JS_GetGlobalObject(ctx);
@@ -172,7 +86,7 @@ int profiler_start(JSContext *ctx) {
   prof_rt = JS_GetRuntime(ctx);
   JSValue p = prof_obj(ctx);
   if (!JS_IsObject(p)) {
-    JSValue r = JS_Eval(ctx, prof_js, strlen(prof_js), "<quix-profiler>", JS_EVAL_TYPE_GLOBAL);
+    JSValue r = JS_Eval(ctx, PROFILER_JS, strlen(PROFILER_JS), "<quix-profiler>", JS_EVAL_TYPE_GLOBAL);
     if (JS_IsException(r)) {
       js_std_dump_error(ctx);
       return -1;

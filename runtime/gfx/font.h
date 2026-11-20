@@ -33,6 +33,7 @@ typedef struct {
   int    height;
 } FontMetrics;
 
+// Se pueden usar desde varios threads: cada funcion entra sola (un candado)
 typedef struct FontHandle FontHandle;
 
 int  font_init(void);
@@ -44,6 +45,11 @@ int  font_is_registered(const char *family);
 // Fuente para un valor CSS de ctx.font ("bold 20px 'GameFont', sans-serif").
 // NULL si no hay ninguna fuente disponible.
 FontHandle *font_from_css(const char *css);
+// La misma, pero propia: no se cierra ni la mueve la cache del juego, y no
+// cambia a otra fuente si le faltan letras. Para el thread que presenta (los
+// avisos encima del juego), que dibuja a la vez que el juego. Hasta 8
+// distintas; NULL si no cabe
+FontHandle *font_from_css_fixed(const char *css);
 
 void font_metrics(FontHandle *f, FontMetrics *m);
 int  font_text_width(FontHandle *f, const char *utf8);

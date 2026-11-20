@@ -24,6 +24,7 @@
 #include "tomlc17.h"
 #include "backend/toast.h"
 #include "hooks/hooks.h"
+#include "achievements/achievements.h"
 #include "symbols/symbols.h"
 #include "cheats.h"
 
@@ -52,7 +53,8 @@ static int   count = 0;
 
 // la partida en curso segun el motor (runtime/engines/<motor>/playthrough.js)
 static JSValue  pt_obj;           // el objeto de playthrough.js
-static int      pt_state = 0;     // 0 sin mirar, 1 motor conocido, -1 ninguno
+static int      pt_state = 0;     // 0 sin mirar, 1 motor conocido, -1 ninguno,
+                                  // 2 juego sin logros (no hace falta la partida)
 static int      pt_tries = 0;
 static JSValue  pt_current;       // la partida en curso (para ver cuando cambia)
 static int      pt_has_current = 0;
@@ -340,8 +342,37 @@ static void apply(JSContext *ctx) {
   JS_FreeValue(ctx, orig);
 }
 
+// Un juego sin logros (HexGL...): no hay logros que proteger, asi que no hace
+// falta saber la partida. Los simbolos de los trucos activos se fijan cada
+// pocas imagenes (un camino que aun no existe no se fija) y los script corren
+// una vez, a los dos segundos (el juego ya cargo sus scripts)
+static void apply_free(JSContext *ctx) {
+  if (frame >= 120) run_scripts(ctx);
+  if (frame % 10 != 0) return;
+  for (int i = 0; i < count; i++) {
+    if (!cheats[i].active) continue;
+    for (int k = 0; k < cheats[i].set_count; k++) {
+      const CheatSet *cs = &cheats[i].sets[k];
+      JSValue now = symbols_get(ctx, cs->symbol);
+      JSValue want = set_value(ctx, cs);
+      if (!JS_StrictEq(ctx, now, want)) symbols_set(ctx, cs->symbol, want);
+      JS_FreeValue(ctx, want);
+      JS_FreeValue(ctx, now);
+    }
+  }
+}
+
 void cheats_tick(JSContext *ctx) {
   frame++;
+  if (pt_state == 2) {
+    apply_free(ctx);
+    return;
+  }
+  if (pt_state == 0 && ach_count() == 0) {
+    pt_state = 2;
+    if (any_active()) printf("[cheats] the game has no achievements: cheats on without a playthrough\n");
+    return;
+  }
   if (pt_state == 0) {
     // el motor se mira cada medio segundo hasta que el juego lo ha cargado
     if (frame % 30 != 1) return;
@@ -377,7 +408,8 @@ size_t cheats_describe(char *out, size_t room) {
                           cheats[i].name);
   }
   if (count && n < room) {
-    n += (size_t)snprintf(out + n, room - n, "playthrough: %s\n", pt_state != 1 ? "unknown engine"
+    n += (size_t)snprintf(out + n, room - n, "playthrough: %s\n", pt_state == 2 ? "not needed (no achievements)"
+                                                                : pt_state != 1 ? "unknown engine"
                                                                   : cheated ? "used cheats (no achievements)"
                                                                             : "clean");
   }

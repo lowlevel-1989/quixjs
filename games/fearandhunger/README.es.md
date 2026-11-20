@@ -2,15 +2,14 @@
 
 ## Instalar
 
-Para usar este port necesitas el juego: Fear & Hunger 1.4.1 para Windows
-(sin DRM), que puedes comprar en itch.io
-(https://mirohaver.itch.io/fear-hunger).
+Para usar este port necesitas el juego: Fear & Hunger 1.4.1 para Windows,
+que puedes comprar en itch.io (https://mirohaver.itch.io/fear-hunger) o en
+Steam (https://store.steampowered.com/app/1002300/).
 
 1. **Consigue los archivos del juego.** Descarga la versión de Windows 1.4.1
-   de itch.io y descomprímela en tu PC. Dentro hay `Game.exe`, varios
-   archivos `.dll` y una carpeta `www/`. El juego (imágenes, sonidos, mapas,
-   plugins) está todo en `www/`: es lo único que necesita el port. `Game.exe`
-   y los `.dll` son el programa de Windows y no se usan.
+   de itch.io y descomprímela en tu PC, o, en Steam, instala el juego y abre
+   su carpeta (en la biblioteca, clic derecho en el juego, Administrar, Ver
+   archivos locales). El port solo necesita la carpeta `www/`.
 
 2. **Instala el port.** Copia `fearandhunger.zip`, sin descomprimirlo, en la
    carpeta `autoinstall` de PortMaster de la SD de tu consola:
@@ -51,37 +50,50 @@ partidas y tus logros (`gamedata/www/save/`) se quedan.
 Sin PortMaster: descomprime el zip en la carpeta de ports. Así puede que
 EmulationStation no enseñe la imagen del port.
 
+## Android
+
+Necesitas el juego y dos archivos de las releases de quixjs
+(https://github.com/lowlevel-1989/quixjs/releases), por ejemplo para la versión 0.4.0:
+
+- `quixjs-0.4.0-android-arm64.apk`: la app
+- `fearandhunger-0.4.0-portmaster.zip`: el port
+
+1. Instala el `.apk` en el teléfono.
+2. En tu PC, descomprime `fearandhunger-0.4.0-portmaster.zip`. Sale la carpeta
+   `fearandhunger/`.
+3. Copia la carpeta `www/` del juego (paso 1 de Instalar) en `fearandhunger/gamedata/`. Queda así:
+
+   ```
+   fearandhunger/
+     port.toml
+     gamedata/
+       www/
+   ```
+
+4. Comprime la carpeta `fearandhunger/` en un `.zip` y pásalo al teléfono.
+5. En quixjs, toca "Import game" y elige ese `.zip`. Después toca el juego
+   y Play.
+
 ## Notas
 
 Fear & Hunger es de Miro Haverinen. Este port solo ejecuta el juego, con
-quixjs (un runtime de JS en C con SDL2 y OpenGL ES 2 para juegos de RPG
-Maker MV en portátiles: https://github.com/lowlevel-1989/quixjs).
-
-`port.toml` describe todo el port (los scripts del juego, sus fuentes, su
-tamaño, los hooks, los logros); el juego se lee de `gamedata/`. Lo que
-cambias en el menú se guarda aparte (`quixjs-settings.toml`).
-
-## Menú
-
-| Opción | Qué hace |
-|--|--|
-| Play | Empieza el juego |
-| Achievements | Los logros del port y cuáles tienes. Dentro del juego, el menú (B) también tiene Achievements |
-| Transfer Save | Pasa tus partidas y logros a otro aparato de la misma red con quixjs (un PC u otra portátil): "Receive Save" en uno, "Send Save" en el otro. Los dos enseñan la misma firma de 4 caracteres para comprobarlo. Las partidas que había se guardan como copia ("Restore Backup"). |
-| Controls | Asigna cada botón y palanca de tu mando |
-| Mods | Activa o quita los mods copiados en `mods/` (por ejemplo una traducción). El port trae `no-widescreen`, que quita la pantalla ancha de un mod de pantalla ancha (ver su README en `mods/no-widescreen/`) |
-| Options | Show FPS, Profiler, Reset achievements |
-| Cheats | Activa o quita trucos (una partida con un truco no consigue logros) |
-| Exit | Cierra el port |
+quixjs: https://github.com/lowlevel-1989/quixjs.
 
 ## Controles
 
 | Botón | Acción |
 |--|--|
 | Cruceta / palanca izquierda | Moverse |
-| A | Aceptar |
-| B | Cancelar / menú |
+| A | OK (aceptar, hablar) |
+| B | Cancel (cancelar) |
+| X | Skill (habilidad) |
+| Y | Menu (menú) |
+| L1 / R1 | Personaje o página anterior / siguiente, en los menús |
+| (lo eliges en Controls) | Torch (antorcha) |
+| (lo eliges en Controls) | Phase |
 | Select + Start | Salir |
+
+Vibración: viene activada con el mod `rumble`; Options > Vibration la apaga ([mods/rumble](mods/rumble/README.es.md)).
 
 ## Compilar
 
@@ -91,6 +103,4 @@ cd quixjs
 make PLATFORM=portmaster PORT=fearandhunger
 ```
 
-Construye `fearandhunger.zip` para aarch64 con clang, contra Debian
-buster (glibc 2.28), y descarga lo que necesita la primera vez.
-`port.json` y `gameinfo.xml` salen entonces de `port.toml`.
+Construye `fearandhunger.zip`.

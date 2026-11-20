@@ -19,6 +19,7 @@
 // La tabla de teclas. Ver keymap.h.
 
 #include <string.h>
+#include <strings.h>
 #include <stdio.h>
 #include "keymap.h"
 
@@ -123,6 +124,17 @@ const KeyInfo *keymap_find(const char *code) {
   if (!code) return NULL;
   for (const KeyInfo *k = keymap; k->code; k++) {
     if (strcmp(k->code, code) == 0) return k;
+  }
+  return NULL;
+}
+
+const char *keymap_code_for(const char *name) {
+  if (!name || !name[0]) return NULL;
+  for (const KeyInfo *k = keymap; k->code; k++) {
+    if (strcasecmp(k->code, name) == 0) return k->code;
+  }
+  for (const KeyInfo *k = keymap; k->code; k++) {
+    if (strcasecmp(k->key, name) == 0) return k->code;
   }
   return NULL;
 }

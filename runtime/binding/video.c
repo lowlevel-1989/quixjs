@@ -22,6 +22,7 @@
 #include <string.h>
 #include "core/app_context.h"
 #include "core/url.h"
+#include "audio/mixer.h"
 #include "video/video.h"
 #include "video.h"
 
@@ -71,7 +72,7 @@ static JSValue js_video_open(JSContext *ctx, JSValueConst this_val, int argc, JS
   return JS_NewInt32(ctx, id);
 }
 
-// info(id) -> { width, height, duration }
+// info(id) -> { width, height, duration, audio }
 static JSValue js_video_info(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
   Slot *s = argc > 0 ? slot_of(ctx, argv[0]) : NULL;
   if (!s) return JS_NULL;
@@ -79,10 +80,14 @@ static JSValue js_video_info(JSContext *ctx, JSValueConst this_val, int argc, JS
   JS_SetPropertyStr(ctx, o, "width", JS_NewInt32(ctx, video_width(s->video)));
   JS_SetPropertyStr(ctx, o, "height", JS_NewInt32(ctx, video_height(s->video)));
   JS_SetPropertyStr(ctx, o, "duration", JS_NewFloat64(ctx, video_duration(s->video)));
+  JS_SetPropertyStr(ctx, o, "audio", JS_NewBool(ctx, video_has_audio(s->video)));
   return o;
 }
 
-// state(id) -> { time, ended, frames }
+// state(id) -> { time, ended, frames, dropped, audioQueued }: dropped, las
+// imagenes que llegaron tarde y no se mostraron; audioQueued, los segundos
+// de audio que le quedan al mezclador; audioOut, los segundos que ha pedido
+// la salida de audio desde que se abrio (para las pruebas)
 static JSValue js_video_state(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
   Slot *s = argc > 0 ? slot_of(ctx, argv[0]) : NULL;
   if (!s) return JS_NULL;
@@ -90,6 +95,9 @@ static JSValue js_video_state(JSContext *ctx, JSValueConst this_val, int argc, J
   JS_SetPropertyStr(ctx, o, "time", JS_NewFloat64(ctx, video_time(s->video)));
   JS_SetPropertyStr(ctx, o, "ended", JS_NewBool(ctx, video_ended(s->video)));
   JS_SetPropertyStr(ctx, o, "frames", JS_NewInt64(ctx, video_decoded_frames(s->video)));
+  JS_SetPropertyStr(ctx, o, "dropped", JS_NewInt64(ctx, video_dropped_frames(s->video)));
+  JS_SetPropertyStr(ctx, o, "audioQueued", JS_NewFloat64(ctx, video_audio_queued(s->video)));
+  JS_SetPropertyStr(ctx, o, "audioOut", JS_NewFloat64(ctx, mixer_output_time()));
   return o;
 }
 
@@ -156,8 +164,10 @@ const Surface *video_screen(int *changed) {
   for (int i = 0; i < MAX_VIDEOS; i++) {
     Slot *s = &slots[i];
     if (s->video && s->visible && s->frame.px && !video_ended(s->video)) {
-      *changed = s->changed;
-      s->changed = 0;
+      if (changed) {   // NULL: solo mirar (una captura), sin gastar el aviso
+        *changed = s->changed;
+        s->changed = 0;
+      }
       return &s->frame;
     }
   }

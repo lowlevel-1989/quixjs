@@ -19,6 +19,7 @@
 // Salida de emergencia con Select + Start. Ver watchdog.h.
 
 #include <dirent.h>
+#include <errno.h>
 #include <fcntl.h>
 #include <linux/input.h>
 #include <poll.h>
@@ -82,11 +83,20 @@ static void *watch(void *arg) {
   for (;;) {
     poll(fds, (nfds_t)n, 250);
     for (int i = 0; i < n; i++) {
+      if (fds[i].fd < 0) continue;
       struct input_event ev;
-      while (read(fds[i].fd, &ev, sizeof(ev)) == (ssize_t)sizeof(ev)) {
+      ssize_t r;
+      while ((r = read(fds[i].fd, &ev, sizeof(ev))) == (ssize_t)sizeof(ev)) {
         if (ev.type != EV_KEY) continue;
         if (ev.code == BTN_SELECT) select_down = ev.value != 0;
         if (ev.code == BTN_START) start_down = ev.value != 0;
+      }
+      // un mando que se desconecta: poll lo da siempre listo (POLLHUP) y read
+      // falla (ENODEV); sin quitarlo, este thread daba vueltas sin parar
+      // (medio nucleo en el PC). poll no mira los fd negativos
+      if ((fds[i].revents & (POLLERR | POLLHUP | POLLNVAL)) || (r < 0 && errno != EAGAIN && errno != EINTR)) {
+        close(fds[i].fd);
+        fds[i].fd = -1;
       }
     }
     // los dos pulsados y el loop principal parado: no va a enterarse

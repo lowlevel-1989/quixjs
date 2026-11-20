@@ -29,6 +29,7 @@
 #include "core/worker.h"
 #include "blob.h"
 #include "gfx/image_loader.h"
+#include "gfx/image_scale.h"
 #include "document.h"
 #include "events.h"
 #include "image.h"
@@ -117,6 +118,15 @@ const Surface *js_image_get_surface_gpu(JSContext *ctx, JSValueConst val) {
   return &img->surface;
 }
 
+int js_image_natural_size(JSContext *ctx, JSValueConst val, int *w, int *h) {
+  (void)ctx;
+  ImageData *img = JS_GetOpaque(val, js_image_class_id);
+  if (!img || !img->loaded || img->nat_w <= 0 || img->nat_h <= 0) return -1;
+  *w = img->nat_w;
+  *h = img->nat_h;
+  return 0;
+}
+
 void js_image_uploaded(JSContext *ctx, JSValueConst val) {
   (void)ctx;
   ImageData *img = JS_GetOpaque(val, js_image_class_id);
@@ -155,8 +165,11 @@ typedef struct {
   size_t    len;
   char     *path;     // el archivo (con su transformacion, si tiene: descifrar)
   int       blob;     // data son los bytes de un Blob
+  int       scale;    // [game] image_scale: se reduce si es grande (gfx/image_scale.h)
   uint8_t  *px;       // el resultado
   int       w, h, ok;
+  int       nat_w;    // el tamano de la imagen entera (el de px si no se redujo)
+  int       nat_h;
   double    ms;
 } ImageJob;
 
@@ -165,12 +178,19 @@ typedef struct {
 static void image_work(void *arg) {
   ImageJob *j = arg;
   double t = now_ms();
-  if (j->path && url_has_transform(j->path)) {
-    j->data = url_read_file_transformed(j->path, &j->len);
-    free(j->path);
-    j->path = NULL;
+  if (j->scale && j->path) {
+    // reducida (y desde la cache, si ya esta): descifra ella misma
+    j->ok = image_scale_decode(j->path, &j->px, &j->w, &j->h, &j->nat_w, &j->nat_h) == 0;
+  } else {
+    if (j->path && url_has_transform(j->path)) {
+      j->data = url_read_file_transformed(j->path, &j->len);
+      free(j->path);
+      j->path = NULL;
+    }
+    j->ok = (j->data || j->path) && image_decode_pixels(j->data, j->len, j->path, &j->px, &j->w, &j->h) == 0;
+    j->nat_w = j->w;
+    j->nat_h = j->h;
   }
-  j->ok = (j->data || j->path) && image_decode_pixels(j->data, j->len, j->path, &j->px, &j->w, &j->h) == 0;
   j->ms = now_ms() - t;
   TRACE_END(t, 5.0, "image decode %dx%d (worker)", j->w, j->h);
   // los bytes de un Blob se guardan (por si hay que decodificar otra vez);
@@ -190,8 +210,8 @@ static void image_done(JSContext *ctx, void *arg) {
     if (j->ok) {
       surface_adopt(&img->surface, j->px, j->w, j->h);
       j->px = NULL;
-      img->nat_w = j->w;
-      img->nat_h = j->h;
+      img->nat_w = j->nat_w;
+      img->nat_h = j->nat_h;
       if (j->blob) {
         img->enc = j->data;
         img->enc_len = j->len;
@@ -240,6 +260,7 @@ static int image_decode_async(JSContext *ctx, JSValueConst obj, ImageData *img, 
       return kind == URL_DATA ? 1 : -1;
     }
     j->path = strdup(path);
+    j->scale = image_scale_wanted(src);
   }
   j->obj = JS_DupValue(ctx, obj);
   j->gen = img->gen;
@@ -273,6 +294,15 @@ static int image_decode(JSContext *ctx, ImageData *img, const char *src) {
       return r;
     }
     case URL_FILE:
+      if (image_scale_wanted(src)) {   // [game] image_scale: reducida si es grande
+        uint8_t *px = NULL;
+        int w = 0, h = 0, nw = 0, nh = 0;
+        if (image_scale_decode(path, &px, &w, &h, &nw, &nh) != 0) return -1;
+        surface_adopt(&img->surface, px, w, h);
+        img->nat_w = nw;
+        img->nat_h = nh;
+        return 0;
+      }
       if (url_has_transform(path)) {   // un archivo cifrado
         size_t len = 0;
         uint8_t *data = url_read_file_transformed(path, &len);
@@ -340,8 +370,10 @@ static JSValue js_image_set_src(JSContext *ctx, JSValueConst this_val, JSValueCo
     // ya se puede dibujar (PIXI lo hace con data URIs sin esperar a load),
     // pero complete no es true hasta el evento load, como en el navegador
     img->loaded = 1;
-    img->nat_w = img->surface.w;
-    img->nat_h = img->surface.h;
+    if (!img->nat_w) {   // si no se redujo (image_decode lo pone si si)
+      img->nat_w = img->surface.w;
+      img->nat_h = img->surface.h;
+    }
     if (strncmp(src, "blob:", 5) == 0) {
       size_t len = 0;
       const uint8_t *data = blob_lookup(src, &len);

@@ -18,9 +18,3 @@ no-widescreen: On (2)
 
 If it has the lower number, the widescreen mod wins and nothing changes.
 Without a widescreen mod, this mod does nothing.
-
-## How it works
-
-Widescreen mods add two plugins: `js/plugins/fullscreen.js` (the game at
-1280x720) and `js/plugins/ShiftEnemies.js` (the enemies moved for that
-size). This mod has two files with the same names that do nothing.

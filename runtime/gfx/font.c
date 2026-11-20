@@ -23,6 +23,7 @@
 #include <SDL2/SDL_ttf.h>
 #include <ctype.h>
 #include <math.h>
+#include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -33,6 +34,7 @@
 
 #define MAX_FAMILIES 64
 #define MAX_CACHED   64
+#define MAX_FIXED    8
 
 typedef struct {
   char family[96];
@@ -44,6 +46,7 @@ struct FontHandle {
   int       size;
   int       style;
   int       outline;
+  int       fixed;     // de font_from_css_fixed: no se cierra ni se mueve
   TTF_Font *font;
 };
 
@@ -53,12 +56,42 @@ static FontHandle  cache[MAX_CACHED];
 static int         cache_count = 0;
 static int         ready = 0;
 static char        default_path[512] = "";
+static FontHandle  fixed[MAX_FIXED];
+static int         fixed_count = 0;
+
+// Un solo thread a la vez: el juego dibuja su texto en el principal y los
+// avisos encima del juego (fps, "Loading...", un logro) se dibujan en el
+// thread que presenta (backend/sdl/thread.c). La cache y SDL_ttf (FreeType)
+// no aguantan dos a la vez: un juego se cerraba al quitar "Loading...".
+// Recursivo: una funcion publica puede llamar a otra (font_from_css a
+// font_init)
+static pthread_mutex_t lock;
+static pthread_once_t  lock_once = PTHREAD_ONCE_INIT;
+static void lock_make(void) {
+  pthread_mutexattr_t a;
+  pthread_mutexattr_init(&a);
+  pthread_mutexattr_settype(&a, PTHREAD_MUTEX_RECURSIVE);
+  pthread_mutex_init(&lock, &a);
+  pthread_mutexattr_destroy(&a);
+}
+static void font_lock(void) {
+  pthread_once(&lock_once, lock_make);
+  pthread_mutex_lock(&lock);
+}
+static void font_unlock(void) {
+  pthread_mutex_unlock(&lock);
+}
 
 
 int font_init(void) {
-  if (ready) return 0;
+  font_lock();
+  if (ready) {
+    font_unlock();
+    return 0;
+  }
   if (TTF_Init() != 0) {
     fprintf(stderr, "SDL_ttf could not initialize: %s\n", TTF_GetError());
+    font_unlock();
     return -1;
   }
   // la de la plataforma (en Linux: QUIXJS_FONT o una del sistema)
@@ -66,25 +99,33 @@ int font_init(void) {
   if (def) snprintf(default_path, sizeof(default_path), "%s", def);
   if (!default_path[0]) fprintf(stderr, "[font] no default font found (set QUIXJS_FONT)\n");
   ready = 1;
+  font_unlock();
   return 0;
 }
 
 void font_quit(void) {
-  if (!ready) return;
-  for (int i = 0; i < cache_count; i++) {
-    if (cache[i].font) TTF_CloseFont(cache[i].font);
+  font_lock();
+  if (ready) {
+    for (int i = 0; i < cache_count; i++) {
+      if (cache[i].font) TTF_CloseFont(cache[i].font);
+    }
+    for (int i = 0; i < fixed_count; i++) {
+      if (fixed[i].font) TTF_CloseFont(fixed[i].font);
+    }
+    cache_count = 0;
+    fixed_count = 0;
+    family_count = 0;
+    TTF_Quit();
+    ready = 0;
   }
-  cache_count = 0;
-  family_count = 0;
-  TTF_Quit();
-  ready = 0;
+  font_unlock();
 }
 
 static int family_eq(const char *a, const char *b) {
   return strcasecmp(a, b) == 0;
 }
 
-int font_register(const char *family, const char *path) {
+static int register_unlocked(const char *family, const char *path) {
   if (access(path, R_OK) != 0) {
     fprintf(stderr, "[font] file not found for \"%s\": %s\n", family, path);
     return -1;
@@ -102,7 +143,7 @@ int font_register(const char *family, const char *path) {
   return 0;
 }
 
-int font_is_registered(const char *family) {
+static int is_registered_unlocked(const char *family) {
   for (int i = 0; i < family_count; i++) {
     if (family_eq(families[i].family, family)) return 1;
   }
@@ -176,7 +217,8 @@ static FontHandle *get_font(const char *path, int size, int style, int outline) 
     FontHandle *h = &cache[i];
     if (h->size == size && h->style == style && h->outline == outline && strcmp(h->path, path) == 0) return h;
   }
-  TTF_Font *font = TTF_OpenFont(path, size);
+  char abs[1024];
+  TTF_Font *font = TTF_OpenFont(platform_file_path(path, abs, sizeof abs), size);
   if (!font) {
     fprintf(stderr, "[font] %s: %s\n", path, TTF_GetError());
     return NULL;
@@ -199,7 +241,7 @@ static FontHandle *get_font(const char *path, int size, int style, int outline) 
   return h;
 }
 
-FontHandle *font_from_css(const char *css) {
+static FontHandle *from_css_unlocked(const char *css, int fixed_handle) {
   if (!ready && font_init() != 0) return NULL;
   double size;
   int style;
@@ -208,25 +250,83 @@ FontHandle *font_from_css(const char *css) {
   int px = (int)lround(size);
   if (px < 1) px = 1;
   if (px > 512) px = 512;
-  return get_font(path, px, style, 0);
+  if (!fixed_handle) return get_font(path, px, style, 0);
+  for (int i = 0; i < fixed_count; i++) {
+    FontHandle *h = &fixed[i];
+    if (h->size == px && h->style == style && strcmp(h->path, path) == 0) return h;
+  }
+  if (fixed_count == MAX_FIXED) return NULL;
+  char abs[1024];
+  TTF_Font *font = TTF_OpenFont(platform_file_path(path, abs, sizeof abs), px);
+  if (!font) return NULL;
+  TTF_SetFontStyle(font, style);
+  FontHandle *h = &fixed[fixed_count++];
+  snprintf(h->path, sizeof(h->path), "%s", path);
+  h->size = px;
+  h->style = style;
+  h->outline = 0;
+  h->fixed = 1;
+  h->font = font;
+  return h;
 }
 
-void font_metrics(FontHandle *f, FontMetrics *m) {
+// Si a la fuente le faltan letras del texto (un parche coreano con la fuente
+// del juego, que solo tiene latinas; o un plugin que pide "Dotum", que no
+// esta), la primera fuente registrada que las tenga todas, y si no, la de
+// por defecto: como un navegador, que las saca de otra fuente. Solo se mira
+// fuera de ASCII (y del plano basico de Unicode: TTF_GlyphIsProvided).
+static int covers(TTF_Font *font, const char *utf8) {
+  const unsigned char *p = (const unsigned char *)utf8;
+  while (*p) {
+    unsigned cp;
+    if (*p < 0x80) { p++; continue; }
+    if ((*p & 0xE0) == 0xC0 && p[1]) { cp = ((p[0] & 0x1Fu) << 6) | (p[1] & 0x3Fu); p += 2; }
+    else if ((*p & 0xF0) == 0xE0 && p[1] && p[2]) { cp = ((p[0] & 0x0Fu) << 12) | ((p[1] & 0x3Fu) << 6) | (p[2] & 0x3Fu); p += 3; }
+    else { p++; while ((*p & 0xC0) == 0x80) p++; continue; }   // fuera del plano basico o roto
+    if (!TTF_GlyphIsProvided(font, (Uint16)cp)) return 0;
+  }
+  return 1;
+}
+
+static int ascii_only(const char *utf8) {
+  for (const unsigned char *p = (const unsigned char *)utf8; *p; p++) if (*p >= 0x80) return 0;
+  return 1;
+}
+
+// get_font puede mover la cache: de f solo se usan sus datos, copiados antes
+static FontHandle *with_glyphs(FontHandle *f, const char *utf8) {
+  if (!utf8 || f->fixed || ascii_only(utf8) || covers(f->font, utf8)) return f;
+  char path[512];
+  snprintf(path, sizeof(path), "%s", f->path);
+  int size = f->size, style = f->style, outline = f->outline;
+  for (int i = 0; i <= family_count; i++) {
+    const char *fp = i < family_count ? families[i].path : default_path;
+    if (!fp[0] || strcmp(fp, path) == 0) continue;
+    FontHandle *h = get_font(fp, size, style, outline);
+    if (h && covers(h->font, utf8)) return h;
+  }
+  return get_font(path, size, style, outline);
+}
+
+static void metrics_unlocked(FontHandle *f, FontMetrics *m) {
   m->ascent = TTF_FontAscent(f->font);
   m->descent = -TTF_FontDescent(f->font);
   m->height = TTF_FontHeight(f->font);
 }
 
-int font_text_width(FontHandle *f, const char *utf8) {
+static int text_width_unlocked(FontHandle *f, const char *utf8) {
   int w = 0, h = 0;
   if (!utf8 || !*utf8) return 0;
-  if (TTF_SizeUTF8(f->font, utf8, &w, &h) != 0) return 0;
+  f = with_glyphs(f, utf8);
+  if (!f || TTF_SizeUTF8(f->font, utf8, &w, &h) != 0) return 0;
   return w;
 }
 
-int font_render(FontHandle *f, const char *utf8, unsigned char r, unsigned char g,
+static int render_unlocked(FontHandle *f, const char *utf8, unsigned char r, unsigned char g,
                 unsigned char b, unsigned char a, int outline, Surface *out) {
   if (!utf8 || !*utf8) return -1;
+  f = with_glyphs(f, utf8);
+  if (!f) return -1;
   FontHandle *use = f;
   if (outline > 0) {
     use = get_font(f->path, f->size, f->style, outline);
@@ -258,4 +358,54 @@ int font_render(FontHandle *f, const char *utf8, unsigned char r, unsigned char 
   SDL_UnlockSurface(rgba);
   SDL_FreeSurface(rgba);
   return 0;
+}
+
+// Las funciones publicas: cada una con el candado (ver lock, arriba)
+int font_register(const char *family, const char *path) {
+  font_lock();
+  int r = register_unlocked(family, path);
+  font_unlock();
+  return r;
+}
+
+int font_is_registered(const char *family) {
+  font_lock();
+  int r = is_registered_unlocked(family);
+  font_unlock();
+  return r;
+}
+
+FontHandle *font_from_css(const char *css) {
+  font_lock();
+  FontHandle *h = from_css_unlocked(css, 0);
+  font_unlock();
+  return h;
+}
+
+FontHandle *font_from_css_fixed(const char *css) {
+  font_lock();
+  FontHandle *h = from_css_unlocked(css, 1);
+  font_unlock();
+  return h;
+}
+
+void font_metrics(FontHandle *f, FontMetrics *m) {
+  font_lock();
+  metrics_unlocked(f, m);
+  font_unlock();
+}
+
+int font_text_width(FontHandle *f, const char *utf8) {
+  font_lock();
+  int r = text_width_unlocked(f, utf8);
+  font_unlock();
+  return r;
+}
+
+int font_render(FontHandle *f, const char *utf8, unsigned char r, unsigned char g,
+                unsigned char b, unsigned char a, int outline, Surface *out) {
+  font_lock();
+  int ret = render_unlocked(f, utf8, r, g, b, a, outline, out);
+  font_unlock();
+  return ret;
 }

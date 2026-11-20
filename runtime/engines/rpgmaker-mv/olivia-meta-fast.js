@@ -18,6 +18,10 @@
 // el plugin (y Olivia guardo esa copia como la de antes), se usa la de
 // debajo: nunca se llama a si mismo.
 //
+// Referencias (el codigo que reproduce o reescribe; gracias a sus autores):
+//   Olivia_MetaControls v1.6.1, de Fallen Angel Olivia (sus condiciones de uso):
+//   https://fallenangelolivia.itch.io/meta-controls (value y setValue)
+//
 // Uso (config.toml o port.toml):
 //   [hooks]
 //   "Game_Switches.prototype.value" = "rpgmaker-mv/olivia-meta-fast"
@@ -25,11 +29,13 @@
 //   "Game_Switches.prototype.setValue" = "rpgmaker-mv/olivia-meta-fast"
 //   "Game_Variables.prototype.setValue" = "rpgmaker-mv/olivia-meta-fast"
 //
-// El archivo es una funcion que recibe la original y devuelve la nueva.
+// El archivo es una funcion que recibe la original y devuelve la nueva. La
+// llama runtime/hooks/hooks.c (hooks_install) al instalar el hook, cuando el
+// juego ya cargo sus scripts. Ver runtime/engines/README.md.
 function (original) {
   var META = /<(?:Global|Global Meta)>|<(?:Local|Local Meta|Meta)>/i;
-  var state = null;   // se mira la primera vez (ya con los plugins)
-  var kinds = new WeakMap();   // lista de nombres -> Uint8Array (1 meta, 2 normal)
+  var state = null; // se mira la primera vez (ya con los plugins)
+  var kinds = new WeakMap(); // lista de nombres -> Uint8Array (1 meta, 2 normal)
 
   function prepare(self) {
     var M = typeof Olivia === 'object' && Olivia && Olivia.MetaControls;
@@ -70,7 +76,8 @@ function (original) {
       if (typeof names[id] !== 'string' || isMeta(names, id)) return original.call(this, id, value);
       return state.prev.call(this, id, value);
     }
-    if (typeof (names && names[id]) !== 'string') return original.call(this, id, value);   // como siempre (puede fallar igual)
+    // como siempre (puede fallar igual)
+    if (typeof (names && names[id]) !== 'string') return original.call(this, id, value);
     return isMeta(names, id) ? original.call(this, id, value) : state.prev.call(this, id);
   };
   hooked.__quixOriginal = original;

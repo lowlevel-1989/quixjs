@@ -89,7 +89,8 @@ elseif (APPLE)
         ${WTF_DERIVED_SOURCES_DIR}/mach_excServer.c
         ${WTF_DERIVED_SOURCES_DIR}/mach_excUser.c
     )
-elseif (CMAKE_SYSTEM_NAME MATCHES "Linux")
+# quixjs: Android (el NDK dice CMAKE_SYSTEM_NAME Android) es Linux con /proc
+elseif (CMAKE_SYSTEM_NAME MATCHES "Linux" OR CMAKE_SYSTEM_NAME STREQUAL "Android")
     list(APPEND WTF_SOURCES
         linux/CurrentProcessMemoryStatus.cpp
         linux/MemoryFootprintLinux.cpp

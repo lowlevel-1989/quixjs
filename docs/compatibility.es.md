@@ -85,7 +85,7 @@ con el reloj, asi `onended` y los loops funcionan igual.
 | window, self, globalThis              | si       | |
 | document.body, head, documentElement  | si       | |
 | createElement, appendChild, removeChild, setAttribute, getElementById | si | |
-| `<script>` anadidos con appendChild   | si       | `src` y en linea; `document.currentScript`, DOMContentLoaded y window.onload |
+| `<script>` agregados con appendChild   | si       | `src` y en linea; `document.currentScript`, DOMContentLoaded y window.onload |
 | querySelector                         | parcial  | solo `#id`, `body` y `head` |
 | style                                 | parcial  | es un objeto normal; solo `display: none` y `visibility: hidden` ocultan un canvas |
 | addEventListener, removeEventListener, dispatchEvent | si | con `once` y `handleEvent` |
@@ -101,7 +101,7 @@ con el reloj, asi `onended` y los loops funcionan igual.
 | FontFace, document.fonts, @font-face  | si       | |
 | setTimeout, setInterval, requestAnimationFrame | si | |
 | performance.now                       | si       | fijo con `--fixed-step` (Date.now siempre es el reloj real) |
-| `<video>`                             | parcial  | WebM con video VP8 o VP9 y audio Opus (hace falta libvpx y libopus al compilar); el audio Vorbis dentro de un WebM no se decodifica (el video se ve sin sonido); sin saltar a otro punto; sin video se salta (`loadeddata` y `ended` enseguida) |
+| `<video>`                             | parcial  | WebM con video VP8 o VP9 y audio Opus (hace falta libvpx y libopus al compilar), MP4 con H.264 y AAC; el audio Vorbis dentro de un WebM no se decodifica (el video se ve sin sonido); sin saltar a otro punto; sin video se salta (`loadeddata` y `ended` enseguida) |
 
 ## JavaScript
 
@@ -134,12 +134,12 @@ con el `WebGLRenderer`. Cubren Application, ticker, Sprite, Container, Graphics,
 Text, tint, blend modes, TilingSprite, RenderTexture, el loader y el teclado.
 
 Otras versiones 4.x (RPG Maker MV 1.6 usa la 4.5.4, juegos mas nuevos la 4.8.x)
-deberian funcionar igual; para probar una, pon su `pixi.js` junto a la otra y anade
+deberian funcionar igual; para probar una, pon su `pixi.js` junto a la otra y agrega
 un test.
 
 ## RPG Maker MV
 
-Fear & Hunger 1.4.1 (la version sin DRM de itch.io, nw.js) corre a 60 fps con WebGL
+Fear & Hunger 1.4.1 (la version sin DRM de itch.io o la de Steam, nw.js) corre a 60 fps con WebGL
 en un portatil con una Intel UHD 630, y a 30 fps estables en una RG CubeXX con los
 ajustes de su port (`[engine] fps = 30`, los hooks de motor de RPG Maker MV y el
 hook `gpu-canvas` para la mascara de luces). Es el unico juego probado por ahora;

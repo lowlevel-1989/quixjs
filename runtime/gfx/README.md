@@ -15,9 +15,9 @@ draws a 2d canvas on the GPU when a `gpu-canvas` hook asks for it.
 | `paint.c`        | what goes in fillStyle / strokeStyle: color, linear and radial gradient, pattern; sampled per pixel |
 | `raster.c`       | paths, fill (nonzero / evenodd), stroke, coverage masks (also for `clip()`), fillRect, clearRect, drawImage |
 | `image_loader.c` | decodes images (PNG, JPG...) with SDL_image and saves PNG for the screenshots |
-| `font.c`         | TrueType fonts with SDL_ttf: registered families, CSS `font` value, measure and draw text |
+| `font.c`         | TrueType fonts with SDL_ttf: registered families, CSS `font` value, measure and draw text; one thread at a time (the game and the notices over it, drawn by the present thread) |
 | `gl.h/.c`        | OpenGL ES 2.0 context for WebGL (hidden SDL window, or offscreen without window); functions loaded with `SDL_GL_GetProcAddress`; a second context that shares textures (`gl_aux_begin` / `gl_aux_end`) for `gpu2d.c` |
-| `gpu2d.h/.c`     | 2d canvas drawn on the GPU (hook `gpu-canvas`): fillRect, clearRect, fill and stroke with color or gradient; the rest goes back to the CPU |
+| `gpu2d.h/.c`     | 2d canvas drawn on the GPU (hook `gpu-canvas`): fillRect, clearRect, fill and stroke with color or gradient; the rest goes back to the CPU; a full repaint identical to the last one (a light mask with the lights and screen still) is not drawn again; it draws in the WebGL context, saving and restoring its state (`QUIXJS_GPU2D_MAIN=0`: the auxiliary context) |
 | `shader_cache.h/.c` | the WebGL programs already linked, kept in `<cache_dir>/shaders` (`GL_OES_get_program_binary`): next time they load in a few ms instead of being compiled; if the driver no longer takes one, it is linked and saved again |
 | `driver.h/.c`    | which OpenGL ES driver is in use (panfrost, mali or default), read once from `GL_RENDERER` and `GL_VERSION`; the rest of the code asks `gpu_driver()` instead of looking at the name |
 | `drivers/*.c`    | one file per driver with what quixjs does differently with it, and why (what was measured) |

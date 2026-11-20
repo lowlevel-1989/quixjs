@@ -26,20 +26,30 @@
 // Como el plugin cambia updateMain al cargarse, quixjs vuelve a poner el hook
 // encima (hooks_check).
 //
+// Referencias (el codigo que reproduce o reescribe; gracias a sus autores):
+//   TDDP_FluidTimestep v1.0.2, de Tor Damian Design / Galenmereth (sus condiciones
+//   de uso: http://mvplugins.tordamian.com/terms-of-use):
+//   http://mvplugins.tordamian.com/?p=437 (SceneManager.updateMain)
+//
 // Uso (config.toml o port.toml):
 //   [hooks]
 //   "SceneManager.updateMain" = "rpgmaker-mv/fluid-timestep-cap"
 //
-// El archivo es una funcion que recibe la original y devuelve la nueva.
+// El archivo es una funcion que recibe la original y devuelve la nueva. La
+// llama runtime/hooks/hooks.c (hooks_install) al instalar el hook, cuando el
+// juego ya cargo sus scripts. Ver runtime/engines/README.md.
 function (original) {
   var MAX = 4;
-  var EPS = 0.001;   // de una actualizacion: que un redondeo no cambie 2 por 1
+  var EPS = 0.001; // de una actualizacion: que un redondeo no cambie 2 por 1
   var src = String(original);
-  var tddp = src.indexOf('_accumulator') >= 0 && src.indexOf('this._dt') >= 0 &&
+  var tddp =
+    src.indexOf('_accumulator') >= 0 &&
+    src.indexOf('this._dt') >= 0 &&
     src.indexOf('updateInputData') >= 0;
   if (!tddp) return original;
   return function () {
-    var steady = typeof quix === 'object' && quix && typeof quix.frameTime === 'number' && quix.frameTime > 0;
+    var steady =
+      typeof quix === 'object' && quix && typeof quix.frameTime === 'number' && quix.frameTime > 0;
     var newTime = steady ? quix.frameTime : this.getTimeInMs();
     var frameTime = (newTime - this._currentTime) / 1000;
     if (frameTime > 0.25) frameTime = 0.25;
@@ -50,7 +60,7 @@ function (original) {
     var n = 0;
     while (this._accumulator + this._dt * EPS >= this._dt) {
       if (n++ === MAX) {
-        this._accumulator = 0;   // lo que falta se olvida: sin espiral
+        this._accumulator = 0; // lo que falta se olvida: sin espiral
         break;
       }
       this.updateInputData();

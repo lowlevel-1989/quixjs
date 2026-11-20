@@ -10,9 +10,12 @@ out and turns them into KeyboardEvent. `quix.pressKey()` uses the same queue.
 | file              | what it does |
 |-------------------|--------------|
 | `backend.h/.c`    | `BackendInterface`, `InputEvent`, `GamepadState`, `PresentLayer`; creates the backend and keeps the input queue |
-| `sdl/backend.c`   | SDL window presented with OpenGL ES 2, keyboard, gamepads, `--fps` overlay |
+| `sdl.c`           | SDL window presented with OpenGL ES 2, keyboard, gamepads, `--fps` overlay. An index file: it joins the parts of `sdl/` and is compiled as one ([README](sdl/README.md)) |
 | `sdl/mapper.c`    | Controls of the launcher: reads the raw gamepad and saves a SDL_GAMECONTROLLERCONFIG line in `controller.map` (inherited from tamatama) |
 | `dummy/backend.c` | no window: keeps the last frame for `--screenshot` and the tests |
+
+`sdl.c` is an index file (`sdl/` has its parts, [README](sdl/README.md));
+`dummy` is a single small file and needs none.
 
 ## sdl
 

@@ -31,6 +31,9 @@ typedef struct {
 } KeyInfo;
 
 const KeyInfo *keymap_find(const char *code);
+// Una tecla escrita como en el teclado ("T", "c", "Enter", "Shift", "F1",
+// "1") o por su code ("KeyT"): su code, o NULL si no existe
+const char *keymap_code_for(const char *name);
 
 // Rellena ev a partir del code. Devuelve -1 si el code no existe.
 int keymap_make_event(InputEvent *ev, InputType type, const char *code, int shift, int repeat);

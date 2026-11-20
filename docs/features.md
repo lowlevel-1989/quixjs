@@ -19,7 +19,8 @@ What quixjs can do today, in short. The state of each browser API is in
   stb_vorbis while it plays. `new Audio()` exists but only answers
   `canPlayType` (it does not play)
 - video: `<video>` plays WebM with VP8 or VP9 and Opus audio (nestegg, libvpx,
-  libopus); the picture follows the audio and is shown on top of the game
+  libopus) and MP4 with H.264 and AAC audio (minimp4 and a piece of FFmpeg);
+  the picture follows the audio and is shown on top of the game
 - hooks in the toml of the game (`[hooks]`): change a function of the game without
   touching its files. `gpu-canvas` draws a 2d canvas on the GPU (the light masks
   of RPG Maker), `skip` and `once-per-frame`

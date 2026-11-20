@@ -24,14 +24,20 @@
 // Los efectos de Terrax que cuentan por actualizacion (el parpadeo, el
 // fundido del tinte) van a la mitad de velocidad a 30 fps.
 //
+// Referencias (el codigo que reproduce o reescribe; gracias a sus autores):
+//   TerraxLighting v1.3.1, de Terrax (MIT; sin pagina oficial: la copia que trae
+//   el juego, js/plugins/TerraxLighting.js) (Lightmask._updateMask)
+//
 // Uso (config.toml o port.toml):
 //   [hooks]
 //   "Spriteset_Map.prototype.update" = "rpgmaker-mv/terrax-lights-only"
 //
-// El archivo es una funcion que recibe la original y devuelve la nueva.
+// El archivo es una funcion que recibe la original y devuelve la nueva. La
+// llama runtime/hooks/hooks.c (hooks_install) al instalar el hook, cuando el
+// juego ya cargo sus scripts. Ver runtime/engines/README.md.
 function (original) {
   var LIGHT = { light: 1, fire: 1, flashlight: 1, daynight: 1 };
-  var cache = new WeakMap();   // $dataMap.events -> la lista con huecos
+  var cache = new WeakMap(); // $dataMap.events -> la lista con huecos
   var lastMap = null;
 
   function lightsOnly(events) {
@@ -41,9 +47,12 @@ function (original) {
     var first = true;
     for (var i = 0; i < events.length; i++) {
       var e = events[i];
-      if (!e) { r[i] = e; continue; }
+      if (!e) {
+        r[i] = e;
+        continue;
+      }
       var cmd = String(e.note).split(' ').shift().toLowerCase();
-      r[i] = (first || LIGHT[cmd] === 1) ? e : null;
+      r[i] = first || LIGHT[cmd] === 1 ? e : null;
       first = false;
     }
     cache.set(events, r);
@@ -58,7 +67,8 @@ function (original) {
       this.__quixFrame = fr;
       var all = typeof $dataMap === 'object' && $dataMap && $dataMap.events;
       var map = $gameMap.mapId();
-      if (!Array.isArray(all) || map !== lastMap) {   // cambio de mapa: la lista entera
+      if (!Array.isArray(all) || map !== lastMap) {
+        // cambio de mapa: la lista entera
         lastMap = map;
         return updateMask.apply(this, arguments);
       }

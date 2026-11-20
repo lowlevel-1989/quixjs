@@ -65,8 +65,9 @@ Lo que dicen nuestras consolas (de sus logs):
 
 | campo           | que es | se usa en |
 |-----------------|--------|-----------|
-| `thread_wait(fence)` | funcion: como espera ese thread a que la GPU termine cada imagen. Sin ella (`0`), el driver no usa el thread y todo va por `present` | `backend/sdl/backend.c`, el thread y `thread_start` |
-| `present(p, f)` | funcion: como se presenta una imagen sin ese thread (`present_ahead = false`, o si el compositor lo frena) | `backend/sdl/backend.c`, `gpu_present()` |
+| `thread_wait(fence)` | funcion: como espera ese thread a que la GPU termine cada imagen. Sin ella (`0`), el driver no usa el thread y todo va por `present` | `backend/sdl/thread.c`, el thread y `thread_start` |
+| `thread_max_fps` | numero: con mas `[engine] fps` el thread no se usa (`0`: sin limite) | `backend/sdl/thread.c`, `thread_start` |
+| `present(p, f)` | funcion: como se presenta una imagen sin ese thread (`present_ahead = false`, o si el compositor lo frena) | `backend/sdl/present.c`, `gpu_present()` |
 
 `present` recibe la imagen (`GpuFrame`) y lo que el backend sabe hacer con
 ella (`Presenter`), explicados abajo.
@@ -90,6 +91,7 @@ Lo que elige cada driver, y por que (lo medido):
 |-|----------|------|----------|---------|
 | `thread_wait` | `drv_wait_gpu`: con `drv_wait_cpu`, en la RG CubeXX de ~70 a ~390 frames tardios en batalla | `drv_wait_cpu`: con `drv_wait_gpu`, los menus pestaneaban | ninguna (sin thread): con el, el juego esperaba ~16 ms por imagen; en el mapa de ~17 a ~27 fps | `drv_wait_gpu` |
 | `present` | `drv_present_previous`: en la RGB30 con panfrost, de 353 a 76 frames tardios en el mapa y de 940 a 194 en batalla | `drv_present_previous`: en la RGB30, de ~240 a ~60 en el mapa y de ~270 a ~85 en batalla | `drv_present_previous`, como mali | `drv_present_now` |
+| `thread_max_fps` | 0 (sin limite) | 30: a 60 fps con el thread cada imagen tardaba ~50 ms en verse (HexGL en la RGB30: ~18 fps; sin el thread, 60) | (sin thread) | 0 |
 
 ## Como espera el thread a la GPU (thread_wait)
 
@@ -133,7 +135,7 @@ La unica diferencia en el codigo es la primera linea: `eglWaitSyncKHR` pone
 la espera en la cola de la GPU y vuelve; `eglClientWaitSyncKHR` no vuelve
 hasta que la GPU pasa la marca. Estan en `drv_wait_gpu` y `drv_wait_cpu`
 (`common.c`, que llaman a `gl_fence_wait_gpu` y `gl_fence_wait_cpu` de
-`../gl.c`); el thread es `present_thread` en `backend/sdl/backend.c`.
+`../gl.c`); el thread es `present_thread` en `backend/sdl/thread.c`.
 
 La diferencia: desde la GPU, la orden de copiar ya esta en la cola cuando el
 frame termina, y la copia sale enseguida. Desde la CPU, entre el aviso de la
@@ -159,7 +161,7 @@ Que usa cada driver, y por que (probamos las dos formas en cada uno):
 
 ## GpuFrame y Presenter
 
-Los dos estan definidos en `../driver.h`. El backend (`backend/sdl/backend.c`)
+Los dos estan definidos en `../driver.h`. El backend (`backend/sdl.c`)
 los crea y se los pasa a `present` del driver.
 
 ### GpuFrame: una imagen lista para presentar
@@ -211,7 +213,7 @@ el juego dibuje el frame siguiente. Al empezar, la pantalla tarda dos frames en
 tener algo. El juego nunca dibuja en una textura que este esperando o en
 pantalla. El cambio de papeles lo hace la CPU, sin mover pixeles: solo cambia
 a que textura apunta el canvas (`webgl_canvas_handoff`, `binding/webgl.c`,
-llamado al acabar cada frame desde `present_screen`, `core/main.c`).
+llamado al acabar cada frame desde `present_screen`, `runtime/core/main/screen.c`).
 
 `later` es 1 si todo lo que hay en pantalla tiene su textura apartada asi. Es
 0 en dos casos:
@@ -221,7 +223,7 @@ llamado al acabar cada frame desde `present_screen`, `core/main.c`).
 - en pantalla hay un canvas 2d o un video: no son texturas apartadas, son
   pixeles en la memoria de la CPU que el juego cambia en el frame siguiente.
 
-La cuenta la hace `sdl_present_layers` (`backend/sdl/backend.c`). Los canvas
+La cuenta la hace `sdl_present_layers` (`backend/sdl/present.c`). Los canvas
 que estan en pantalla los da `document_screen_canvases`
 (`binding/document.c`): los del `body` que no tienen `display: none`,
 `visibility: hidden` ni `opacity: 0`.

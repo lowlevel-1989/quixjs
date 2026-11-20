@@ -42,6 +42,7 @@ typedef struct {
   int expose_gc;           // --expose-gc: gc() global, como en V8 (para benchmarks)
   int no_webgl;            // --no-webgl: getContext("webgl") da null
   int launcher;            // --launcher: el launcher, un menu antes del juego
+  int controls;            // --controls: solo Controls del launcher (la app de Android)
   const char *profile;     // --profile[=archivo]: profiler desde el arranque, informe en el archivo
   const char *gen_config_dir;   // --gen-config: escribe un toml para el juego y sale
 } Args;

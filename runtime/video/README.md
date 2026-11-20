@@ -2,14 +2,22 @@
 
 English | [Español](README.es.md)
 
-WebM video for the `<video>` element: the "Play Movie" of the events of RPG
-Maker MV. It is made with libraries, not from scratch.
+WebM and MP4 video for the `<video>` element: the "Play Movie" of the events
+of RPG Maker MV, and the MP4 videos of Felvidék. It is made with libraries,
+not from scratch.
 
 | library   | what it does |
 |-----------|--------------|
 | nestegg   | reads the WebM container (`thirdparty/nestegg`, built with quixjs) |
 | libvpx    | decodes the VP8 and VP9 video |
 | libopus   | decodes the Opus audio (the audio of the WebM of RPG Maker) |
+| minimp4   | reads the MP4 container (`thirdparty/minimp4`) |
+| FFmpeg    | decodes the H.264 video and the AAC audio (`thirdparty/ffmpeg`, only those two decoders) |
+
+An MP4 wider than 1280 (1080p) is shown at half size. On a slow handheld
+the audio goes first: the H.264 threads run with less priority, and a
+picture that comes late is not converted nor shown (the RX6S with the videos
+of Felvidék: real time, with about a quarter of the pictures skipped).
 
 | file      | what it does |
 |-----------|--------------|
@@ -17,7 +25,7 @@ Maker MV. It is made with libraries, not from scratch.
 | `video.c` | reads the packets with nestegg, decodes them with libvpx and libopus, converts the picture to RGBA; without video support every function is a stub |
 
 The JS side is `binding/video.c` (`__quixVideo`) and the `<video>` element of
-`binding/polyfill.c` ([binding](../binding/README.md)).
+`binding/polyfill/media.js` ([polyfill](../binding/polyfill/README.md)).
 
 ## How it plays
 
@@ -61,5 +69,6 @@ The PortMaster build always has video and carries `libvpx.so.5` and
 `libopus.so.0` in `libs.aarch64/` and `libs.armhf/`, with the licenses of libvpx5, libopus0 and nestegg.
 
 The test is `games/tests/media/video`: `clip.webm` (64x48, 1 s, 10 frames,
-made with ffmpeg from `testsrc` and a `sine` tone) plays to the end, and a
-missing file is skipped.
+made with ffmpeg from `testsrc` and a `sine` tone) and `clip.mp4` (the same,
+H.264 with B frames and AAC) play to the end, `big.mp4` (1080p) is shown at
+half size, and a missing file is skipped.

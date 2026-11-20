@@ -26,6 +26,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "image_loader.h"
+#include "platform/platform.h"
 
 static int surface_from_sdl(SDL_Surface *img, Surface *out) {
   if (!img) return -1;
@@ -70,7 +71,8 @@ static int pixels_from_sdl(SDL_Surface *img, uint8_t **px, int *w, int *h) {
 }
 
 int image_decode_pixels(const uint8_t *data, size_t len, const char *path, uint8_t **px, int *w, int *h) {
-  if (path) return pixels_from_sdl(IMG_Load(path), px, w, h);
+  char abs[1024];
+  if (path) return pixels_from_sdl(IMG_Load(platform_file_path(path, abs, sizeof abs)), px, w, h);
   SDL_RWops *rw = SDL_RWFromConstMem(data, (int)len);
   if (!rw) return -1;
   return pixels_from_sdl(IMG_Load_RW(rw, 1), px, w, h);
@@ -84,7 +86,8 @@ static double now_ms(void) {
 
 int image_load_file(const char *path, Surface *out) {
   double t = now_ms();
-  int r = surface_from_sdl(IMG_Load(path), out);
+  char abs[1024];
+  int r = surface_from_sdl(IMG_Load(platform_file_path(path, abs, sizeof abs)), out);
   memstats_decode(now_ms() - t);
   return r;
 }

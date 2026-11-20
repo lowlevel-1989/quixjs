@@ -59,16 +59,22 @@ JSC_EXTRA_armhf   := -l:libatomic.a
 
 pm_cc = clang --no-default-config $(TARGET_$(1)) --sysroot=$(SYSROOT_$(1))
 pm_cflags = -O2 -D_GNU_SOURCE -Iruntime -Iruntime/thirdparty -Iruntime/thirdparty/tomlc17 -Iobj/gen \
-            -I$(SYSROOT_$(1))/usr/include/SDL2 -I$(PM_DEPS)/jsc-$(1)/include \
+            -I$(SYSROOT_$(1))/usr/include/SDL2 -I$(PM_DEPS)/jsc-$(1)/include $(FFMPEG_INCLUDES) \
             -DQUIX_VIDEO -DQUIX_HANDHELD -w
+# FFmpeg (el H.264 y el AAC de los MP4): con sus opciones y su config.h de
+# cada arquitectura (runtime/thirdparty/ffmpeg/config/ARCH)
+pm_ffmpeg_cflags = $(FFMPEG_CFLAGS) -I$(FFMPEG_DIR)/config/$(1)
 # JavaScriptCore, ICU y libc++ van dentro del binario (estaticos)
 pm_libs = -L$(PM_DEPS)/jsc-$(1)/lib -lJavaScriptCore -lWTF -lbmalloc $(JSC_EXTRA_$(1)) \
           -licui18n -licuuc -licudata -l:libc++.a -l:libc++abi.a \
           -lvpx -lopus -lSDL2_ttf -lSDL2_image -lSDL2 -lm -lpthread -ldl -Wl,--gc-sections -Wl,--strip-all \
           -Wl,--allow-shlib-undefined -Wl,--disable-new-dtags -Wl,-rpath,'$$$$ORIGIN/libs.$(1)' -static-libgcc
 
-# con video siempre (nestegg + libvpx + libopus, estas dos en libs.ARCH/)
-PM_SRCS := $(filter-out runtime/thirdparty/nestegg/nestegg.c,$(SRCS)) runtime/thirdparty/nestegg/nestegg.c
+# con video siempre: WebM (nestegg + libvpx + libopus, estas dos en
+# libs.ARCH/) y MP4 (minimp4 + FFmpeg, dentro del binario). Lo de FFmpeg
+# que pone el Makefile es del PC: aqui va el de cada arquitectura
+PM_SRCS := $(filter-out runtime/thirdparty/nestegg/nestegg.c $(FFMPEG_DIR)/%,$(SRCS)) runtime/thirdparty/nestegg/nestegg.c
+pm_ffmpeg_objs = $(patsubst %.S,$(PM)/$(1)/%.o,$(patsubst %.c,$(PM)/$(1)/%.o,$(FFMPEG_SRCS) $(FFMPEG_SRCS_$(1))))
 PM_BINS := $(PM_ARCHES:%=$(PM)/quixjs.%)
 
 all: $(PM_ZIP)
@@ -105,15 +111,23 @@ $(PM)/$(1)/%.o: %.c $(HEADERS) $(PM)/$(1)/cflags | $(PM_DEPS)/sysroot-$(DEB_$(1)
                 $(PM_DEPS)/jsc-$(1)/lib/libJavaScriptCore.a
 	@mkdir -p $$(@D) && $(call pm_cc,$(1)) $(call pm_cflags,$(1)) -c $$< -o $$@
 
-$(PM)/quixjs.$(1): $(PM_SRCS:%.c=$(PM)/$(1)/%.o) $(PM_DEPS)/jsc-$(1)/lib/libJavaScriptCore.a
-	$(call pm_cc,$(1)) -fuse-ld=lld $(PM_SRCS:%.c=$(PM)/$(1)/%.o) -o $$@ $(call pm_libs,$(1))
+$(PM)/$(1)/$(FFMPEG_DIR)/%.o: $(FFMPEG_DIR)/%.c $(PM)/$(1)/cflags | $(PM_DEPS)/sysroot-$(DEB_$(1))/.ready
+	@mkdir -p $$(@D) && $(call pm_cc,$(1)) $(call pm_ffmpeg_cflags,$(1)) -c $$< -o $$@
+
+$(PM)/$(1)/$(FFMPEG_DIR)/%.o: $(FFMPEG_DIR)/%.S $(PM)/$(1)/cflags | $(PM_DEPS)/sysroot-$(DEB_$(1))/.ready
+	@mkdir -p $$(@D) && $(call pm_cc,$(1)) $(call pm_ffmpeg_cflags,$(1)) -c $$< -o $$@
+
+$(PM)/quixjs.$(1): $(PM_SRCS:%.c=$(PM)/$(1)/%.o) $(call pm_ffmpeg_objs,$(1)) $(PM_DEPS)/jsc-$(1)/lib/libJavaScriptCore.a
+	$(call pm_cc,$(1)) -fuse-ld=lld $(PM_SRCS:%.c=$(PM)/$(1)/%.o) $(call pm_ffmpeg_objs,$(1)) -o $$@ $(call pm_libs,$(1))
 endef
 $(foreach a,$(PM_ARCHES),$(eval $(call PM_ARCH_RULES,$(a))))
+# los archivos indice (INDEX_FILES): su .o depende de sus partes
+$(foreach a,$(PM_ARCHES),$(foreach d,$(INDEX_FILES),$(eval $(PM)/$(a)/$(d).o: $(wildcard $(d)/*.c))))
 .PHONY: FORCE
 
 # 4. El .zip
 PM_STAGE := $(PM)/zip
-$(PM_ZIP): $(PM_BINS) portmaster/portmaster.mk portmaster/portmaster.sh tools/portmaster.py $(shell find $(PM_PORTDIR) -type f 2>/dev/null)
+$(PM_ZIP): $(PM_BINS) portmaster/portmaster.mk portmaster/portmaster.sh tools/portmaster.py $(shell find $(PM_PORTDIR) -path $(PM_PORTDIR)/gamedata -prune -o -type f -print 2>/dev/null)
 	rm -rf $(PM_STAGE) && mkdir -p $(PM_STAGE)
 	# el script .sh, port.json y gameinfo.xml salen del port.toml del port
 	PM_ARCHES="$(PM_ARCHES)" python3 tools/portmaster.py $(PM_PORTDIR)/port.toml $(PM_STAGE)
@@ -121,6 +135,8 @@ $(PM_ZIP): $(PM_BINS) portmaster/portmaster.mk portmaster/portmaster.sh tools/po
 	if [ -f $(PM_PORTDIR)/README.es.md ]; then cp $(PM_PORTDIR)/README.es.md $(PM_STAGE)/$(PORT)/; fi
 	# los mods que trae el port (mods/<nombre>/, se activan en la opcion Mods)
 	if [ -d $(PM_PORTDIR)/mods ]; then cp -r $(PM_PORTDIR)/mods $(PM_STAGE)/$(PORT)/; fi
+	# los scripts propios del port (games/hexgl/menu.js), junto a port.toml
+	for f in $(wildcard $(PM_PORTDIR)/*.js); do cp $$f $(PM_STAGE)/$(PORT)/; done
 	mkdir -p $(PM_STAGE)/$(PORT)/licenses $(PM_STAGE)/$(PORT)/gamedata
 	# cada arquitectura: su quixjs y sus librerias en libs.ARCH/
 	set -e; for a in $(PM_ARCHES); do \
@@ -141,6 +157,8 @@ $(PM_ZIP): $(PM_BINS) portmaster/portmaster.mk portmaster/portmaster.sh tools/po
 	cp runtime/thirdparty/tomlc17/LICENSE $(PM_STAGE)/$(PORT)/licenses/tomlc17.txt
 	cp runtime/thirdparty/stb/LICENSE $(PM_STAGE)/$(PORT)/licenses/stb_vorbis.txt
 	cp runtime/thirdparty/nestegg/LICENSE $(PM_STAGE)/$(PORT)/licenses/nestegg.txt
+	cp runtime/thirdparty/minimp4/LICENSE $(PM_STAGE)/$(PORT)/licenses/minimp4.txt
+	cp runtime/thirdparty/ffmpeg/LICENSE $(PM_STAGE)/$(PORT)/licenses/ffmpeg.txt
 	set -e; for p in $(PM_BUNDLE_PKGS); do \
 	  cp $(SYSROOT_aarch64)/usr/share/doc/$$p/copyright $(PM_STAGE)/$(PORT)/licenses/$$p.txt; \
 	done

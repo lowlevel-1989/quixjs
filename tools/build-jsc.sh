@@ -18,7 +18,13 @@
 #      se enlaza contra lib/ y se comprueba que no pide nada mas nuevo que
 #      GLIBC_2.28
 #
-# Uso: tools/build-jsc.sh [aarch64|armhf|all] [etapa...]
+# Android (arm64-v8a): tools/build-jsc.sh android-arm64; android-x86_64 para
+# el emulador de Android del PC (x86_64), solo para probar. Con el NDK
+# (ANDROID_NDK, por defecto el ultimo de ~/Android/Sdk/ndk): su clang, su
+# sysroot (bionic, ANDROID_API) y su libc++ estatica; sin las etapas sysroot
+# ni libcxx. Para el APK de Android (android/README.md).
+#
+# Uso: tools/build-jsc.sh [aarch64|armhf|android-arm64|android-x86_64|all] [etapa...]
 #        tools/build-jsc.sh host
 #   etapas: sysroot libcxx icu jsc install test (por defecto, todas en orden)
 #   host: JavaScriptCore para este PC (para make y make test), con el clang y
@@ -76,7 +82,11 @@ run() {
 # Lo que depende de la arquitectura.
 setup_arch() {
   ARCH=$1
+  ANDROID=0
   case $ARCH in
+    android-arm64|android-x86_64)
+      setup_android
+      return;;
     aarch64)
       DEB=arm64; TRIPLE=aarch64-linux-gnu; BINUTILS=aarch64-linux-gnu; CPU=aarch64
       # sin outline atomics: el libgcc de GCC 8 no trae __aarch64_ldadd4...
@@ -84,7 +94,7 @@ setup_arch() {
     armhf)
       DEB=armhf; TRIPLE=arm-linux-gnueabihf; BINUTILS=arm-linux-gnu; CPU=armv7l
       ARCHFLAGS="--target=arm-linux-gnueabihf -march=armv7-a -mfpu=vfpv3-d16 -mfloat-abi=hard";;
-    *) die "arquitectura desconocida: $ARCH (aarch64 o armhf)";;
+    *) die "arquitectura desconocida: $ARCH (aarch64, armhf, android-arm64 o android-x86_64)";;
   esac
   SYSROOT=$DEPS/sysroot-$DEB
   B=$WORK/$ARCH
@@ -100,12 +110,40 @@ setup_arch() {
   mkdir -p "$B"
 }
 
+# Android: todo del NDK (clang, bionic y libc++ estatica)
+setup_android() {
+  ANDROID=1
+  NDK=${ANDROID_NDK:-$(ls -d "$HOME"/Android/Sdk/ndk/* 2>/dev/null | sort -V | tail -1)}
+  [ -d "$NDK" ] || die "no hay NDK: ANDROID_NDK=<carpeta del NDK>"
+  # 28 (Android 9): aligned_alloc de bionic, que usa bmalloc
+  ANDROID_API=${ANDROID_API:-28}
+  if [ "$ARCH" = android-x86_64 ]; then
+    TRIPLE=x86_64-linux-android; CPU=x86_64; ANDROID_ABI=x86_64
+  else
+    TRIPLE=aarch64-linux-android; CPU=aarch64; ANDROID_ABI=arm64-v8a
+  fi
+  local tc=$NDK/toolchains/llvm/prebuilt/linux-x86_64
+  SYSROOT=$tc/sysroot
+  B=$WORK/$ARCH
+  PREFIX=$B/prefix          # ICU instalado (headers + .a)
+  OUT=$DEPS/jsc-$ARCH
+  JSC_BUILD=$B/jsc
+  NDK_BIN=$tc/bin
+  AR=$NDK_BIN/llvm-ar
+  RANLIB=$NDK_BIN/llvm-ranlib
+  CC_FLAGS="--target=$TRIPLE$ANDROID_API"
+  CXX_FLAGS="$CC_FLAGS"
+  LD_FLAGS="-static-libstdc++"
+  mkdir -p "$B"
+}
+
 done_mark() { touch "$B/$1.done"; }
 is_done() { [ -f "$B/$1.done" ]; }
 
 # 1. El sysroot de buster, con la regla de portmaster/portmaster.mk (la misma que usa
 #    quixjs.aarch64, con SDL y demas). Si make falla, solo lo minimo.
 stage_sysroot() {
+  [ "$ANDROID" = 1 ] && return   # el del NDK
   [ -f "$SYSROOT/.ready" ] && return
   log "$ARCH: sysroot de Debian buster en $SYSROOT"
   if ! (cd "$ROOT" && make PLATFORM=portmaster "obj/deps/sysroot-$DEB/.ready") > "$LOGS/sysroot-$DEB.log" 2>&1; then
@@ -198,6 +236,7 @@ EOF
 # 2. libc++ + libc++abi, estaticas. El desenrollado de pila es el de libgcc
 #    (libgcc_eh.a de buster): sin libunwind. libc++.a lleva dentro libc++abi.
 stage_libcxx() {
+  [ "$ANDROID" = 1 ] && return   # la del NDK (c++_static)
   is_done libcxx && return
   sources_llvm
   log "$ARCH: libc++ $LLVM_VERSION"
@@ -259,8 +298,10 @@ stage_icu() {
   icu_host
   log "$ARCH: ICU $ICU_VERSION"
   rm -rf "$B/icu" && mkdir -p "$B/icu"
+  local cc=clang cxx=clang++
+  [ "$ANDROID" = 1 ] && cc=$NDK_BIN/clang cxx=$NDK_BIN/clang++
   (cd "$B/icu" && ICU_DATA_FILTER_FILE="$WORK/icu-filter.json" \
-    CC=clang CXX=clang++ AR="$AR" RANLIB="$RANLIB" \
+    CC=$cc CXX=$cxx AR="$AR" RANLIB="$RANLIB" \
     CFLAGS="$CC_FLAGS -O2 -fPIC" CXXFLAGS="$CXX_FLAGS -O2 -fPIC" LDFLAGS="$LD_FLAGS" \
     run "icu-$ARCH-configure" "$ICU_SRC/source/configure" --host="$TRIPLE" \
       --with-cross-build="$WORK/icu-host" --prefix="$PREFIX" \
@@ -276,11 +317,20 @@ stage_icu() {
 stage_jsc() {
   is_done jsc && return
   sources_webkit
-  toolchain toolchain "$CXX_FLAGS" "$LD_FLAGS"
+  local tcargs
+  if [ "$ANDROID" = 1 ]; then
+    # el toolchain del NDK (bionic y libc++ estatica)
+    tcargs="-DCMAKE_TOOLCHAIN_FILE=$NDK/build/cmake/android.toolchain.cmake -DANDROID_ABI=$ANDROID_ABI
+      -DANDROID_PLATFORM=android-$ANDROID_API -DANDROID_STL=c++_static
+      -DCMAKE_FIND_ROOT_PATH=$PREFIX"
+  else
+    toolchain toolchain "$CXX_FLAGS" "$LD_FLAGS"
+    tcargs="-DCMAKE_TOOLCHAIN_FILE=$B/toolchain.cmake"
+  fi
   log "$ARCH: JavaScriptCore (WebKit $WEBKIT_TAG) en $JSC_BUILD"
   # shellcheck disable=SC2086
   run "jsc-$ARCH-configure" cmake -G Ninja -S "$WEBKIT" -B "$JSC_BUILD" \
-    -DCMAKE_TOOLCHAIN_FILE="$B/toolchain.cmake" \
+    $tcargs \
     -DPORT=JSCOnly -DENABLE_STATIC_JSC=ON -DCMAKE_BUILD_TYPE=Release -DDEVELOPER_MODE=OFF \
     -DUSE_LIBBACKTRACE=OFF -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
     -DICU_ROOT="$PREFIX" ${JSC_EXTRA_CMAKE:-}
@@ -303,8 +353,14 @@ stage_install() {
       cp "$a" "$OUT/lib/"
     fi
   done
-  cp "$PREFIX"/lib/libicudata.a "$PREFIX"/lib/libicuuc.a "$PREFIX"/lib/libicui18n.a \
-     "$PREFIX"/lib/libc++.a "$PREFIX"/lib/libc++abi.a "$OUT/lib/"
+  cp "$PREFIX"/lib/libicudata.a "$PREFIX"/lib/libicuuc.a "$PREFIX"/lib/libicui18n.a "$OUT/lib/"
+  if [ "$ANDROID" = 1 ]; then
+    # la libc++ del NDK (c++_static)
+    cp "$SYSROOT/usr/lib/$TRIPLE/libc++_static.a" "$OUT/lib/libc++.a"
+    cp "$SYSROOT/usr/lib/$TRIPLE/libc++abi.a" "$OUT/lib/"
+  else
+    cp "$PREFIX"/lib/libc++.a "$PREFIX"/lib/libc++abi.a "$OUT/lib/"
+  fi
   # la API publica en C
   local h api=$WEBKIT/JavaScriptCore/API
   for h in JavaScript.h JSBase.h JSContextRef.h JSStringRef.h JSObjectRef.h JSTypedArray.h \
@@ -324,11 +380,20 @@ stage_install() {
   cat "$W/WTF/wtf/dtoa/LICENSE" "$W/WTF/wtf/dtoa/COPYING" > "$L/WTF-dtoa.txt"
   cp "$W/WTF/wtf/simdutf/LICENSE-simdutf.txt" "$L/WTF-simdutf.txt"
   cp "$ICU_SRC/LICENSE" "$L/ICU.txt"
-  cp "$LLVM_SRC/libcxx/LICENSE.TXT" "$L/libc++.txt"
-  cp "$LLVM_SRC/libcxxabi/LICENSE.TXT" "$L/libc++abi.txt"
+  if [ "$ANDROID" = 1 ]; then
+    # libc++ y bionic del NDK: sus avisos de licencia
+    cp "$NDK/toolchains/llvm/prebuilt/linux-x86_64/NOTICE" "$L/libc++-NDK.txt"
+  else
+    cp "$LLVM_SRC/libcxx/LICENSE.TXT" "$L/libc++.txt"
+    cp "$LLVM_SRC/libcxxabi/LICENSE.TXT" "$L/libc++abi.txt"
+  fi
   {
     echo "JavaScriptCore de WebKit $WEBKIT_TAG (port JSCOnly, estatico), ICU $ICU_VERSION y"
-    echo "libc++/libc++abi de LLVM $LLVM_VERSION, para $TRIPLE (Debian buster, glibc 2.28)."
+    if [ "$ANDROID" = 1 ]; then
+      echo "libc++ del NDK ($(basename "$NDK")), para $TRIPLE (Android API $ANDROID_API)."
+    else
+      echo "libc++/libc++abi de LLVM $LLVM_VERSION, para $TRIPLE (Debian buster, glibc 2.28)."
+    fi
     echo "Construido con tools/build-jsc.sh de quixjs."
     echo
     echo "Enlazar (C, con clang y lld): -I$OUT/include y"

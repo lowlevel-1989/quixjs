@@ -6,15 +6,21 @@
 // buffers del tamano del archivo en el JS por cada imagen, que disparaban
 // GC a mitad de una imagen. Con el hook, la imagen
 // recibe la ruta cifrada y quixjs la lee, la descifra (la clave de
-// $dataSystem: __quixEngine["rpgmaker-mv"].setDecryptKey) y la decodifica en
+// $dataSystem: __quixEngine["rpgmaker"].setDecryptKey, de
+// runtime/engines/rpgmaker/decrypt.c) y la decodifica en
 // segundo plano: los bytes no pasan por el JS. Sin la nativa o sin la clave,
 // la original.
 //
 // Uso (config.toml o port.toml):
 //   [hooks]
 //   "Decrypter.decryptImg" = "rpgmaker-mv/decrypt-image-native"
+//
+// El archivo es una funcion que recibe la original y devuelve la nueva. La
+// llama runtime/hooks/hooks.c (hooks_install) al instalar el hook, cuando el
+// juego ya cargo sus scripts. Ver runtime/engines/README.md.
 function (original) {
-  var native = typeof __quixEngine === 'object' && __quixEngine ? __quixEngine['rpgmaker-mv'] : null;
+  var native =
+    typeof __quixEngine === 'object' && __quixEngine ? __quixEngine['rpgmaker'] : null;
   var ready = false;
   function setup() {
     if (ready) return true;
@@ -26,7 +32,13 @@ function (original) {
   return function (url, bitmap) {
     if (!setup()) return original.apply(this, arguments);
     bitmap._image.src = this.extToEncryptExt(url);
-    bitmap._image.addEventListener('load', bitmap._loadListener = Bitmap.prototype._onLoad.bind(bitmap));
-    bitmap._image.addEventListener('error', bitmap._errorListener = bitmap._loader || Bitmap.prototype._onError.bind(bitmap));
+    bitmap._image.addEventListener(
+      'load',
+      (bitmap._loadListener = Bitmap.prototype._onLoad.bind(bitmap))
+    );
+    bitmap._image.addEventListener(
+      'error',
+      (bitmap._errorListener = bitmap._loader || Bitmap.prototype._onError.bind(bitmap))
+    );
   };
 }

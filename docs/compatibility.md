@@ -100,7 +100,7 @@ clock, so `onended` and loops work the same.
 | FontFace, document.fonts, @font-face  | yes      | |
 | setTimeout, setInterval, requestAnimationFrame | yes | |
 | performance.now                       | yes      | fixed with `--fixed-step` (Date.now is always the real clock) |
-| `<video>`                             | partial  | WebM with VP8 or VP9 video and Opus audio (needs libvpx and libopus at build time); Vorbis audio in WebM is not decoded (the video plays without sound); no seeking; without video support it is skipped (`loadeddata` and `ended` at once) |
+| `<video>`                             | partial  | WebM with VP8 or VP9 video and Opus audio (needs libvpx and libopus at build time), MP4 with H.264 and AAC; Vorbis audio in WebM is not decoded (the video plays without sound); no seeking; without video support it is skipped (`loadeddata` and `ended` at once) |
 
 ## JavaScript
 
@@ -138,7 +138,7 @@ same; to test one, put its `pixi.js` next to the other one and add a test.
 
 ## RPG Maker MV
 
-Fear & Hunger 1.4.1 (the DRM-free version from itch.io, nw.js) runs at 60 fps with
+Fear & Hunger 1.4.1 (the DRM-free version from itch.io or the Steam one, nw.js) runs at 60 fps with
 WebGL on a laptop with an Intel UHD 630, and at a stable 30 fps on an RG CubeXX
 with the settings of its port (`[engine] fps = 30`, the RPG Maker MV engine hooks
 and the `gpu-canvas` hook for the light mask). It is the only game tested so far; other games may use APIs that are

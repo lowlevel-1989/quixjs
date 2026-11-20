@@ -14,14 +14,18 @@
 //   [hooks]
 //   "Game_Interpreter.prototype.skipBranch" = "rpgmaker-mv/skip-branch-table"
 //
-// El archivo es una funcion que recibe la original y devuelve la nueva.
+// El archivo es una funcion que recibe la original y devuelve la nueva. La
+// llama runtime/hooks/hooks.c (hooks_install) al instalar el hook, cuando el
+// juego ya cargo sus scripts. Ver runtime/engines/README.md.
 function (original) {
   var tables = typeof WeakMap === 'function' ? new WeakMap() : null;
 
   // ends[i]: la ultima linea del bloque de la linea i (la anterior a la
   // primera que vuelve a tener su sangria o menos)
   function build(list) {
-    var n = list.length, ends = new Int32Array(n), stack = [];
+    var n = list.length,
+      ends = new Int32Array(n),
+      stack = [];
     for (var i = n - 1; i >= 0; i--) {
       var indent = list[i].indent;
       while (stack.length && list[stack[stack.length - 1]].indent > indent) stack.pop();
@@ -32,7 +36,8 @@ function (original) {
   }
 
   return function () {
-    var list = this._list, i = this._index;
+    var list = this._list,
+      i = this._index;
     if (!tables || !list || !list[i] || list[i].indent !== this._indent) return original.call(this);
     var ends = tables.get(list);
     if (!ends || ends.length !== list.length) {

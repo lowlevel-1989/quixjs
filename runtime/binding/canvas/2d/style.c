@@ -22,6 +22,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "context2d.h"
+#include "binding/image.h"
 
 // Mismo orden que en context2d.c
 enum { NUM_GLOBAL_ALPHA, NUM_LINE_WIDTH, NUM_MITER_LIMIT, NUM_SHADOW_BLUR,
@@ -188,6 +189,12 @@ JSValue js_ctx2d_createPattern(JSContext *ctx, JSValueConst this_val, int argc, 
   }
   p->repeat = repeat;
   matrix_identity(&p->transform);
+  // una imagen reducida ([game] image_scale): cada pixel suyo cubre mas
+  int lw = src->w, lh = src->h;
+  if (js_image_natural_size(ctx, argv[0], &lw, &lh) == 0 && (lw != src->w || lh != src->h)) {
+    p->transform.a = (double)lw / src->w;
+    p->transform.d = (double)lh / src->h;
+  }
   JS_SetOpaque(obj, p);
   return obj;
 }

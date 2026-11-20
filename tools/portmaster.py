@@ -42,6 +42,9 @@ def main():
         sh = (f.read().replace("@PORT@", port).replace("@TITLE@", title)
               .replace("@PORT_VERSION@", p.get("version", "?"))
               .replace("@GAME_DIR_PARENT@", os.path.dirname(game_dir) or game_dir)
+              # MV: la carpeta www/; MZ (sin www/): lo de la carpeta del juego
+              .replace("@GAME_WHAT@", "the folder " + os.path.basename(game_dir) + "/"
+                       if os.path.dirname(game_dir) else "the contents of the game folder (the one with index.html)")
               .replace("@GAME_DIR@", game_dir))
     with open(os.path.join(out, script), "w") as f:
         f.write(sh)
@@ -81,7 +84,11 @@ def main():
             "image": {"screenshot": shot, "covers": covers, "thumbnail": None, "video": None} if shot else {},
             "rtr": False,
             "exp": p.get("experimental", False),
-            "runtime": [],
+            # null y no []: los PortMaster anteriores a 2025.06 (el que trae
+            # ROCKNIX 20250517) fallan al instalar con una lista
+            # (runtime_nicename hace runtime.startswith); los nuevos pasan
+            # null a [] (harbourmaster/info.py)
+            "runtime": None,
             "store": [{"name": store["name"], "gameurl": store["url"]}] if store else [],
             "availability": p.get("availability", "full"),
             "reqs": [],

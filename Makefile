@@ -18,12 +18,15 @@ CFLAGS = -g -O2 -D_GNU_SOURCE
 CFLAGS += -Iruntime -Iruntime/thirdparty -Iruntime/thirdparty/tomlc17 -Iobj/gen $(JSC_CFLAGS)
 LDFLAGS = -lm -lpthread -lSDL2_ttf -lSDL2_image -lSDL2 $(JSC_LIBS)
 
-# Video WebM (nestegg + libvpx + libopus): si estan instaladas (o VIDEO=1/0)
+# Video: WebM (nestegg + libvpx + libopus, si estan instaladas; o VIDEO=1/0)
+# y MP4 (minimp4 + el H.264 y el AAC de FFmpeg, en runtime/thirdparty)
 VIDEO ?= $(shell pkg-config --exists vpx opus && echo 1 || echo 0)
+include runtime/thirdparty/ffmpeg/ffmpeg.mk
+FFMPEG_ARCH ?= $(shell uname -m)
 ifeq ($(VIDEO),1)
-CFLAGS += -DQUIX_VIDEO $(shell pkg-config --cflags vpx opus)
+CFLAGS += -DQUIX_VIDEO $(shell pkg-config --cflags vpx opus) $(FFMPEG_INCLUDES)
 LDFLAGS += $(shell pkg-config --libs vpx opus)
-CORE_SRCS_VIDEO = runtime/thirdparty/nestegg/nestegg.c
+CORE_SRCS_VIDEO = runtime/thirdparty/nestegg/nestegg.c $(FFMPEG_SRCS) $(FFMPEG_SRCS_$(FFMPEG_ARCH))
 endif
 
 # PLATFORM=portmaster construye el port de PortMaster (portmaster/portmaster.mk)
@@ -32,7 +35,7 @@ PLATFORM ?= linux
 PLATFORM_OS ?= linux
 
 # Main source files
-CORE_SRCS = runtime/js/js_jsc.c \
+CORE_SRCS = runtime/js/jsc.c \
 						runtime/binding/console.c \
 						runtime/core/args.c \
 						runtime/core/memstats.c \
@@ -52,6 +55,7 @@ CORE_SRCS = runtime/js/js_jsc.c \
 						runtime/gfx/paint.c \
 						runtime/gfx/raster.c \
 						runtime/gfx/image_loader.c \
+						runtime/gfx/image_scale.c \
 						runtime/gfx/font.c \
 						runtime/gfx/gl.c \
 						runtime/gfx/driver.c \
@@ -85,7 +89,7 @@ CORE_SRCS = runtime/js/js_jsc.c \
 						runtime/backend/backend.c \
 						runtime/backend/toast.c \
 						runtime/backend/dummy/backend.c \
-						runtime/backend/sdl/backend.c \
+						runtime/backend/sdl.c \
 						runtime/backend/sdl/mapper.c \
 						runtime/launcher/ui.c \
 						runtime/launcher/launcher.c \
@@ -96,6 +100,8 @@ CORE_SRCS = runtime/js/js_jsc.c \
 						runtime/transfer/sender.c \
 						runtime/transfer/receiver.c \
 						runtime/transfer/transfer.c \
+						runtime/lan/lan.c \
+						runtime/binding/lan.c \
 						runtime/achievements/achievements.c \
 						runtime/symbols/symbols.c \
 						runtime/cheats/cheats.c \
@@ -129,6 +135,24 @@ GEN_ENGINES = obj/gen/engines.h
 $(GEN_ENGINES): $(ENGINE_FILES) tools/embed_engines.py
 	python3 tools/embed_engines.py runtime/engines $@
 
+# El JS de quixjs (runtime/**/*.js fuera de engines/) tambien va dentro del
+# binario: cada .js se edita como JS y tools/embed_js.py lo convierte en una
+# cadena de C al compilar (ver su cabecera: por que se hace asi)
+GEN_POLYFILLS = obj/gen/polyfills.h
+$(GEN_POLYFILLS): $(wildcard runtime/binding/polyfill/*.js) tools/embed_js.py
+	python3 tools/embed_js.py $@ --table POLYFILLS runtime/binding/polyfill
+GEN_JS = obj/gen/js_nwjs.h obj/gen/js_webaudio.h obj/gen/js_gamepads.h obj/gen/js_profiler.h obj/gen/js_same_code.h
+obj/gen/js_nwjs.h: runtime/binding/nwjs.js tools/embed_js.py
+	python3 tools/embed_js.py $@ NWJS_JS $<
+obj/gen/js_webaudio.h: runtime/binding/webaudio.js tools/embed_js.py
+	python3 tools/embed_js.py $@ WEBAUDIO_JS $<
+obj/gen/js_gamepads.h: runtime/binding/gamepads.js tools/embed_js.py
+	python3 tools/embed_js.py $@ GAMEPADS_JS $<
+obj/gen/js_profiler.h: runtime/core/profiler.js tools/embed_js.py
+	python3 tools/embed_js.py $@ PROFILER_JS $<
+obj/gen/js_same_code.h: runtime/engines/same-code.js tools/embed_js.py
+	python3 tools/embed_js.py $@ SAME_CODE_JS $<
+
 # La version de quixjs: la del archivo VERSION (QUIX_VERSION)
 GEN_VERSION = obj/gen/version.h
 $(GEN_VERSION): VERSION
@@ -146,11 +170,21 @@ $(GEN_TRACE): FORCE_TRACE
 .PHONY: FORCE_TRACE
 FORCE_TRACE:
 
+# Archivos partidos en carpetas (ver docs/build.md, "Index files"): X.c
+# solo incluye, en orden, las partes de la carpeta X/ y se compila como un
+# solo archivo, para que el compilador genere el mismo codigo que cuando era
+# uno. Su .o se recompila si cambia una parte
+INDEX_FILES = runtime/js/jsc runtime/binding/webgl runtime/backend/sdl runtime/core/main
+$(foreach d,$(INDEX_FILES),$(eval $(d).o: $(wildcard $(d)/*.c)))
+
 # Las cabeceras propias: si cambia una, se recompila lo nuestro
-HEADERS = $(shell find runtime -name '*.h' -not -path 'runtime/thirdparty/*') $(GEN_SHADERS) $(GEN_ENGINES) $(GEN_VERSION) $(GEN_TRACE)
+HEADERS = $(shell find runtime -name '*.h' -not -path 'runtime/thirdparty/*') $(GEN_SHADERS) $(GEN_ENGINES) $(GEN_POLYFILLS) $(GEN_JS) $(GEN_VERSION) $(GEN_TRACE)
 
 ifeq ($(PLATFORM),portmaster)
 include portmaster/portmaster.mk
+else ifeq ($(PLATFORM),android)
+# PLATFORM=android construye quixjs.apk (android/android.mk)
+include android/android.mk
 else
 .PHONY: all clean test release bench
 
@@ -175,6 +209,9 @@ $(CORE_SRCS:.c=.o): $(HEADERS) | $(JSC_LIB)
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
+
+# FFmpeg: con sus opciones y el config.h del PC (no con las nuestras)
+$(filter $(FFMPEG_DIR)/%,$(OBJS)): CFLAGS = $(FFMPEG_CFLAGS) -I$(FFMPEG_DIR)/config/$(FFMPEG_ARCH)
 
 # Ejecuta los juegos de games/tests en modo test (sin ventana)
 test: $(TARGET)

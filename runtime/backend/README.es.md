@@ -10,9 +10,12 @@ convierte en KeyboardEvent. `quix.pressKey()` usa la misma cola.
 | archivo           | de qué se encarga |
 |-------------------|-------------------|
 | `backend.h/.c`    | `BackendInterface`, `InputEvent`, `GamepadState`, `PresentLayer`; crea el backend y mantiene la cola de entrada |
-| `sdl/backend.c`   | ventana SDL presentada con OpenGL ES 2, teclado, mandos, texto de `--fps` |
+| `sdl.c`           | ventana SDL presentada con OpenGL ES 2, teclado, mandos, texto de `--fps`. Archivo indice: une las partes de `sdl/` y se compila como uno ([README](sdl/README.es.md)) |
 | `sdl/mapper.c`    | Controls del launcher: lee el mando crudo y guarda una línea de SDL_GAMECONTROLLERCONFIG en `controller.map` (heredado de tamatama) |
 | `dummy/backend.c` | sin ventana: guarda el último frame para `--screenshot` y los tests |
+
+`sdl.c` es un archivo indice (`sdl/` tiene sus partes, [README](sdl/README.es.md));
+`dummy` es un solo archivo pequeno y no le hace falta.
 
 ## sdl
 

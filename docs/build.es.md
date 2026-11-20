@@ -33,7 +33,7 @@ libvpx y libopus; `make VIDEO=0` compila sin el.
 
 La version de quixjs esta en el archivo `VERSION` (los `make` y la release la
 toman de ahi). Para una version nueva se cambia ese archivo, el titulo de
-`README.md` y `README.es.md`, y se anade su bloque al `CHANGELOG`.
+`README.md` y `README.es.md`, y se agrega su bloque al `CHANGELOG`.
 
 ```
 make release
@@ -41,16 +41,25 @@ make release
 
 Compila lo que falte y deja en `release/` los archivos de una release de
 GitHub: quixjs solo para x86_64 y aarch64
-(`quixjs-VERSION-linux-ARCH.tar.gz`), el port para PortMaster
-(`PORT-VERSION-portmaster.zip`, se instala con su autoinstall) y el
-port para el PC (`PORT-VERSION-linux-x86_64.tar.gz`). `PORT=fearandhunger` por
-defecto.
+(`quixjs-VERSION-linux-ARCH.tar.gz`), y, por cada port de `games/` con
+`[portmaster]` en su `port.toml` (hoy `fearandhunger`, `firework-shiying` y
+`lookoutside`), el port para PortMaster (`PORT-VERSION-portmaster.zip`, se
+instala con su autoinstall) y el port para el PC
+(`PORT-VERSION-linux-x86_64.tar.gz`); y la app de Android
+(`quixjs-VERSION-android-arm64.apk`, necesita el SDK y el NDK de Android), y
+`SHA256SUMS` con las sumas de todo.
+
+```
+PORTS="lookoutside" tools/release.sh   # solo esos ports
+tools/release.sh --ports                # solo los ports (sin la app de Android ni quixjs solo)
+```
 
 ## PortMaster
 
 ```
 make PLATFORM=portmaster                     # PORT=fearandhunger por defecto
 make PLATFORM=portmaster PORT=fearandhunger
+make PLATFORM=portmaster PORT=lookoutside   # cualquier port de games/ con [portmaster]
 ```
 
 Construye `<PORT>.zip` (aqui `fearandhunger.zip`) para aarch64 con
@@ -70,8 +79,47 @@ ejecuta `quixjs -c port.toml`, que lee de ahi el juego.
 | archivo                | que hace |
 |------------------------|----------|
 | `portmaster/`          | lo de PortMaster: `portmaster.mk` (la construccion de `PLATFORM=portmaster`, la incluye el `Makefile`) y `portmaster.sh` (plantilla del script `.sh` del port) |
-| `tools/portmaster.py`  | genera el `.sh`, `port.json` y `gameinfo.xml` desde `games/<port>/port.toml` al construir el zip (no estan en el repositorio) |
+| `tools/portmaster.py`  | genera el `.sh`, `port.json` y `gameinfo.xml` desde `games/<port>/port.toml` al construir el zip (no estan en el repositorio); `[portmaster] title`, si lo hay, es el nombre en PortMaster en vez de `[game] title` (`firework-shiying`: "Firework (Shiying Studio)") |
 | `games/<port>/`        | el port: `port.toml`, su `README.md` y `README.es.md` (como instalarlo), `screenshot.jpg` (la imagen en EmulationStation) y `cover.png` (la portada en PortMaster) |
+
+## Archivos indice
+
+Algunos archivos grandes estan partidos en una carpeta para que se puedan
+leer, pero se siguen compilando como uno: `runtime/js/jsc.c`,
+`runtime/binding/webgl.c`, `runtime/backend/sdl.c` y `runtime/core/main.c`.
+Cada uno es un archivo indice: solo hace `#include`, en orden, de las partes
+de la carpeta con su nombre (`jsc/`, `webgl/`, `sdl/`, `main/`), y el
+`Makefile` compila el archivo indice, no las partes.
+
+```c
+// runtime/binding/webgl.c
+#include "webgl/common.h"
+#include "webgl/canvas.c"
+#include "webgl/classes.c"
+...
+```
+
+Por que: son los caminos calientes de quixjs (cada llamada de JS a C, cada
+metodo de WebGL, cada imagen hasta la pantalla). El compilador solo puede
+meter una funcion pequena dentro de otra (inline) cuando las dos estan en el
+archivo que compila. Compiladas como archivos separados, las llamadas de JS a
+C eran ~4 % mas lentas; unidas asi, el compilador ve el mismo texto que con
+el archivo unico de antes y genera el mismo codigo (`webgl.o` y `sdl.o`
+son identicos byte a byte).
+
+Reglas:
+
+- Una parte nueva se agrega al archivo indice, despues de lo que usa.
+- Cada parte incluye la cabecera compartida de su carpeta (`#pragma once`),
+  para que se pueda leer en el editor por separado.
+- El `.o` de un archivo indice se recompila si cambia una parte
+  (`INDEX_FILES` en el `Makefile`).
+- Cada carpeta tiene un README con sus partes y lo que tienen.
+
+El JS de quixjs (`runtime/binding/*.js`, `runtime/binding/polyfill/`,
+`runtime/core/profiler.js`) funciona parecido: se edita como `.js` y
+`tools/embed_js.py` lo convierte en una cadena de C al compilar, asi quixjs
+sigue siendo un solo programa ([El JS dentro de quixjs](embedded-js.es.md)).
 
 ## Carpetas
 

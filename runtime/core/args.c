@@ -44,6 +44,7 @@ int parse_args(int argc, char **argv, Args *args) {
   args->show_fps = 0;
   args->no_webgl = 0;
   args->launcher = 0;
+  args->controls = 0;
   int backend_given = 0;
 
   for (int i = 1; i < argc; i++) {
@@ -109,6 +110,8 @@ int parse_args(int argc, char **argv, Args *args) {
       args->profile = a + 10;
     } else if (strcmp(a, "--launcher") == 0) {
       args->launcher = 1;
+    } else if (strcmp(a, "--controls") == 0) {
+      args->controls = 1;
     } else if (strcmp(a, "--test") == 0) {
       args->test = 1;
     } else {
@@ -144,6 +147,7 @@ void print_help() {
   printf("      --frame-rate=<n>   Frame rate cap (10 to 60), above the toml (for testing)\n");
   printf("      --profile[=file]   Sampling profiler: report in file (quixjs-profile.txt) every 10 s and on exit\n");
   printf("      --launcher         Menu before the game: play, achievements, transfer save, options\n");
+  printf("      --controls         Only the Controls screen of the launcher (map the gamepad), then exit\n");
   printf("      --no-webgl         No WebGL: games use their canvas renderer\n");
   printf("      --expose-gc        A global gc() that collects now, as in V8 (benchmarks)\n");
   printf("      --hold <ms>        With a window: keep it open <ms> after the end\n");

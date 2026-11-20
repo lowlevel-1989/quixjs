@@ -20,20 +20,48 @@
 // es como se espera, JSON.parse como siempre. Solo si loadDataFile es la de
 // RPG Maker MV (un plugin que carga los datos de otra forma: la suya).
 //
+// Referencias (el codigo que reproduce o reescribe; gracias a sus autores):
+//   nucleo de RPG Maker MV (corescript, KADOKAWA, MIT), commit 182e314:
+//   https://github.com/rpgtkoolmv/corescript/blob/182e31449707ba7e406db0485c44c2a9d11e2dcd/js/rpg_managers/DataManager.js#L75-L91 (loadDataFile)
+//
 // Uso (config.toml o port.toml), junto con gc-on-transition:
 //   [hooks]
 //   "DataManager.loadDataFile" = "rpgmaker-mv/lazy-data"
 //
-// El archivo es una funcion que recibe la original y devuelve la nueva.
+// El archivo es una funcion que recibe la original y devuelve la nueva. La
+// llama runtime/hooks/hooks.c (hooks_install) al instalar el hook, cuando el
+// juego ya cargo sus scripts. Ver runtime/engines/README.md.
 function (original) {
+  // MODEL: las funciones que espera el hook, tal cual (las de RPG Maker MV o
+  // las del plugin; ver Referencias arriba), copiadas del juego con
+  // tools/rpgmaker_mv_model.py. No se ejecutan: son el modelo con el que se
+  // compara.
+  var MODEL = {
+    'DataManager.loadDataFile': function(name, src) {
+        var xhr = new XMLHttpRequest();
+        var url = 'data/' + src;
+        xhr.open('GET', url);
+        xhr.overrideMimeType('application/json');
+        xhr.onload = function() {
+            if (xhr.status < 400) {
+                window[name] = JSON.parse(xhr.responseText);
+                DataManager.onLoad(window[name]);
+            }
+        };
+        xhr.onerror = this._mapLoader || function() {
+            DataManager._errorUrl = DataManager._errorUrl || url;
+        };
+        window[name] = null;
+        xhr.send();
+    }
+  };
+  // sameCode (runtime/engines/same-code.js): la funcion del juego es igual que
+  // el modelo, sin contar espacios? Si un plugin la cambio, el hook deja la
+  // suya y no hace nada
+  var sameCode = __quixEngine.sameCode;
   var E = globalThis.__quixEngine && __quixEngine['rpgmaker-mv'];
   if (!E || !E.splitJsonArray) return original;
-  var MV = "function(name,src){varxhr=newXMLHttpRequest();varurl='data/'+src;xhr.open('GET',url);" +
-    "xhr.overrideMimeType('application/json');xhr.onload=function(){if(xhr.status<400){" +
-    "window[name]=JSON.parse(xhr.responseText);DataManager.onLoad(window[name]);}};" +
-    "xhr.onerror=this._mapLoader||function(){DataManager._errorUrl=DataManager._errorUrl||url;};" +
-    "window[name]=null;xhr.send();}";
-  if (String(original).replace(/\s+/g, '') !== MV) return original;
+  if (!sameCode(original, MODEL['DataManager.loadDataFile'])) return original;
   // los archivos que se cargan asi y la clave que se queda como texto
   var LAZY = { $dataTroops: 'pages', $dataCommonEvents: 'list' };
 
@@ -49,9 +77,14 @@ function (original) {
   };
 
   function lazy(obj, key, text) {
-    var value;   // la convertida
+    var value; // la convertida
     function set(value) {
-      Object.defineProperty(obj, key, { value: value, writable: true, enumerable: true, configurable: true });
+      Object.defineProperty(obj, key, {
+        value: value,
+        writable: true,
+        enumerable: true,
+        configurable: true
+      });
     }
     Object.defineProperty(obj, key, {
       get: function () {
@@ -75,7 +108,8 @@ function (original) {
   }
 
   function build(name, text) {
-    var key = LAZY[name], parts = E.splitJsonArray(text, key);
+    var key = LAZY[name],
+      parts = E.splitJsonArray(text, key);
     if (!parts) return null;
     var list = new Array(parts.length);
     for (var i = 0; i < parts.length; i++) {
@@ -100,15 +134,22 @@ function (original) {
     xhr.overrideMimeType('application/json');
     xhr.onload = function () {
       if (xhr.status < 400) {
-        var text = xhr.responseText, data = null;
-        try { data = build(name, text); } catch (e) { data = null; }
+        var text = xhr.responseText,
+          data = null;
+        try {
+          data = build(name, text);
+        } catch (e) {
+          data = null;
+        }
         window[name] = data || JSON.parse(text);
         DataManager.onLoad(window[name]);
       }
     };
-    xhr.onerror = this._mapLoader || function () {
-      DataManager._errorUrl = DataManager._errorUrl || url;
-    };
+    xhr.onerror =
+      this._mapLoader ||
+      function () {
+        DataManager._errorUrl = DataManager._errorUrl || url;
+      };
     window[name] = null;
     xhr.send();
   };

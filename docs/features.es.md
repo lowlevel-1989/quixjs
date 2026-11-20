@@ -20,7 +20,8 @@ esta en [compatibilidad](compatibility.es.md).
   stb_vorbis mientras suena. `new Audio()` existe pero solo responde a
   `canPlayType` (no suena)
 - video: `<video>` reproduce WebM con VP8 o VP9 y audio Opus (nestegg, libvpx,
-  libopus); la imagen sigue al audio y se ve encima del juego
+  libopus) y MP4 con H.264 y audio AAC (minimp4 y un pedazo de FFmpeg); la
+  imagen sigue al audio y se ve encima del juego
 - hooks en el toml del juego (`[hooks]`): cambian una funcion del juego sin tocar sus
   archivos. `gpu-canvas` dibuja un canvas 2d en la GPU (las mascaras de luces de
   RPG Maker), `skip` y `once-per-frame`
@@ -34,7 +35,7 @@ esta en [compatibilidad](compatibility.es.md).
   XMLHttpRequest para archivos locales (texto, json, arraybuffer)
 - modo nw.js (`[engine] nwjs = true`): `require('fs')`, `path`, `events`, `os`,
   `nw.gui`, `process`, y `require('./x')` de los archivos del juego
-- `<script>` anadidos con appendChild (plugins), DOMContentLoaded, window.onload, y
+- `<script>` agregados con appendChild (plugins), DOMContentLoaded, window.onload, y
   JS antiguo (`RegExp.$1..$9`, que JavaScriptCore trae)
 - setTimeout, setInterval, requestAnimationFrame, performance.now
 - DOM minimo: document, body, createElement, appendChild, getElementById, eventos

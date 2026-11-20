@@ -10,13 +10,16 @@
 //   [hooks]
 //   "Bitmap.prototype.adjustTone" = "rpgmaker-mv/adjust-tone"
 //
-// El archivo es una funcion que recibe la original y devuelve la nueva.
+// El archivo es una funcion que recibe la original y devuelve la nueva. La
+// llama runtime/hooks/hooks.c (hooks_install) al instalar el hook, cuando el
+// juego ya cargo sus scripts. Ver runtime/engines/README.md.
 function (original) {
   var E = globalThis.__quixEngine && __quixEngine['rpgmaker-mv'];
   if (!E || !E.adjustTone) return original;
   return function (r, g, b) {
     if ((r || g || b) && this.width > 0 && this.height > 0) {
-      if (!E.adjustTone(this._context, r || 0, g || 0, b || 0)) return original.apply(this, arguments);
+      if (!E.adjustTone(this._context, r || 0, g || 0, b || 0))
+        return original.apply(this, arguments);
       this._setDirty();
     }
   };

@@ -1,0 +1,94 @@
+# port.toml: el port de Look Outside a quixjs.
+#
+# Es el archivo que describe el juego: quixjs -c port.toml. La primera parte
+# ([engine], [game], [saves], [scripts]) salio de quixjs --gen-config sobre
+# Look Outside (RPG Maker MZ 1.8.1, GOG), revisada a mano; despues, los
+# hooks. Sirve en cualquier sitio donde corre quixjs, con el juego copiado en
+# gamedata/. [portmaster] es lo que pide PortMaster (make PLATFORM=portmaster
+# PORT=lookoutside genera con ella su port.json, su gameinfo.xml y el script
+# .sh del port).
+
+[engine]
+name    = "rpgmaker-mz"
+version = "1.8.1"
+nwjs    = true   # package.json de nw.js: require('fs'), process...
+# en una portatil, 30 imagenes por segundo (RPG Maker sigue con 60 pasos)
+fps     = 30
+# como Fear & Hunger: el GC antes, el heap no crece de mas (1 GB de RAM)
+js_memory = 128
+
+[engine.pc]
+fps = 60
+
+[game]
+title     = "Look Outside"
+version   = "0.1.0"           # la del port
+id        = "look_outside"
+# la carpeta del juego (la que tiene index.html), copiada como gamedata/; MZ
+# no tiene www/
+game_dir  = "gamedata"
+cache_dir = "cache/gamedata"
+width     = 816   # package.json
+height    = 624
+mods      = []
+developer = "Francis Coulombe"
+publisher = "Raw Fury"
+releasedate = "20250321T000000"   # el 21 de marzo de 2025, en Steam
+genres    = ["rpg"]   # horror no esta en la lista de PortMaster
+desc      = "Look Outside (RPG Maker MZ) running on quixjs, a JS runtime in C with SDL2 and OpenGL ES 2."
+
+# Transfer Save: que archivos pasa a otro dispositivo
+[saves]
+dir   = "save"
+files = ["*.rmmzsave"]
+
+# MZ carga sus scripts desde js/main.js (no hay <script> en el index.html
+# aparte de main.js)
+[scripts]
+libs     = []
+includes = []
+entry    = "js/main.js"
+
+# ---------- PortMaster ----------
+[portmaster]
+script       = "Look Outside.sh"
+porter       = ["lowlevel.1989"]
+inst         = "Needs Look Outside for Windows (GOG or Steam). Copy the contents of its folder (the one with index.html) into ports/lookoutside/gamedata/ (it must end up as gamedata/index.html). Game.exe and the .dll files are not needed."
+store        = { name = "GOG", url = "https://www.gog.com/game/look_outside" }
+availability = "paid"
+
+# ---------- hooks ----------
+# Los de RPG Maker MZ (runtime/engines/rpgmaker-mz/hooks.toml); lo que hace
+# cada uno, en runtime/engines/rpgmaker-mz:
+#   - effekseer-no-wasm: sin WebAssembly, Effekseer no arranca y el juego se
+#     quedaba en negro
+#   - color-filter-identity-off: los ColorFilter en neutro no se dibujan
+#   - menu-blur-once: el fondo desenfocado de los menus, una vez
+#   - no-vao-bind: PixiJS sin VAO, sin rehacer la geometria en cada bind
+#   - touch-ui-off: sin los botones tactiles en pantalla
+#   - decrypt-image-native: las imagenes cifradas (.png_) en C, por su ruta
+#   - battle-images-release y gc-on-transition: lo de cada batalla se suelta
+#     al terminarla
+[hooks]
+engine = "rpgmaker-mz"
+# Look Outside: un plugin del juego borra cada segundo un canvas "refresher"
+# del index.html de nw.js; en quixjs no existe y lanzaba un error cada
+# segundo. La funcion no hace nada mas: fuera
+"overlayBugFix" = "skip"
+
+[controls]
+gamepad = true
+
+# lo que hace cada boton en el juego, con los nombres de su Mano_InputConfig:
+# Controls los pide por su nombre (y siempre las dos palancas)
+[controls.buttons]
+dpup          = "Move up"
+dpdown        = "Move down"
+dpleft        = "Move left"
+dpright       = "Move right"
+a             = "OK"
+b             = "Cancel"
+x             = "Dash"
+y             = "Menu"
+leftshoulder  = "Next"
+rightshoulder = "Prev"

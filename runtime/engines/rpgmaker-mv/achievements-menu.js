@@ -8,7 +8,7 @@
 // apagados. Se vuelve con cancelar.
 //
 // Envuelve la funcion que haya (la de RPG Maker o la de un plugin de menus,
-// como YEP_MainMenuManager): primero hace lo suyo y despues anade la opcion.
+// como YEP_MainMenuManager): primero hace lo suyo y despues agrega la opcion.
 // Sin logros (o sin quix.achievements) no cambia nada.
 //
 // Con un icono en el toml del port (de img/system/IconSet, como los de los
@@ -20,17 +20,26 @@
 //   [hooks]
 //   "Scene_Menu.prototype.createCommandWindow" = "rpgmaker-mv/achievements-menu"
 //
-// El archivo es una funcion que recibe la original y devuelve la nueva.
+// El archivo es una funcion que recibe la original y devuelve la nueva. La
+// llama runtime/hooks/hooks.c (hooks_install) al instalar el hook, cuando el
+// juego ya cargo sus scripts. Ver runtime/engines/README.md.
 function (original) {
   if (typeof quix === 'undefined' || typeof quix.achievements !== 'function') return original;
-  if (typeof Scene_MenuBase === 'undefined' || typeof Window_Selectable === 'undefined' ||
-      typeof Window_Help === 'undefined' || typeof SceneManager === 'undefined') return original;
+  if (
+    typeof Scene_MenuBase === 'undefined' ||
+    typeof Window_Selectable === 'undefined' ||
+    typeof Window_Help === 'undefined' ||
+    typeof SceneManager === 'undefined'
+  )
+    return original;
 
   var SYMBOL = 'quixAchievements';
 
   function date(secs) {
     var d = new Date(secs * 1000);
-    function two(n) { return (n < 10 ? '0' : '') + n; }
+    function two(n) {
+      return (n < 10 ? '0' : '') + n;
+    }
     return d.getFullYear() + '-' + two(d.getMonth() + 1) + '-' + two(d.getDate());
   }
 
@@ -48,8 +57,12 @@ function (original) {
     this.select(0);
     this.activate();
   };
-  Window_QuixAchievements.prototype.maxItems = function () { return this._list.length; };
-  Window_QuixAchievements.prototype.item = function () { return this._list[this.index()]; };
+  Window_QuixAchievements.prototype.maxItems = function () {
+    return this._list.length;
+  };
+  Window_QuixAchievements.prototype.item = function () {
+    return this._list[this.index()];
+  };
   Window_QuixAchievements.prototype.drawItem = function (index) {
     var a = this._list[index];
     var rect = this.itemRectForText(index);
@@ -91,7 +104,13 @@ function (original) {
     head.setText('Achievements  ' + got + '/' + list.length);
     this.addWindow(head);
     var y = head.y + head.height;
-    this._listWindow = new Window_QuixAchievements(0, y, Graphics.boxWidth, Graphics.boxHeight - y, list);
+    this._listWindow = new Window_QuixAchievements(
+      0,
+      y,
+      Graphics.boxWidth,
+      Graphics.boxHeight - y,
+      list
+    );
     this._listWindow.setHelpWindow(this._helpWindow);
     this._listWindow.setHandler('cancel', this.popScene.bind(this));
     this._listWindow.setHandler('ok', this.onOk.bind(this));
@@ -113,11 +132,16 @@ function (original) {
     var before = ['options', 'save', 'gameEnd'];
     for (var b = 0; b < before.length && at === w._list.length; b++) {
       for (var j = 0; j < w._list.length; j++) {
-        if (w._list[j].symbol === before[b]) { at = j; break; }
+        if (w._list[j].symbol === before[b]) {
+          at = j;
+          break;
+        }
       }
     }
     w._list.splice(at, 0, { name: 'Achievements', symbol: SYMBOL, enabled: true, ext: null });
-    w.setHandler(SYMBOL, function () { SceneManager.push(Scene_QuixAchievements); });
+    w.setHandler(SYMBOL, function () {
+      SceneManager.push(Scene_QuixAchievements);
+    });
     // su icono, como los dibuja ARP_CommandIcons (el texto a su derecha)
     var icon = typeof quix.achievementsIcon === 'function' ? quix.achievementsIcon() : 0;
     if (icon > 0 && w.drawIcon && w.itemRectForText && w.commandSymbol) {
@@ -128,7 +152,13 @@ function (original) {
         this.resetTextColor();
         this.changePaintOpacity(true);
         this.drawIcon(icon, rect.x - 4, rect.y + 2);
-        this.drawText(this.commandName(index), rect.x + 30, rect.y, rect.width - 30, this.itemTextAlign());
+        this.drawText(
+          this.commandName(index),
+          rect.x + 30,
+          rect.y,
+          rect.width - 30,
+          this.itemTextAlign()
+        );
       };
     }
     // la ventana con la opcion nueva (sin volver a hacer la lista)

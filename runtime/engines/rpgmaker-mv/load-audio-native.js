@@ -14,8 +14,13 @@
 // Uso (config.toml o port.toml):
 //   [hooks]
 //   "WebAudio.prototype._load" = "rpgmaker-mv/load-audio-native"
+//
+// El archivo es una funcion que recibe la original y devuelve la nueva. La
+// llama runtime/hooks/hooks.c (hooks_install) al instalar el hook, cuando el
+// juego ya cargo sus scripts. Ver runtime/engines/README.md.
 function (original) {
-  var native = typeof __quixEngine === 'object' && __quixEngine ? __quixEngine['rpgmaker-mv'] : null;
+  var native =
+    typeof __quixEngine === 'object' && __quixEngine ? __quixEngine['rpgmaker'] : null;
   var ready = false;
   function setup() {
     if (ready) return true;

@@ -19,7 +19,7 @@ requestAnimationFrame(function () {
   T.test('hooks: engine = "rpgmaker-mv"', function () {
     T.equal(Game_Actor.prototype.hasSkill.__quixHook, 'rpgmaker-mv/has-skill-fast', 'a hook of the engine without listing it');
     T.equal(Game_Follower.prototype.actor.__quixHook, 'rpgmaker-mv/party-member-fast', 'another one');
-    T.equal(Scene_Map.prototype.create.__quixHook, 'rpgmaker-mv/gc-on-transition', 'and another');
+    T.equal(Scene_Map.prototype.create.__quixHook, 'rpgmaker/gc-on-transition', 'and another');
     T.ok(!Tilemap.prototype._sortChildren.__quixHook, '"off" in the game: not used');
     T.equal(new Game_Party().leader(), undefined, 'another hook in the game: the game wins (skip)');
   });

@@ -37,8 +37,20 @@ for cfg in $(find games/tests -name config.toml | sort); do
   [ -n "$BACKEND" ] && extra="$extra -b $BACKEND"
   [ -n "$HOLD" ] && extra="$extra --hold $HOLD"
   [ -n "$FPS" ] || [ "$BACKEND" = "sdl" ] && extra="$extra --fps"
+  # argumentos propios del test (su archivo args, como "-b sdl"); con el
+  # backend sdl y sin BACKEND, sin ventana (SDL_VIDEODRIVER=offscreen)
+  own=""
+  [ -f "$dir/args" ] && own=$(cat "$dir/args")
+  video=""
+  case "$own" in
+    *"-b sdl"*) [ -z "$BACKEND" ] && video=offscreen ;;
+  esac
+  [ -n "$BACKEND" ] && own=""
   # shellcheck disable=SC2086
-  "$QUIXJS" --test $extra -c "$cfg" > "$log" 2>&1
+  (
+    [ -n "$video" ] && export SDL_VIDEODRIVER="$video"
+    exec "$QUIXJS" --test $own $extra -c "$cfg"
+  ) > "$log" 2>&1
   code=$?
 
   # FPS del ultimo segundo medido (con --fps)

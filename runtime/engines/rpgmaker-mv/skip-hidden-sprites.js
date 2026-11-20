@@ -24,13 +24,22 @@
 //   [hooks]
 //   "Sprite_Character.prototype.update" = "rpgmaker-mv/skip-hidden-sprites"
 //
-// El archivo es una funcion que recibe la original y devuelve la nueva.
+// El archivo es una funcion que recibe la original y devuelve la nueva. La
+// llama runtime/hooks/hooks.c (hooks_install) al instalar el hook, cuando el
+// juego ya cargo sus scripts. Ver runtime/engines/README.md.
 function (original) {
   // nada que obligue a actualizarlo: sin hijos, animaciones ni globos
   function quiet(s, c) {
-    return s.children.length === 0 && s._animationSprites && s._animationSprites.length === 0 &&
-      !s._balloonSprite && !(c.animationId() > 0) && !(c.balloonId() > 0) &&
-      !c.isAnimationPlaying() && !c.isBalloonPlaying();
+    return (
+      s.children.length === 0 &&
+      s._animationSprites &&
+      s._animationSprites.length === 0 &&
+      !s._balloonSprite &&
+      !(c.animationId() > 0) &&
+      !(c.balloonId() > 0) &&
+      !c.isAnimationPlaying() &&
+      !c.isBalloonPlaying()
+    );
   }
   function stillEmpty(s, c) {
     return s._tilesetId === $gameMap.tilesetId() && c.characterName() === '' && !(c.tileId() > 0);
@@ -43,8 +52,11 @@ function (original) {
       if (quiet(this, c) && stillEmpty(this, c)) return;
       this.__quixEmpty = false;
     } else if (typeof $gameScreen === 'object' && $gameScreen.zoomScale() === 1 && quiet(this, c)) {
-      var x = c.screenX(), y = c.screenY();
-      var f = this._frame, w = (f ? f.width : 0) + 48, h = (f ? f.height : 0) + 48;
+      var x = c.screenX(),
+        y = c.screenY();
+      var f = this._frame,
+        w = (f ? f.width : 0) + 48,
+        h = (f ? f.height : 0) + 48;
       if (x < -w || x > Graphics.width + w || y < -48 || y > Graphics.height + h) {
         this.x = x;
         this.y = y;
@@ -54,6 +66,7 @@ function (original) {
       }
     }
     original.call(this);
-    this.__quixEmpty = this._characterName === '' && !(this._tileId > 0) && quiet(this, c) && stillEmpty(this, c);
+    this.__quixEmpty =
+      this._characterName === '' && !(this._tileId > 0) && quiet(this, c) && stillEmpty(this, c);
   };
 }

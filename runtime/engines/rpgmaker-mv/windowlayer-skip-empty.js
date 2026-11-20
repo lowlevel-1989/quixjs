@@ -17,11 +17,14 @@
 //   [hooks]
 //   "WindowLayer.prototype.renderWebGL" = "rpgmaker-mv/windowlayer-skip-empty"
 //
-// El archivo es una funcion que recibe la original y devuelve la nueva.
+// El archivo es una funcion que recibe la original y devuelve la nueva. La
+// llama runtime/hooks/hooks.c (hooks_install) al instalar el hook, cuando el
+// juego ya cargo sus scripts. Ver runtime/engines/README.md.
 function (original) {
   return function (renderer) {
     if (!this.visible || !this.renderable) return;
-    var ch = this.children, i;
+    var ch = this.children,
+      i;
     for (i = 0; i < ch.length; i++) {
       var c = ch[i];
       if (c._isWindow && c.visible && c.openness > 0) return original.apply(this, arguments);

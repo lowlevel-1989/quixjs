@@ -214,6 +214,22 @@ uint8_t *url_read_file_transformed(const char *path, size_t *len) {
   return data;
 }
 
+uint8_t *url_read_head_transformed(const char *path, size_t n, size_t *len) {
+  FILE *f = fopen(path, "rb");
+  if (!f) return NULL;
+  uint8_t *buf = malloc(n + 1);   // +1: las transformaciones terminan con un 0
+  size_t got = buf ? fread(buf, 1, n, f) : 0;
+  fclose(f);
+  if (!buf) return NULL;
+  *len = got;
+  UrlTransform fn = transform_of(path);
+  if (fn && fn(buf, len) != 0) {
+    free(buf);
+    return NULL;
+  }
+  return buf;
+}
+
 uint8_t *url_read_file(const char *path, size_t *len) {
   FILE *f = fopen(path, "rb");
   if (!f) return NULL;

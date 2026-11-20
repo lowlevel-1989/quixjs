@@ -1,0 +1,14 @@
+[game]
+cache_dir = "cache/tests/core/native-loading-mz"
+game_dir  = "games/tests/core/native-loading-mz"
+width     = 64
+height    = 64
+
+[scripts]
+libs     = []
+includes = ["../../lib/assert.js"]
+entry    = "main.js"
+
+# las imagenes cifradas de RPG Maker MZ (.png_) leidas en C
+[hooks]
+"Bitmap.prototype._startDecrypting" = "rpgmaker-mz/decrypt-image-native"

@@ -1,0 +1,12 @@
+# Con el backend sdl (args) y un mando virtual de SDL (quix.pressPad); sin
+# ventana: tests/run.sh lo arranca con SDL_VIDEODRIVER=offscreen
+[game]
+cache_dir = "cache/tests/core/gamepad-frame"
+game_dir  = "games/tests/core/gamepad-frame"
+width     = 64
+height    = 64
+
+[scripts]
+libs     = []
+includes = ["../../lib/assert.js"]
+entry    = "main.js"

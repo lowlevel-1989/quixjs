@@ -8,7 +8,7 @@ port). La clave es la ruta de la función desde `window`; el valor, el hook.
 
 | archivo   | qué hace |
 |-----------|----------|
-| `hooks.c` | lee `[hooks]`, añade `__quixGpuScope` y envuelve cada función en JS cuando existe |
+| `hooks.c` | lee `[hooks]`, agrega `__quixGpuScope`, envuelve cada función en JS cuando existe y da `__quixEngine.lib` (los modulos de `runtime/engines/lib`) |
 | `hooks.h` | el formato de `[hooks]` y las funciones que llama `core/main.c` |
 
 ## El formato
@@ -44,6 +44,31 @@ usarlo.
 [hooks]
 engine = "rpgmaker-mv"
 "Scene_Menu.prototype.createCommandWindow" = "off"
+```
+
+## Los hooks de un mod
+
+Un mod activo puede traer sus propios hooks: un `hooks.toml` en su carpeta,
+con la ruta de cada función y un archivo `.js` del mod. El archivo es como
+los de un motor: una función que recibe la original (y la ruta) y devuelve
+la nueva. Van encima del hook del juego o del motor en la misma ruta.
+
+```toml
+# mods/rumble/hooks.toml
+[hooks]
+"BattleManager.setup" = "rumble.js"   # mods/rumble/rumble.js
+```
+
+El resto del código de un mod puede ir en otros archivos: `scripts = [...]`
+en su `hooks.toml`. Corren una vez, en orden, antes de poner sus hooks
+(cuando el juego ya cargó sus scripts); los hooks usan lo que dejan (por
+ejemplo un objeto global). `games/hexgl/mods/multiplayer` es un ejemplo.
+
+```toml
+# mods/multiplayer/hooks.toml
+scripts = ["net.js", "ghosts.js", "screens.js"]
+[hooks]
+"PortMenu.items" = "option.js"
 ```
 
 ## Cuándo se ponen

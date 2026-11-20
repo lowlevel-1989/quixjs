@@ -18,9 +18,9 @@
 
 #pragma once
 
-// <script> anadidos con appendChild: los que tienen src se cargan en el
+// <script> agregados con appendChild: los que tienen src se cargan en el
 // siguiente ciclo del loop y despues reciben load
-// o error, en el orden en que se anadieron; los que no tienen src ejecutan
+// o error, en el orden en que se agregaron; los que no tienen src ejecutan
 // su texto al momento. Asi cargan sus plugins RPG Maker y muchas librerias.
 //
 // script_document_loaded() lanza DOMContentLoaded y load cuando terminan de

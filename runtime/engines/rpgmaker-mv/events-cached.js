@@ -8,7 +8,7 @@
 //
 // Con el hook se devuelve el mismo array mientras siga valiendo: antes de
 // darlo se comprueba, sin crear nada, que tiene los mismos eventos y en el
-// mismo orden que this._events sin huecos (por si el juego anadio o quito
+// mismo orden que this._events sin huecos (por si el juego agrego o quito
 // eventos, o alguien cambio el array devuelto). Si no, se rehace como el
 // original. Quien lo llama solo lo lee (forEach, filter, some, [i]).
 //
@@ -16,17 +16,24 @@
 //   [hooks]
 //   "Game_Map.prototype.events" = "rpgmaker-mv/events-cached"
 //
-// El archivo es una funcion que recibe la original y devuelve la nueva.
+// El archivo es una funcion que recibe la original y devuelve la nueva. La
+// llama runtime/hooks/hooks.c (hooks_install) al instalar el hook, cuando el
+// juego ya cargo sus scripts. Ver runtime/engines/README.md.
 function (original) {
   var hooked = function () {
-    var all = this._events, list = this.__quixEvents;
+    var all = this._events,
+      list = this.__quixEvents;
     if (!Array.isArray(all)) return original.call(this);
     if (list) {
-      var j = 0, ok = true;
+      var j = 0,
+        ok = true;
       for (var i = 0; i < all.length; i++) {
         var e = all[i];
         if (!e) continue;
-        if (list[j] !== e) { ok = false; break; }
+        if (list[j] !== e) {
+          ok = false;
+          break;
+        }
         j++;
       }
       if (ok && j === list.length) return list;
@@ -35,6 +42,6 @@ function (original) {
     this.__quixEvents = list;
     return list;
   };
-  hooked.__quixOriginal = original;   // para los hooks que miran el original (any-event-starting)
+  hooked.__quixOriginal = original; // para los hooks que miran el original (any-event-starting)
   return hooked;
 }

@@ -103,6 +103,18 @@ int backend_capture_input(Backend* backend, int step, char *out, size_t room) {
   return -1;
 }
 
+void backend_vibrate(Backend* backend, float strong, float weak, int ms) {
+  if (backend && !backend->no_vibration && backend->iface && backend->iface->vibrate)
+    backend->iface->vibrate(backend, strong, weak, ms);
+}
+
+int backend_test_pad(Backend* backend, int button, int type) {
+  if (backend && backend->iface && backend->iface->test_pad) {
+    return backend->iface->test_pad(backend, button, type);
+  }
+  return -1;
+}
+
 int backend_save_controller(Backend* backend, const char *pairs) {
   if (backend && backend->iface && backend->iface->save_controller) {
     return backend->iface->save_controller(backend, pairs);
@@ -119,6 +131,11 @@ void backend_set_title(Backend* backend, const char *game_title) {
 
 void backend_set_fullscreen(Backend* backend, int on) {
   if (backend && backend->iface && backend->iface->set_fullscreen) backend->iface->set_fullscreen(backend, on);
+}
+
+int backend_screen_size(Backend* backend, int *w, int *h) {
+  if (backend && backend->iface && backend->iface->screen_size) return backend->iface->screen_size(backend, w, h);
+  return -1;
 }
 
 double backend_refresh_rate(Backend* backend) {
@@ -222,6 +239,15 @@ void backend_loading_poke(void) {
   if (!backend_loading_visible(b)) return;
   loading_repainted = now;
   b->iface->repaint(b);
+}
+
+void backend_loading_now(Backend* backend) {
+  if (!backend) return;
+  backend_set_loading(backend, 1, 0);
+  backend->loading_shown = 1;
+  if (!backend->iface || !backend->iface->repaint) return;
+  loading_repainted = loading_now();
+  backend->iface->repaint(backend);
 }
 
 void backend_loading_tick(Backend* backend) {

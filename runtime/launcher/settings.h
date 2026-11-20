@@ -26,6 +26,7 @@
 //   profile  = true    el profiler: quixjs-profile.txt cada 10 s (como --profile)
 //   cheats   = ["no_encounters"]   los trucos activos (ids de [[cheat]])
 //   fullscreen = true  a pantalla completa (en el PC; --fullscreen tambien)
+//   vibration = false  no vibrar (el mando o el telefono; sin la clave, si)
 //   mods     = ["es"]  los mods activos (Mods), en orden: si dos traen el
 //                      mismo archivo, gana el ultimo. Sin la clave, los de
 //                      [game] mods del toml del juego
@@ -37,6 +38,7 @@ typedef struct {
   int show_fps;
   int profile;
   int fullscreen;   // en el PC: la ventana a pantalla completa
+  int no_vibration; // Vibration: Off (vibration = false)
   char cheats[MAX_SETTING_CHEATS][64];   // los trucos activos (Cheats), por id
   int  cheats_count;
   int  mods_set;                          // 1: mods manda sobre [game] mods
@@ -48,3 +50,18 @@ void settings_load(Settings *s, const char *config_path);
 int  settings_save(const Settings *s, const char *config_path);
 // Los trucos activos de s, a runtime/cheats
 void settings_apply_cheats(const Settings *s);
+
+// Cheats y Mods: lo que cambia una opcion, igual en el launcher y en la app
+// de Android (platform/android/launcher.c). Sin guardar: settings_save.
+// La posicion de un truco o un mod activo (por id o nombre), o -1
+int  settings_cheat_index(const Settings *s, const char *id);
+int  settings_mod_index(const Settings *s, const char *name);
+// Lo enciende o lo apaga
+void settings_toggle_cheat(Settings *s, const char *id);
+// La primera vez parte de los de [game] mods (defaults, count): desde ahi,
+// mods manda (mods_set)
+void settings_toggle_mod(Settings *s, const char (*defaults)[64], int count, const char *name);
+
+// Las carpetas de mods/ (root), por orden alfabetico: cuantas
+#define MAX_MOD_DIRS 32
+int  settings_mod_dirs(const char *root, char names[][64]);

@@ -3,7 +3,7 @@
 [English](README.md) | Español
 
 Las APIs del navegador para el JS del juego, escritas como clases y funciones
-de la capa de motor (`js/js.h`, sobre JavaScriptCore). Cada archivo añade su
+de la capa de motor (`js/js.h`, sobre JavaScriptCore). Cada archivo agrega su
 parte al objeto global con una función `js_api_add_*()` que llama `core/main.c` al arrancar; el orden importa (eventos
 y DOM base antes que canvas e imágenes). El dibujo en sí está en `gfx/`, el
 audio en `audio/` y la ventana y la entrada en `backend/`.
@@ -11,24 +11,61 @@ audio en `audio/` y la ventana y la entrada en `backend/`.
 | archivo              | de qué se encarga |
 |----------------------|-------------------|
 | `window.c`           | `window` (el mismo objeto que `globalThis`), `innerWidth` / `innerHeight` del toml del juego, `location` (`http://localhost/`) |
-| `document.c`         | DOM mínimo: elementos, appendChild, getElementById, getElementsByTagName; los canvas añadidos al documento son los que salen en pantalla |
+| `document.c`         | DOM mínimo: elementos, appendChild, getElementById, getElementsByTagName; los canvas agregados al documento son los que salen en pantalla |
 | `events.c`           | EventTarget, Event, KeyboardEvent, MouseEvent, CustomEvent; eventos despachados en la siguiente vuelta del loop |
 | `timer.c`            | setTimeout, setInterval, requestAnimationFrame, `performance.now()` (sobre `core/timer.c`) |
 | `canvas.c`           | HTMLCanvasElement: su framebuffer RGBA, width, height, getContext (un tipo de contexto por canvas); un canvas creado dentro de un hook `gpu-canvas` dibuja en la GPU (`gfx/gpu2d.c`) |
 | `canvas/2d/`         | CanvasRenderingContext2D, un archivo por tema ([README](canvas/2d/README.es.md)) |
-| `webgl.c`            | WebGL 1 sobre OpenGL ES 2.0 (`gfx/gl.c`): cada canvas dibuja en su propio framebuffer |
+| `webgl.c`            | WebGL 1 sobre OpenGL ES 2.0 (`gfx/gl.c`): cada canvas dibuja en su propio framebuffer. Archivo indice: une las partes de `webgl/` y se compila como uno ([README](webgl/README.es.md)) |
 | `video.c`            | `__quixVideo` sobre `video/` (open, info, state, play, pause, close, volume, visible, `supported`); hasta 4 videos, el visible sale en pantalla |
 | `webgl_constants.h`  | constantes de WebGL 1, generadas por `tools/gen_gl.py` (no editar a mano) |
 | `image.c`            | Image / HTMLImageElement: decodifica al asignar `src`, load / error en la siguiente vuelta |
 | `blob.c`             | Blob y `URL.createObjectURL`: los bytes se quedan en C e Image y XHR leen la url `blob:` sin copias |
 | `xhr.c`              | XMLHttpRequest para los archivos locales del juego (texto, json, arraybuffer; `blob` da un ArrayBuffer); sin red |
-| `script.c`           | `<script>` añadidos con appendChild, `document.currentScript`, DOMContentLoaded y load |
-| `audio.c`            | WebAudio sobre el mezclador de `audio/` (AudioContext, decodeAudioData, nodos de ganancia y panner) |
+| `script.c`           | `<script>` agregados con appendChild, `document.currentScript`, DOMContentLoaded y load |
+| `audio.c`            | WebAudio sobre el mezclador de `audio/`: las nativas (`__quixAudio`) |
+| `webaudio.js`        | el grafo de WebAudio en JS (AudioContext, decodeAudioData, nodos de ganancia y panner) |
 | `navigator.c`        | `navigator` y `getGamepads()` (4 posiciones, mapeo "standard") |
-| `nwjs.c`             | modo nw.js: `require('fs')`, `path`, `events`, `os`, `nw.gui`, `process` |
+| `gamepads.js`        | `getGamepads()` en JS, sobre el estado que `navigator.c` lee del backend |
+| `nwjs.c`             | modo nw.js: las nativas de `fs` |
+| `nwjs.js`            | el modo nw.js en JS: `require('fs')`, `path`, `events`, `os`, `nw.gui`, `process` |
 | `quix.c`             | el objeto `quix`: `exit`, `pressKey`, `frame`, `backend`, `fixedStep`, `registerFont`, `hasFont`, `version`, `frameTime`, `achievementUnlocked`, `achievements`, `achievementsIcon`, `isGpuCanvas`, `collectGarbage`, `gcPressure` |
 | `console.c`          | `console` (log, info, warn, error...) y `print` |
-| `polyfill.c`         | APIs escritas en JS: alias de console, localStorage, screen, matchMedia, atob / btoa, FontFace, `document.fonts`, `new Audio()` (solo `canPlayType`), `<video>` sobre `__quixVideo`... |
+| `polyfill.c`         | ejecuta al arrancar las APIs escritas en JS de `polyfill/` |
+| `polyfill/`          | las APIs escritas en JS, una por archivo ([README](polyfill/README.es.md)) |
+
+
+## Archivos JS
+
+Los `.js` de esta carpeta (y de `polyfill/`) son parte de quixjs, escrita en
+JS. No se leen al arrancar: `tools/embed_js.py` convierte cada uno en una
+cadena de C al compilar y su `.c` lo ejecuta al arrancar. Así el JS se edita
+como JS y quixjs sigue siendo un solo programa, sin archivos que buscar.
+
+## C o JS
+
+Va en C cuando:
+
+1. Toca algo nativo: la GPU (`webgl.c`, `canvas/2d`), archivos (`xhr.c`,
+   `image.c`), el audio de SDL (`audio.c`), el decodificador de video
+   (`video.c`), los mandos (`navigator.c`) o las fuentes TTF
+   (`quix.registerFont`).
+2. Se llama muchas veces por frame: `drawImage`, `fillRect` o `drawElements`.
+   Cada llamada de JS a C cuesta, pero hacer el trabajo en JS cuesta mucho
+   más. Por eso los hooks de motor pasan a C cosas como el blur o el tint.
+3. Necesita datos que solo tiene C: el tamaño de la ventana, el reloj o el
+   estado del backend.
+
+Va en JS ([polyfill](polyfill/README.es.md)) cuando:
+
+1. Es lógica que solo usa otras APIs que ya existen: `localStorage` es un
+   objeto en memoria, y `atob` / `btoa` es aritmética de cadenas.
+2. Es "forma de navegador": objetos, propiedades, promesas y eventos que el
+   juego espera ver, como `FontFace.loaded`, los eventos `loadeddata` /
+   `ended` de `<video>`, `screen` o `matchMedia`. En C sería mucho código de
+   la API de JavaScriptCore para algo que en JS son pocas líneas.
+3. Se llama poco: al arrancar o en momentos sueltos, sin que su coste se note
+   en el frame.
 
 ## Imágenes cifradas de RPG Maker
 
@@ -43,7 +80,7 @@ decodifica en segundo plano: los bytes no pasan por el JS.
 
 ## Modo nw.js
 
-Con `[engine] nwjs = true` en el toml del juego, `nwjs.c` añade lo mínimo que usan
+Con `[engine] nwjs = true` en el toml del juego, `nwjs.c` agrega lo mínimo que usan
 los juegos hechos para nw.js (RPG Maker MV guarda las partidas con `fs` en
 `www/save/`). Las rutas relativas son relativas a `game_dir`, y
 `require('./x')` carga `x.js` como módulo CommonJS. Los módulos nativos
@@ -66,30 +103,3 @@ canvas va directa a la pantalla. `--no-webgl` o `webgl = false` hacen que
 `bufferData` (orphaning). Sin eso el driver espera a que la GPU deje de usar
 el buffer (unos 1,6 ms cada vez en panfrost). Lo que hubiera detrás de lo
 escrito se pierde; con esos usos se vuelve a escribir antes de dibujar.
-
-## Video
-
-`<video>` está hecho en `polyfill.c` sobre `__quixVideo` (`video.c`):
-
-- `canPlayType` dice `"probably"` a WebM cuando quixjs tiene video, y `""` a
-  lo demás.
-- `load()` abre el archivo y luego lanza `loadedmetadata`, `loadeddata`,
-  `canplay` y `canplaythrough`, con `videoWidth`, `videoHeight` y `duration`.
-- `play()` lanza `play` y, en cada imagen, actualiza `currentTime` y
-  `webkitDecodedFrameCount` y le dice a `video.c` si el elemento se ve. Al
-  final pone `ended` y `paused` y lanza `ended`.
-- `muted` y `volume` van al volumen del flujo.
-- Un video que no se puede reproducir (sin video, un archivo que no existe o
-  que no es WebM) se salta: lanza `loadeddata` y luego `ended` enseguida, que
-  es lo que espera RPG Maker para seguir.
-
-## JS antiguo
-
-`RegExp.$1..$9`, `lastMatch`, `leftContext`..., que usan muchos plugins de RPG
-Maker, vienen con JavaScriptCore (el test `games/tests/core/legacy` lo
-comprueba).
-
-## localStorage
-
-De momento localStorage está en memoria (`polyfill.c`): se pierde al salir.
-Los juegos en modo nw.js guardan con `fs`.

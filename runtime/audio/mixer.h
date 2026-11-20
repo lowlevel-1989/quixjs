@@ -71,6 +71,9 @@ int    mixer_stream_open(int rate);
 int    mixer_stream_push(const float *stereo, int frames);
 // segundos ya sonados (el reloj del video); sin dispositivo, el del runtime
 double mixer_stream_time(void);
+// segundos de audio que ha pedido la salida desde que se abrio (las pruebas:
+// si va por detras del reloj, la salida no llega a tiempo)
+double mixer_output_time(void);
 // frames en la cola, aun sin sonar
 int    mixer_stream_queued(void);
 void   mixer_stream_volume(float volume);

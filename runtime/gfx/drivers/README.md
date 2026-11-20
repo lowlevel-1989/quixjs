@@ -66,8 +66,9 @@ What our devices say (from their logs):
 
 | field           | what it is | used in |
 |-----------------|------------|---------|
-| `thread_wait(fence)` | function: how that thread waits for the GPU to finish each frame. Without it (`0`), the driver does not use the thread and everything goes through `present` | `backend/sdl/backend.c`, the thread and `thread_start` |
-| `present(p, f)` | function: how a frame is presented without that thread (`present_ahead = false`, or if the compositor holds it back) | `backend/sdl/backend.c`, `gpu_present()` |
+| `thread_wait(fence)` | function: how that thread waits for the GPU to finish each frame. Without it (`0`), the driver does not use the thread and everything goes through `present` | `backend/sdl/thread.c`, the thread and `thread_start` |
+| `thread_max_fps` | number: with a higher `[engine] fps` the thread is not used (`0`: no limit) | `backend/sdl/thread.c`, `thread_start` |
+| `present(p, f)` | function: how a frame is presented without that thread (`present_ahead = false`, or if the compositor holds it back) | `backend/sdl/present.c`, `gpu_present()` |
 
 `present` gets the frame (`GpuFrame`) and what the backend can do with it
 (`Presenter`), explained below.
@@ -91,6 +92,7 @@ What each driver picks, and why (what was measured):
 |-|----------|------|----------|---------|
 | `thread_wait` | `drv_wait_gpu`: with `drv_wait_cpu`, on the RG CubeXX from ~70 to ~390 late frames in battle | `drv_wait_cpu`: with `drv_wait_gpu`, the menus flickered | none (no thread): with it, the game waited ~16 ms per frame; on the map from ~17 to ~27 fps | `drv_wait_gpu` |
 | `present` | `drv_present_previous`: on the RGB30 with panfrost, from 353 to 76 late frames on the map and from 940 to 194 in battle | `drv_present_previous`: on the RGB30, from ~240 to ~60 on the map and from ~270 to ~85 in battle | `drv_present_previous`, like mali | `drv_present_now` |
+| `thread_max_fps` | 0 (no limit) | 30: at 60 fps with the thread each frame took ~50 ms to show (HexGL on the RGB30: ~18 fps; without the thread, 60) | (no thread) | 0 |
 
 ## How the thread waits for the GPU (thread_wait)
 
@@ -134,7 +136,7 @@ The only difference in the code is the first line: `eglWaitSyncKHR` queues
 the wait on the GPU and returns; `eglClientWaitSyncKHR` does not return
 until the GPU passes the mark. They are in `drv_wait_gpu` and `drv_wait_cpu`
 (`common.c`, which call `gl_fence_wait_gpu` and `gl_fence_wait_cpu` in
-`../gl.c`); the thread is `present_thread` in `backend/sdl/backend.c`.
+`../gl.c`); the thread is `present_thread` in `backend/sdl/thread.c`.
 
 The difference: on the GPU, the copy command is already queued when the frame
 ends, and the copy goes out at once. On the CPU, a little time passes between
@@ -161,7 +163,7 @@ What each driver uses, and why (we tried both ways on each):
 
 ## GpuFrame and Presenter
 
-Both are defined in `../driver.h`. The backend (`backend/sdl/backend.c`)
+Both are defined in `../driver.h`. The backend (`backend/sdl.c`)
 makes them and passes them to the driver's `present`.
 
 ### GpuFrame: a frame ready to present
@@ -214,7 +216,7 @@ free for the game to draw the next frame. At the start, the screen takes two
 frames to have something. The game never draws on a texture that is waiting
 or on screen. The CPU swaps the roles without moving pixels: it only changes
 which texture the canvas points to (`webgl_canvas_handoff`, `binding/webgl.c`,
-called at the end of every frame from `present_screen`, `core/main.c`).
+called at the end of every frame from `present_screen`, `runtime/core/main/screen.c`).
 
 `later` is 1 if everything on screen has its texture set aside like that. It
 is 0 in two cases:
@@ -225,7 +227,7 @@ is 0 in two cases:
   aside, they are pixels in CPU memory that the game changes in the next
   frame.
 
-`sdl_present_layers` (`backend/sdl/backend.c`) works it out. The canvases on
+`sdl_present_layers` (`backend/sdl/present.c`) works it out. The canvases on
 screen come from `document_screen_canvases` (`binding/document.c`): those of
 the `body` without `display: none`, `visibility: hidden` or `opacity: 0`.
 

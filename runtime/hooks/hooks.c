@@ -36,15 +36,55 @@ typedef struct {
   const char *engine_name;     // HOOK_ENGINE: "rpgmaker-mv/request-images-once"
   const char *engine_source;   // la funcion que recibe la original
   int         installed;
+  // el hook de un mod (hooks_load_mods): su nombre ("rumble/rumble.js") y su
+  // codigo, leido del archivo (engine_name y engine_source apuntan aqui). Va
+  // encima de otro hook de la misma ruta
+  char        mod_name[128];
+  char       *mod_source;
 } Hook;
 
 static Hook hooks[MAX_HOOKS];
 static int  count = 0;
 static int  installed = 0;
 
+// los scripts de los mods (scripts = [...] de su hooks.toml): corren una vez,
+// en orden, antes de poner sus hooks (lo que comparten los archivos de un mod)
+#define MAX_MOD_SCRIPTS 32
+typedef struct {
+  char  name[128];   // "multiplayer/net.js"
+  char *source;
+  int   ran;
+} ModScript;
+static ModScript mod_scripts[MAX_MOD_SCRIPTS];
+static int       mod_script_count = 0;
+
 static const char *kind_names[] = { "gpu-canvas", "skip", "once-per-frame" };
 
-// Anade un hook (la ruta del juego y lo que se pone). 0 si vale, -1 si no
+// la ruta de la funcion: solo nombres y puntos (va dentro del JS que la pone)
+static int path_ok(const char *key) {
+  if (key[0] == 0 || strlen(key) >= sizeof(hooks[0].path)) return 0;
+  for (const char *p = key; *p; p++) {
+    if (!(*p == '.' || *p == '_' || *p == '$' || (*p >= '0' && *p <= '9') || (*p >= 'a' && *p <= 'z') ||
+          (*p >= 'A' && *p <= 'Z'))) {
+      return 0;
+    }
+  }
+  return 1;
+}
+
+// un sitio nuevo en la lista para la ruta key, o NULL si no caben mas
+static Hook *new_hook(const char *key) {
+  if (count >= MAX_HOOKS) {
+    fprintf(stderr, "[hooks] %s: more than %d hooks, left out\n", key, MAX_HOOKS);
+    return NULL;
+  }
+  Hook *h = &hooks[count++];
+  memset(h, 0, sizeof *h);
+  snprintf(h->path, sizeof(h->path), "%s", key);
+  return h;
+}
+
+// Agrega un hook (la ruta del juego y lo que se pone). 0 si vale, -1 si no
 static int add_hook(const char *key, toml_datum_t v) {
   int kind = -1;
   const EngineHook *eh = NULL;
@@ -58,29 +98,16 @@ static int add_hook(const char *key, toml_datum_t v) {
       eh = &ENGINE_HOOKS[k];
     }
   }
-  // la ruta: solo nombres y puntos (va dentro del JS que la pone)
-  int path_ok = key[0] != 0 && strlen(key) < sizeof(hooks[0].path);
-  for (const char *p = key; *p && path_ok; p++) {
-    if (!(*p == '.' || *p == '_' || *p == '$' || (*p >= '0' && *p <= '9') || (*p >= 'a' && *p <= 'z') ||
-          (*p >= 'A' && *p <= 'Z'))) {
-      path_ok = 0;
-    }
-  }
-  if (kind < 0 || !path_ok) {
+  if (kind < 0 || !path_ok(key)) {
     fprintf(stderr, "[hooks] %s: expected \"gpu-canvas\", \"skip\", \"once-per-frame\", \"off\" or an engine hook (%s...)\n",
             key, ENGINE_HOOKS[0].name ? ENGINE_HOOKS[0].name : "none");
     return -1;
   }
-  if (count >= MAX_HOOKS) {
-    fprintf(stderr, "[hooks] %s: more than %d hooks, left out\n", key, MAX_HOOKS);
-    return -1;
-  }
-  snprintf(hooks[count].path, sizeof(hooks[count].path), "%s", key);
-  hooks[count].kind = (HookKind)kind;
-  hooks[count].engine_name = eh ? eh->name : NULL;
-  hooks[count].engine_source = eh ? eh->source : NULL;
-  hooks[count].installed = 0;
-  count++;
+  Hook *h = new_hook(key);
+  if (!h) return -1;
+  h->kind = (HookKind)kind;
+  h->engine_name = eh ? eh->name : NULL;
+  h->engine_source = eh ? eh->source : NULL;
   return 0;
 }
 
@@ -98,8 +125,19 @@ static int is_off(toml_datum_t v) {
   return v.type == TOML_STRING && strcmp(v.u.s, "off") == 0;
 }
 
-int hooks_load(const char *config_path) {
+// lo de los hooks de los mods de la carga anterior
+static void forget_hooks(void) {
+  for (int i = 0; i < count; i++) {
+    free(hooks[i].mod_source);
+    hooks[i].mod_source = NULL;
+  }
   count = installed = 0;
+  for (int i = 0; i < mod_script_count; i++) free(mod_scripts[i].source);
+  mod_script_count = 0;
+}
+
+int hooks_load(const char *config_path) {
+  forget_hooks();
   FILE *f = fopen(config_path, "r");
   if (!f) return 0;
   toml_result_t result = toml_parse_file(f);
@@ -143,6 +181,112 @@ int hooks_load(const char *config_path) {
   return bad ? -1 : count;
 }
 
+// el archivo entero (malloc), o NULL
+static char *read_file(const char *path) {
+  FILE *f = fopen(path, "rb");
+  if (!f) return NULL;
+  fseek(f, 0, SEEK_END);
+  long size = ftell(f);
+  fseek(f, 0, SEEK_SET);
+  char *text = size >= 0 ? malloc((size_t)size + 1) : NULL;
+  if (text && fread(text, 1, (size_t)size, f) != (size_t)size) {
+    free(text);
+    text = NULL;
+  }
+  if (text) text[size] = 0;
+  fclose(f);
+  return text;
+}
+
+// un nombre que va dentro del JS que pone el hook: letras, numeros, . _ - y /
+// (sin "..")
+static int safe_name(const char *s) {
+  if (!s[0] || strstr(s, "..")) return 0;
+  for (; *s; s++) {
+    if (!(*s == '.' || *s == '_' || *s == '-' || *s == '/' || (*s >= '0' && *s <= '9') || (*s >= 'a' && *s <= 'z') ||
+          (*s >= 'A' && *s <= 'Z'))) {
+      return 0;
+    }
+  }
+  return 1;
+}
+
+int hooks_load_mods(const char *root, const char (*names)[64], int n) {
+  int added = 0, bad = 0;
+  for (int m = 0; m < n; m++) {
+    char path[1024];
+    snprintf(path, sizeof path, "%s/%s/hooks.toml", root, names[m]);
+    FILE *f = fopen(path, "r");
+    if (!f) continue;
+    toml_result_t result = toml_parse_file(f);
+    fclose(f);
+    if (!result.ok) {
+      fprintf(stderr, "[hooks] %s: %s\n", path, result.errmsg);
+      bad = 1;
+      continue;
+    }
+    // scripts = ["net.js", ...]: los archivos del mod que no son hooks
+    toml_datum_t sl = toml_get(result.toptab, "scripts");
+    for (int i = 0; sl.type == TOML_ARRAY && i < sl.u.arr.size; i++) {
+      toml_datum_t v = sl.u.arr.elem[i];
+      char name[128], file[1024];
+      if (v.type != TOML_STRING || snprintf(name, sizeof name, "%s/%s", names[m], v.u.s) >= (int)sizeof name ||
+          !safe_name(name)) {
+        fprintf(stderr, "[hooks] %s: scripts: expected .js files of the mod\n", path);
+        bad = 1;
+        continue;
+      }
+      snprintf(file, sizeof file, "%s/%s", root, name);
+      char *source = read_file(file);
+      if (!source || mod_script_count >= MAX_MOD_SCRIPTS) {
+        fprintf(stderr, "[hooks] %s: cannot read %s\n", path, file);
+        free(source);
+        bad = 1;
+        continue;
+      }
+      ModScript *s = &mod_scripts[mod_script_count++];
+      snprintf(s->name, sizeof s->name, "%s", name);
+      s->source = source;
+      s->ran = 0;
+    }
+    toml_datum_t t = toml_get(result.toptab, "hooks");
+    for (int i = 0; t.type == TOML_TABLE && i < t.u.tab.size; i++) {
+      const char *key = t.u.tab.key[i];
+      toml_datum_t v = t.u.tab.value[i];
+      char name[128];
+      if (!path_ok(key) || v.type != TOML_STRING ||
+          snprintf(name, sizeof name, "%s/%s", names[m], v.u.s) >= (int)sizeof name || !safe_name(name)) {
+        fprintf(stderr, "[hooks] %s: \"%s\": expected the path of a function and a .js file of the mod\n", path, key);
+        bad = 1;
+        continue;
+      }
+      char file[1024];
+      snprintf(file, sizeof file, "%s/%s", root, name);
+      char *source = read_file(file);
+      if (!source) {
+        fprintf(stderr, "[hooks] %s: cannot read %s\n", key, file);
+        bad = 1;
+        continue;
+      }
+      Hook *h = new_hook(key);
+      if (!h) {
+        free(source);
+        bad = 1;
+        continue;
+      }
+      snprintf(h->mod_name, sizeof h->mod_name, "%s", name);
+      h->mod_source = source;
+      h->kind = HOOK_ENGINE;
+      h->engine_name = h->mod_name;
+      h->engine_source = h->mod_source;
+      added++;
+    }
+    toml_free(result);
+  }
+  if (added) printf("Hooks of the mods: %d\n", added);
+  return bad ? -1 : added;
+}
+
 static JSValue js_gpu_scope(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
   int32_t d = 0;
   if (argc > 0) JS_ToInt32(ctx, &d, argv[0]);
@@ -157,8 +301,70 @@ void hooks_add_api(JSContext *ctx) {
   JS_FreeValue(ctx, global);
 }
 
+// __quixEngine.lib(nombre): data[0] guarda los modulos ya evaluados
+static JSValue js_engine_lib(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv, int magic,
+                             JSValue *data) {
+  (void)this_val;
+  (void)magic;
+  const char *name = argc > 0 ? JS_ToCString(ctx, argv[0]) : NULL;
+  if (!name) return JS_UNDEFINED;
+  JSValue mod = JS_GetPropertyStr(ctx, data[0], name);
+  if (JS_IsUndefined(mod)) {
+    for (int k = 0; ENGINE_LIBS[k].name; k++) {
+      if (strcmp(ENGINE_LIBS[k].name, name) != 0) continue;
+      size_t room = strlen(ENGINE_LIBS[k].source) + 16;
+      char *code = malloc(room);
+      if (!code) break;
+      snprintf(code, room, "(%s)()", ENGINE_LIBS[k].source);
+      char file[96];
+      snprintf(file, sizeof(file), "lib/%s", name);
+      mod = JS_Eval(ctx, code, strlen(code), file, JS_EVAL_TYPE_GLOBAL);
+      free(code);
+      if (JS_IsException(mod)) {
+        JS_FreeCString(ctx, name);
+        return mod;
+      }
+      JS_SetPropertyStr(ctx, data[0], name, JS_DupValue(ctx, mod));
+      break;
+    }
+  }
+  JS_FreeCString(ctx, name);
+  return mod;
+}
+
+JSValue hooks_lib_function(JSContext *ctx) {
+  JSValue cache = JS_NewObject(ctx);
+  JSValue fn = JS_NewCFunctionData(ctx, js_engine_lib, 1, 0, 1, &cache);
+  JS_FreeValue(ctx, cache);
+  return fn;
+}
+
 int hooks_pending(void) {
+  for (int i = 0; i < mod_script_count; i++) {
+    if (!mod_scripts[i].ran) return 1;
+  }
   return installed < count;
+}
+
+// los scripts de los mods que aun no corrieron (la primera vez que se ponen
+// hooks: el juego ya cargo sus scripts)
+static void run_mod_scripts(JSContext *ctx) {
+  for (int i = 0; i < mod_script_count; i++) {
+    ModScript *s = &mod_scripts[i];
+    if (s->ran) continue;
+    s->ran = 1;
+    JSValue r = JS_Eval(ctx, s->source, strlen(s->source), s->name, JS_EVAL_TYPE_GLOBAL);
+    if (JS_IsException(r)) {
+      JSValue e = JS_GetException(ctx);
+      const char *msg = JS_ToCString(ctx, e);
+      fprintf(stderr, "[hooks] %s: %s\n", s->name, msg ? msg : "error");
+      if (msg) JS_FreeCString(ctx, msg);
+      JS_FreeValue(ctx, e);
+    } else {
+      printf("[hooks] script %s\n", s->name);
+    }
+    JS_FreeValue(ctx, r);
+  }
 }
 
 // El JS que envuelve la funcion. Devuelve 1 si la ha puesto, 0 si aun no existe.
@@ -219,12 +425,17 @@ void hooks_check(JSContext *ctx) {
 }
 
 int hooks_install(JSContext *ctx) {
+  run_mod_scripts(ctx);
   for (int i = 0; i < count; i++) {
     Hook *h = &hooks[i];
     if (h->installed) continue;
     if (h->kind == HOOK_ENGINE) {
       // la funcion del archivo recibe la original (y la ruta, por si el
       // mismo archivo sirve para varias) y devuelve la nueva
+      // el de un mod va encima de otro hook (el del motor en esa ruta): solo
+      // no se pone si ya esta el suyo
+      char mine[192];
+      snprintf(mine, sizeof mine, h->mod_source ? "f.__quixHook === '%s'" : "f.__quixHook", h->engine_name);
       size_t room = strlen(h->engine_source) + 1024;
       char *code = malloc(room);
       if (!code) continue;
@@ -234,10 +445,10 @@ int hooks_install(JSContext *ctx) {
                " for (var i = 0; i < parts.length - 1; i++) { o = o[parts[i]]; if (o == null) return 0; }"
                " var k = parts[parts.length - 1], f = o[k];"
                " if (typeof f !== 'function') return 0;"
-               " if (f.__quixHook) return 1;"
+               " if (%s) return 1;"
                " var g = (%s)(f, '%s');"
                " g.__quixHook = '%s'; o[k] = g; return 1; })()",
-               h->path, h->engine_source, h->path, h->engine_name);
+               h->path, mine, h->engine_source, h->path, h->engine_name);
       JSValue r = JS_Eval(ctx, code, strlen(code), h->engine_name, JS_EVAL_TYPE_GLOBAL);
       free(code);
       int ok = 0;

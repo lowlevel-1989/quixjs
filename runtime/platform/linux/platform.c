@@ -151,6 +151,14 @@ void platform_system_name(char *out, size_t room) {
   fclose(file);
 }
 
+// ---------------------------------------------------------------- archivos
+
+const char *platform_file_path(const char *path, char *buf, size_t size) {
+  (void)buf;
+  (void)size;
+  return path;
+}
+
 // ----------------------------------------------------------------- pantalla
 //
 // Los refrescos los da el DRM del kernel (Direct Rendering Manager: la
@@ -230,3 +238,11 @@ int platform_vblank(double *last_ms, double *period_ms) {
   return 0;
 }
 
+// ------------------------------------------------------------------ vibrar
+
+// En Linux vibran los mandos (el backend): no hay otro vibrador
+int platform_vibrate(int ms, int amplitude) {
+  (void)ms;
+  (void)amplitude;
+  return 0;
+}

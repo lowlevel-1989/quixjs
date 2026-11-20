@@ -21,17 +21,21 @@ their number: if two mods have the same file, the higher number wins. The
 choice is used when Play starts the game; until it is changed, the active
 mods are those of `[game] mods`.
 
-Options has Show FPS, Profiler, Fullscreen (only on the PC) and Reset
+Options has Show FPS, Profiler, Vibration (if the game vibrates: `[controls] vibration`), Fullscreen (only on the PC) and Reset
 achievements. There is no frame rate option: the port sets `[engine] fps`.
 What changes in Options, Mods and Cheats is saved at once in
 `quixjs-settings.toml`, next to the config. Controls maps every button and
 stick of the gamepad and saves it in `controller.map`, the format of
-PortMaster (`backend/sdl/mapper.c`).
+PortMaster (`backend/sdl/mapper.c`). With `[controls.buttons]` it asks Start,
+those buttons by the name the port gives them ("Confirm (A)") and always both
+sticks; the buttons it does not ask keep what they had. Select is asked always
+(Select + Start closes the game). The actions of `[controls.keys]` go last,
+by their name, and are saved in `controller.keys`.
 
 | file         | what it does |
 |--------------|--------------|
 | `launcher.c` | the menu: its options, the achievements, options and cheats screens, and what is chosen; after Transfer Save it reads the achievements again |
-| `settings.c` | `quixjs-settings.toml`: `show_fps`, `profile`, `fullscreen` and `cheats` |
+| `settings.c` | `quixjs-settings.toml`: `show_fps`, `profile`, `fullscreen`, `vibration`, `cheats` and `mods`, and what choosing a cheat or a mod changes (also used by the Android menu, `platform/android/launcher.c`) |
 | `ui.c`       | draws a screen (logo, title, lines, a list that slides when it does not fit, a notice and the help) and waits for a choice: keyboard, the d-pad and stick of a controller, and `--script` |
 
 ## How it is drawn

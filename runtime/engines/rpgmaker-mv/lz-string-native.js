@@ -15,7 +15,9 @@
 //   [hooks]
 //   "LZString.decompressFromBase64" = "rpgmaker-mv/lz-string-native"
 //
-// El archivo es una funcion que recibe la original y devuelve la nueva.
+// El archivo es una funcion que recibe la original y devuelve la nueva. La
+// llama runtime/hooks/hooks.c (hooks_install) al instalar el hook, cuando el
+// juego ya cargo sus scripts. Ver runtime/engines/README.md.
 function (original) {
   var E = globalThis.__quixEngine && __quixEngine['rpgmaker-mv'];
   if (!E || !E.lzDecompressBase64) return original;
@@ -23,9 +25,12 @@ function (original) {
   function check() {
     try {
       var text = '{"a":[1,2,3],"b":"' + 'quixjs lz-string '.repeat(40) + 'é中😀","c":null}';
-      for (var i = 0; i < 300; i++) text += String.fromCharCode(32 + (i * 7919) % 500);
+      for (var i = 0; i < 300; i++) text += String.fromCharCode(32 + ((i * 7919) % 500));
       var packed = LZString.compressToBase64(text);
-      return E.lzDecompressBase64(packed) === text && E.lzDecompressBase64(packed) === original.call(LZString, packed);
+      return (
+        E.lzDecompressBase64(packed) === text &&
+        E.lzDecompressBase64(packed) === original.call(LZString, packed)
+      );
     } catch (e) {
       return false;
     }

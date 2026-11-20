@@ -30,6 +30,9 @@ window.DataManager = DataManager;
 // carga, apuntado (quix.loading de verdad tambien se llama)
 DataManager.loadGame = function (id) { return id === 1; };
 DataManager.setupNewGame = function () { return 'new'; };
+// el titulo: New Game solo cuenta desde ahi (al arrancar, Scene_Boot tambien
+// llama a setupNewGame)
+function Scene_Title() {}
 var loadingCalls = [];
 var quixLoading = quix.loading;
 quix.loading = function (on, after) { loadingCalls.push(after ? on + ' ' + after : on); return quixLoading.apply(quix, arguments); };
@@ -184,6 +187,16 @@ var originalAnyStarting = function() {
     });
 };
 Game_Map.prototype.isAnyEventStarting = originalAnyStarting;
+// la de YEP_StopMapMovement (la misma pregunta, recorriendo _events)
+var originalQuick = function() {
+    var max = this._events.length;
+    for (var i = 0; i < max; ++i) {
+      var ev = this._events[i];
+      if (ev && ev.isStarting()) return true;
+    }
+    return false;
+};
+Game_Map.prototype.isAnyEventStartingQuick = originalQuick;
 
 // Game_Event de RPG Maker MV, lo justo para _starting
 function Game_Event() { this._starting = false; this._eventId = 0; }
@@ -946,8 +959,14 @@ function startTests() {
     T.equal(DataManager.loadGame(2), false, 'broken save: false');
     T.deepEqual(loadingCalls, [true, false], 'broken save: notice off');
     loadingCalls.length = 0;
+    var sceneBefore = SceneManager._scene;
+    SceneManager._scene = null;
+    T.equal(DataManager.setupNewGame(), 'new', 'new game at boot: the original result');
+    T.deepEqual(loadingCalls, [], 'new game at boot (before the title): no notice');
+    SceneManager._scene = new Scene_Title();
     T.equal(DataManager.setupNewGame(), 'new', 'new game: the original result');
-    T.deepEqual(loadingCalls, [true], 'new game: notice on');
+    T.deepEqual(loadingCalls, [true], 'new game from the title: notice on');
+    SceneManager._scene = sceneBefore;
     quix.loading(false);
     loadingCalls.length = 0;
     var m = new Scene_Map();
@@ -1252,11 +1271,15 @@ function startTests() {
 
   T.test('rpgmaker-mv/any-event-starting', function () {
     T.equal(Game_Map.prototype.isAnyEventStarting.__quixHook, 'rpgmaker-mv/any-event-starting', 'installed');
+    T.equal(Game_Map.prototype.isAnyEventStartingQuick.__quixHook, 'rpgmaker-mv/any-event-starting-quick', 'Quick installed');
     var m = new Game_Map();
     function ev(id) { var e = new Game_Event(); e._eventId = id; return e; }
     var a = ev(1), b = ev(2), c = ev(3);
     m._events = [null, a, b, null, c];
-    function same(what) { T.equal(m.isAnyEventStarting(), originalAnyStarting.call(m), what); }
+    function same(what) {
+      T.equal(m.isAnyEventStarting(), originalAnyStarting.call(m), what);
+      T.equal(m.isAnyEventStartingQuick(), originalQuick.call(m), what + ' (Quick)');
+    }
     same('none starting');
     b.start(); same('one starts');
     T.equal(b._starting, true, '_starting reads true');
@@ -1277,6 +1300,7 @@ function startTests() {
     var d = ev(1); d.start();
     other._events = [null, ev(1)];
     T.equal(other.isAnyEventStarting(), false, 'a starting event of another map does not count');
+    T.equal(other.isAnyEventStartingQuick(), false, 'nor with Quick');
     T.ok(!JSON.stringify(a).includes('_starting'), 'the flag is not saved in the event');
   });
 
@@ -1508,6 +1532,8 @@ function startTests() {
       'quiet': {},
       'step animation': { _stepAnime: true },
       'out of its original pattern': { _pattern: 2 },
+      'pattern 3 (counts as 1)': { _pattern: 3 },
+      'another original pattern': { _originalPattern: 0 },
       'animation count started': { _animationCount: 7 },
       'alert running (YEP)': { _alertPlayer: true, _alertTimer: 50, _alertLock: 3 },
       'erased': { _erased: true },
@@ -1541,7 +1567,7 @@ function startTests() {
     screenTone = [0, 0, 0, 0];
     s.updateToneChanger();
     T.equal(names(), 'none', 'tone 0,0,0,0: no filter at all');
-    b.filters = (b.filters || []).concat([other]);   // un plugin (FilterController) anade el suyo
+    b.filters = (b.filters || []).concat([other]);   // un plugin (FilterController) agrega el suyo
     s.updateToneChanger();
     T.equal(names(), 'plugin filter', 'the filters of plugins stay');
     screenTone = [-68, -68, 0, 68];
@@ -1616,7 +1642,7 @@ function startTests() {
     T.ok(typeof early.__quixOriginal === 'function', 'the hook keeps what it wraps');
   });
 
-  T.test('rpgmaker-mv/gc-on-transition', function () {
+  T.test('rpgmaker/gc-on-transition', function () {
     var collected = [], gc = quix.collectGarbage;
     T.equal(typeof gc(), 'number', 'quix.collectGarbage returns how long it took (ms)');
     quix.collectGarbage = function (kind) { collected.push(kind === 'due' ? 'due' : (scene && scene.created ? 'late' : 'full')); return gc(kind); };

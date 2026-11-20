@@ -1,4 +1,4 @@
-// <script> anadidos con appendChild (asi cargan sus plugins RPG Maker),
+// <script> agregados con appendChild (asi cargan sus plugins RPG Maker),
 // DOMContentLoaded y window.onload
 
 var order = [];

@@ -1,0 +1,20 @@
+# Un juego sin logros (como HexGL): los trucos se aplican sin saber la
+# partida (no hay logros que proteger)
+[game]
+cache_dir = "cache/tests/core/cheats-free"
+game_dir  = "games/tests/core/cheats-free"
+width     = 320
+height    = 240
+
+[scripts]
+libs     = []
+includes = ["../../lib/assert.js"]
+entry    = "main.js"
+
+[symbols]
+damage = "path:game.ship.damage"
+
+[[cheat]]
+id   = "no_damage"
+name = "No damage"
+set  = { damage = 0 }

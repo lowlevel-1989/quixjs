@@ -12,3 +12,11 @@ mods      = ["uno", "dos"]
 libs     = []
 includes = ["../../../lib/assert.js", "lib.js"]
 entry    = "main.js"
+
+# el hook del juego; el mod dos pone el suyo encima (mods/dos/hooks.toml)
+[hooks]
+"Game.hit" = "skip"
+
+# el juego vibra: sin esto navigator.vibrate no hace nada
+[controls]
+vibration = true

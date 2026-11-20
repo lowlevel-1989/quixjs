@@ -51,10 +51,19 @@ typedef struct {
 
 typedef struct {
   char game_dir[MAX_PATH_LEN];
-  char cache_dir[MAX_PATH_LEN];   // sin uso (era la cache de bytecode de QuickJS)
+  char cache_dir[MAX_PATH_LEN];   // shaders (<cache_dir>/shaders) e imagenes reducidas
   char version[32];               // la version del port o del juego ([game] version), informativa
   int width;
   int height;
+  // imagenes grandes a menos resolucion (gfx/image_scale.h): image_scale
+  // (0 o 1: no; -1: "auto"), image_scale_min (px de un lado) y image_scale_dirs
+  double image_scale;
+  // la resolucion a la que se dibuja (rpgmaker-mv/render-scale): render_scale
+  // (0 o 1: la del juego; -1: "auto", la que se ve en la pantalla)
+  double render_scale;
+  int    image_scale_min;
+  char   image_scale_dirs[8][128];
+  int    image_scale_dirs_count;
 } GameConfig;
 
 // Cada script es una ruta (desde game_dir) o una data: URL con el codigo (un
@@ -78,8 +87,24 @@ typedef struct {
 // [controls]: lo que espera el juego del mando. gamepad = true: el juego lee
 // el mando (la Gamepad API); el launcher (Controls) deja asignar todos sus
 // botones y las dos palancas, y se guarda en controller.map junto al toml del juego
+// [controls.buttons] (opcional): el nombre de lo que hace cada boton en el
+// juego ("a" = "Confirm"); con ella, Controls pide Start, esos botones y las
+// dos palancas, cada uno por su nombre. vibration = true: el juego (o un
+// mod suyo) hace vibrar; sin ella no vibra nada y Options no tiene Vibration
+#define MAX_CONTROL_NAMES 24
 typedef struct {
   int gamepad;
+  int vibration;
+  int names_count;
+  char button[MAX_CONTROL_NAMES][16];   // como en SDL: a, b, dpup, leftshoulder...
+  char name[MAX_CONTROL_NAMES][48];
+  // [controls.keys] (opcional): acciones con nombre que pulsan una tecla
+  // (Torch = "T"), para lo que el juego solo escucha en el teclado; su
+  // boton se elige en Controls
+  int keys_count;
+  char key_button[8][48];   // el nombre de la accion
+  char key_code[8][24];     // su KeyboardEvent.code
+
 } ControlsConfig;
 
 #define MAX_SAVE_PATTERNS 16
@@ -116,3 +141,6 @@ typedef struct {
 } Config;
 
 int config_load(Config* out, const char* filename);
+// El id del juego: [saves] id, o el titulo, o el nombre del motor (los
+// logros y la red local, quix.lan, van por juego)
+const char *config_game_id(const Config *cfg);

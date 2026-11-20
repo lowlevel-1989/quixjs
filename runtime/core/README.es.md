@@ -3,7 +3,7 @@
 [English](README.md) | Español
 
 El arranque y el loop principal de quixjs. `main.c` lee las opciones y
-el toml del juego, crea el backend y el contexto de JavaScriptCore, añade las APIs del
+el toml del juego, crea el backend y el contexto de JavaScriptCore, agrega las APIs del
 navegador (`binding/`), compila y ejecuta los scripts del juego y después corre
 el loop hasta que no queda nada por hacer. El resto de archivos son las piezas
 que usa `main.c`: opciones, config, carga de scripts, reloj y timers, teclas,
@@ -17,7 +17,7 @@ urls y las herramientas de prueba (`--script`, `--debug`).
 | `config_loader.c` | lee el toml del juego (`[engine]` y `[engine.pc]` / `[engine.handheld]`, `[game]` con `title`, `id` y `mods`, `[scripts]`, `[fonts]`, `[launcher]`, `[saves]` con `dir` desde `game_dir`, `[controls]`) con tomlc17; `[symbols]` y `[[achievements]]` los lee `achievements/`, `[hooks]` los lee `hooks/` |
 | `printer.c`       | muestra la config cargada al arrancar |
 | `gen_config.c`    | `--gen-config <carpeta o .html>`: mira el juego (`package.json` de nw.js, `index.html` o el `.html` dado, su CSS, `rpg_core.js` / `rmmz_core.js`, `pixi.js`) y escribe un `config.toml` en stdout |
-| `compiler.c`      | lee los scripts y comprueba su sintaxis; también carga los scripts añadidos después (`<script src>`) |
+| `compiler.c`      | lee los scripts y comprueba su sintaxis; también carga los scripts agregados después (`<script src>`) |
 | `runner.c`        | ejecuta cada script en orden |
 | `timer.c`         | reloj (real o fijo), setTimeout / setInterval, requestAnimationFrame |
 | `keymap.c`        | KeyboardEvent.code -> key y keyCode, como un navegador con teclado US; lo usan el backend sdl y `quix.pressKey()` |
@@ -25,9 +25,41 @@ urls y las herramientas de prueba (`--script`, `--debug`).
 | `input_script.c`  | `--script <archivo>`: guion de entrada para pruebas, una acción por línea en un frame dado (`press`, `down`, `up`, `shot`, `log`, `exit`) |
 | `debug_server.c`  | `--debug`: consola de debug en un socket Unix (`quixjs.sock`), se usa con `tools/console.py` |
 | `profiler.c`      | `--profile`: el sampling profiler de JavaScriptCore, un informe cada 10 s y al salir |
+| `profiler.js`     | el resumen del informe en JS (agrupa las muestras por función); en el binario con `tools/embed_js.py` |
 | `watchdog.c`      | salida de emergencia: un thread lee los mandos del kernel; Select + Start sale si el loop lleva más de 1 s parado |
 | `worker.c`        | un thread de trabajo para cargar en segundo plano (decodificar imágenes, leer y descifrar sonidos) |
 | `memstats.c`      | memoria de canvas, imágenes y texturas WebGL, para el comando `mem` |
+
+## main()
+
+`main()` se lee como un indice: arrancar, el bucle de cada frame y cerrar.
+
+```c
+if (!start_window(r)) return 1;        // el toml, el backend y la ventana
+if (!load_port(r)) return 1;           // partidas, logros, simbolos, trucos, hooks, --script
+if (!launcher(r, &code)) return code;  // el menu (--launcher): jugar o salir
+if (!start_js(r)) return 1;            // mods, motor de JS, APIs, fuentes, scripts del juego
+start_tools(r);                        // --fps, --profile, --debug, el tope de fps
+
+while (!r->failed) {
+  housekeeping(r);                     // memoria y profiler, cada x segundos
+  events(r, ...);                      // backend, consola de debug, --script
+  run_timers(r);                       // entrada, promesas, timers
+  if (toca un frame) {
+    game_frame(r);                     // requestAnimationFrame, video, audio, logros
+    pace_frame(r);                     // a que refresco va esta imagen
+    present_frame(r);                  // mostrarla y cuando toca la siguiente
+  }
+  wait_next(r);                        // queda algo por hacer? esperar al siguiente
+}
+return finish(r);                      // --hold, --screenshot, informes, liberar todo
+```
+
+`main.c` es un archivo indice: `main()` esta ahi y los pasos en `main/`
+([README](main/README.es.md)). Los pasos comparten su estado en `Run` y
+`Loop`. Todos son `always_inline` (`STEP`): el compilador los copia dentro de
+`main()`, sin llamadas de mas en cada frame, como cuando todo estaba escrito
+en `main()` (ninguno existe como funcion aparte en `main.o`).
 
 ## El loop principal
 

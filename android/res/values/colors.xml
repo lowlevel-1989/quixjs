@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- el acento del launcher de quixjs (runtime/launcher/launcher.c) -->
+    <color name="icon_background">#FF2C4A7A</color>
+</resources>

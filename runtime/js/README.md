@@ -4,13 +4,37 @@ English | [Español](README.es.md)
 
 The engine layer: the only place of quixjs that knows the JavaScript engine.
 The bindings (`binding/`), the hooks and the rest of the runtime use `js.h`;
-`js_jsc.c` implements it on top of the C API of JavaScriptCore (WebKit),
+`jsc/` implements it on top of the C API of JavaScriptCore (WebKit),
 built by us as a static library (`tools/build-jsc.sh`).
 
 | file       | what it does |
 |------------|--------------|
 | `js.h`     | the API: values (`JSValue`), objects and properties, C functions and classes with C data, errors, running code, ArrayBuffer and TypedArray, memory and the sampling profiler |
-| `js_jsc.c` | the API on JavaScriptCore: a `JSValue` with an object or a string keeps its `JSValueRef`; C functions and class objects are JSC objects made with a `JSClassRef` whose private data says which C function to call or which C pointer they carry |
+| `jsc.c` | index file: includes the files of `jsc/` and is compiled as one (see below) |
+| `jsc/jsc.h` | what the files of `jsc/` share: the structs (`JSRuntime`, `JSContext`, `FnPriv`, `ObjPriv`) and the small helpers (`wrap`, `ref_of`...) |
+| `jsc/context.c` | runtime and contexts |
+| `jsc/value.c` | values: free, create and convert |
+| `jsc/property.c` | properties: the name cache, atoms and hidden properties (`JS_SetHidden`) |
+| `jsc/error.c` | exceptions |
+| `jsc/function.c` | C functions in JS: the calls from JSC (`fn_call` and the fast path `fast_call`), `JS_Call`, function lists |
+| `jsc/class.c` | classes with C data (`JS_NewClass`, `JS_SetOpaque`...) |
+| `jsc/eval.c` | running code (`JS_Eval`) |
+| `jsc/typedarray.c` | ArrayBuffer and TypedArray |
+| `jsc/profiler.c` | memory, GC and profiler (the private API of JSC and the quixjs patches) |
+
+## How it is made
+
+A `JSValue` with an object or a string keeps its `JSValueRef`; C functions and
+class objects are JSC objects made with a `JSClassRef` whose private data says
+which C function to call or which C pointer they carry.
+
+The files of `jsc/` are compiled together, as one: `jsc.c` is an index file
+that only includes them, and the `Makefile` compiles `jsc.c`. That way the
+compiler puts the small functions of one file inside another (inline), as
+when it was a single file. Compiled apart, the calls from JS to C were ~4 %
+slower. A new file in `jsc/` is added to `jsc.c`. Each file includes `jsc.h`,
+where everything shared is declared, so the order of `jsc.c` does not
+matter.
 
 ## Rules
 

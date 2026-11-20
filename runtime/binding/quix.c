@@ -72,6 +72,22 @@ static JSValue js_quix_pressKey(JSContext *ctx, JSValueConst this_val, int argc,
   return JS_UNDEFINED;
 }
 
+// quix.pressPad(boton, t): el boton (indice del mapeo "standard") de un mando
+// de prueba (backend_test_pad); t es "down", "up" o "press" (por defecto).
+// Devuelve la posicion del mando en navigator.getGamepads(), o -1 si el
+// backend no tiene mando de prueba (dummy)
+static JSValue js_quix_pressPad(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+  AppContext *app = JS_GetContextOpaque(ctx);
+  int32_t button = -1;
+  if (argc < 1 || JS_ToInt32(ctx, &button, argv[0])) return JS_ThrowTypeError(ctx, "pressPad: button required");
+  const char *type = argc > 1 ? JS_ToCString(ctx, argv[1]) : NULL;
+  int t = TEST_PAD_PRESS;
+  if (type && strcmp(type, "down") == 0) t = TEST_PAD_DOWN;
+  else if (type && strcmp(type, "up") == 0) t = TEST_PAD_UP;
+  if (type) JS_FreeCString(ctx, type);
+  return JS_NewInt32(ctx, backend_test_pad(app->backend, button, t));
+}
+
 static JSValue js_quix_get_frame(JSContext *ctx, JSValueConst this_val) {
   AppContext *app = JS_GetContextOpaque(ctx);
   return JS_NewInt64(ctx, app->frame);
@@ -164,6 +180,19 @@ static JSValue js_quix_achievementsIcon(JSContext *ctx, JSValueConst this_val, i
   (void)argc;
   (void)argv;
   return JS_NewInt64(ctx, ach_menu_icon());
+}
+
+// quix.renderScale(): a que resolucion dibujar el juego ([game] render_scale;
+// 1 si no se pidio)
+static double render_scale = 1;
+void quix_set_render_scale(double scale) {
+  render_scale = scale > 0 && scale < 1 ? scale : 1;
+}
+static JSValue js_quix_renderScale(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+  (void)this_val;
+  (void)argc;
+  (void)argv;
+  return JS_NewFloat64(ctx, render_scale);
 }
 
 // quix.isGpuCanvas(canvas): si ese canvas dibuja en la GPU (hook gpu-canvas)
@@ -263,6 +292,7 @@ static const JSCFunctionListEntry js_quix_funcs[] = {
   JS_CFUNC_DEF("gpuDriver", 0, js_quix_gpuDriver),
   JS_CFUNC_DEF("memoryUsage", 0, js_quix_memoryUsage),
   JS_CFUNC_DEF("isGpuCanvas", 1, js_quix_isGpuCanvas),
+  JS_CFUNC_DEF("renderScale", 0, js_quix_renderScale),
   JS_CFUNC_DEF("achievementUnlocked", 1, js_quix_achievementUnlocked),
   JS_CFUNC_DEF("achievements", 0, js_quix_achievements),
   JS_CFUNC_DEF("achievementsIcon", 0, js_quix_achievementsIcon),
@@ -272,6 +302,7 @@ static const JSCFunctionListEntry js_quix_funcs[] = {
   JS_CFUNC_DEF("collectGarbage", 0, js_quix_collectGarbage),
   JS_CFUNC_DEF("gcPressure", 0, js_quix_gcPressure),
   JS_CFUNC_DEF("pressKey", 2, js_quix_pressKey),
+  JS_CFUNC_DEF("pressPad", 2, js_quix_pressPad),
   JS_CGETSET_DEF("frame",     js_quix_get_frame, NULL),
   JS_CGETSET_DEF("frameTime", js_quix_get_frame_time, NULL),
   JS_CGETSET_DEF("backend",   js_quix_get_backend, NULL),

@@ -18,8 +18,11 @@
 
 // quixjs-settings.toml. Ver settings.h.
 
+#include <dirent.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
 #include "tomlc17.h"
 #include "cheats/cheats.h"
 #include "settings.h"
@@ -46,6 +49,8 @@ void settings_load(Settings *s, const char *config_path) {
   if (v.type == TOML_BOOLEAN) s->fullscreen = v.u.boolean;
   v = toml_get(r.toptab, "profile");
   if (v.type == TOML_BOOLEAN) s->profile = v.u.boolean;
+  v = toml_get(r.toptab, "vibration");
+  if (v.type == TOML_BOOLEAN) s->no_vibration = !v.u.boolean;
   v = toml_get(r.toptab, "mods");
   if (v.type == TOML_ARRAY) {
     s->mods_set = 1;
@@ -77,6 +82,7 @@ int settings_save(const Settings *s, const char *config_path) {
   fprintf(f, "show_fps = %s\n", s->show_fps ? "true" : "false");
   fprintf(f, "profile  = %s\n", s->profile ? "true" : "false");
   if (s->fullscreen) fprintf(f, "fullscreen = true\n");
+  fprintf(f, "vibration = %s\n", s->no_vibration ? "false" : "true");
   fprintf(f, "cheats   = [");
   for (int i = 0; i < s->cheats_count; i++) fprintf(f, "%s\"%s\"", i ? ", " : "", s->cheats[i]);
   fprintf(f, "]\n");
@@ -94,4 +100,66 @@ void settings_apply_cheats(const Settings *s) {
   const char *ids[MAX_SETTING_CHEATS];
   for (int i = 0; i < s->cheats_count; i++) ids[i] = s->cheats[i];
   cheats_set_active(ids, s->cheats_count);
+}
+
+int settings_cheat_index(const Settings *s, const char *id) {
+  for (int i = 0; i < s->cheats_count; i++) {
+    if (strcmp(s->cheats[i], id) == 0) return i;
+  }
+  return -1;
+}
+
+int settings_mod_index(const Settings *s, const char *name) {
+  for (int i = 0; i < s->mods_count; i++) {
+    if (strcmp(s->mods[i], name) == 0) return i;
+  }
+  return -1;
+}
+
+void settings_toggle_cheat(Settings *s, const char *id) {
+  int k = settings_cheat_index(s, id);
+  if (k >= 0) {
+    memmove(s->cheats[k], s->cheats[k + 1], sizeof s->cheats[0] * (size_t)(s->cheats_count - k - 1));
+    s->cheats_count--;
+  } else if (s->cheats_count < MAX_SETTING_CHEATS) {
+    snprintf(s->cheats[s->cheats_count++], sizeof s->cheats[0], "%s", id);
+  }
+}
+
+// Los activos llevan su numero: si dos traen el mismo archivo, gana el de
+// numero mas alto (el ultimo de la lista)
+void settings_toggle_mod(Settings *s, const char (*defaults)[64], int count, const char *name) {
+  if (!s->mods_set) {
+    s->mods_count = 0;
+    for (int i = 0; i < count && i < MAX_SETTING_MODS; i++) {
+      snprintf(s->mods[s->mods_count++], sizeof s->mods[0], "%s", defaults[i]);
+    }
+  }
+  int k = settings_mod_index(s, name);
+  if (k >= 0) {
+    memmove(s->mods[k], s->mods[k + 1], sizeof s->mods[0] * (size_t)(s->mods_count - k - 1));
+    s->mods_count--;
+  } else if (s->mods_count < MAX_SETTING_MODS) {
+    snprintf(s->mods[s->mods_count++], sizeof s->mods[0], "%s", name);
+  }
+  s->mods_set = 1;
+}
+
+static int mod_cmp(const void *a, const void *b) { return strcmp((const char *)a, (const char *)b); }
+
+int settings_mod_dirs(const char *root, char names[][64]) {
+  int n = 0;
+  DIR *d = opendir(root);
+  if (!d) return 0;
+  struct dirent *e;
+  while ((e = readdir(d)) != NULL && n < MAX_MOD_DIRS) {
+    if (e->d_name[0] == '.' || strlen(e->d_name) >= 64) continue;
+    char path[1024];
+    struct stat st;
+    snprintf(path, sizeof path, "%s/%s", root, e->d_name);
+    if (stat(path, &st) == 0 && S_ISDIR(st.st_mode)) snprintf(names[n++], 64, "%s", e->d_name);
+  }
+  closedir(d);
+  qsort(names, (size_t)n, 64, mod_cmp);
+  return n;
 }

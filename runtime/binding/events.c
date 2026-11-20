@@ -187,7 +187,7 @@ int events_dispatch(JSContext *ctx, JSValueConst target, JSValueConst event) {
   JS_FreeCString(ctx, type);
 
   if (!JS_IsUndefined(list)) {
-    // se itera sobre una copia: un listener puede quitar o anadir otros
+    // se itera sobre una copia: un listener puede quitar o agregar otros
     JSValue slice = JS_GetPropertyStr(ctx, list, "slice");
     JSValue copy = JS_Call(ctx, slice, list, 0, NULL);
     JS_FreeValue(ctx, slice);

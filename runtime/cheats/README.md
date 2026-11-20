@@ -38,6 +38,9 @@ cheat is turned off later. The other playthroughs still get them.
   their value before the cheat (it is kept with the playthrough).
 - With an engine that has no `playthrough.js`, the cheats are not applied:
   there would be no way to keep the achievements safe.
+- A game without achievements (no `[[achievements]]`, like HexGL) has nothing
+  to protect: its cheats apply without knowing the playthrough, with any
+  engine. A symbol whose object does not exist yet is set as soon as it does.
 
 The cheats that are on go in `quixjs-settings.toml` (`cheats = [...]`), next to
 the `port.toml`. `ach` in `tools/console.py` lists them and says if the

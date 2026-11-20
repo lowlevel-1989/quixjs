@@ -1,0 +1,17 @@
+# [controls.keys]: acciones con nombre que pulsan una tecla; su boton, el
+# de controller.keys (lo que guarda Controls). Con el backend sdl (args) y el
+# mando virtual de SDL (quix.pressPad); sin ventana
+[game]
+cache_dir = "cache/tests/core/pad-keys"
+game_dir  = "games/tests/core/pad-keys"
+width     = 64
+height    = 64
+
+[scripts]
+libs     = []
+includes = ["../../lib/assert.js"]
+entry    = "main.js"
+
+[controls.keys]
+Torch = "T"
+Phase = "C"

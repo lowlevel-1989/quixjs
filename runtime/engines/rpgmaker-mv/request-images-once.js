@@ -15,7 +15,9 @@
 //   [hooks]
 //   "Game_Interpreter.requestImages" = "rpgmaker-mv/request-images-once"
 //
-// El archivo es una funcion que recibe la original y devuelve la nueva.
+// El archivo es una funcion que recibe la original y devuelve la nueva. La
+// llama runtime/hooks/hooks.c (hooks_install) al instalar el hook, cuando el
+// juego ya cargo sus scripts. Ver runtime/engines/README.md.
 function (original) {
   var seen = typeof WeakSet === 'function' ? new WeakSet() : null;
   return function (list, commonList) {

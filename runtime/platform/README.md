@@ -9,6 +9,7 @@ What quixjs needs from the operating system, behind one header
 | folder   | for |
 |----------|-----|
 | `linux/` | the PC and the handhelds (glibc) |
+| `android/` | the Android app (bionic, `make PLATFORM=android`); `launcher.c` is the JNI of its menu and Transfer Save screens |
 
 Another system (Android...) adds its folder and the rest of quixjs stays the
 same. The window, GL, input and audio output belong to the backend

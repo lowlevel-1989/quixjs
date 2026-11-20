@@ -43,3 +43,8 @@
 // settings: los de quixjs-settings.toml; Options los cambia y los guarda.
 int launcher_run(Backend *backend, const Config *cfg, const char *config_path, Settings *settings,
                  int *exit_code);
+
+// --controls: solo la pantalla Controls, con los colores del launcher. La usa
+// la app de Android, que tiene su menu pero asigna el mando con este codigo
+// (controller.map con el GUID de SDL)
+void launcher_controls(Backend *backend, const Config *cfg);

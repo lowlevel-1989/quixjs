@@ -40,9 +40,10 @@ game_dir  = "gamedata/www"      # la carpeta www/ del juego, copiada en gamedata
 cache_dir = "cache/gamedata"
 width     = 816   # package.json
 height    = 624
-mods      = []                  # mods activos (mods/<nombre>/ junto al port.toml, con las
+mods      = ["rumble"]          # mods activos (mods/<nombre>/ junto al port.toml, con las
                                 # mismas rutas que dentro de game_dir); si dos traen el
-                                # mismo archivo, gana el ultimo de la lista
+                                # mismo archivo, gana el ultimo de la lista. rumble (la
+                                # vibracion) viene activo
 developer = "Miro Haverinen"
 publisher = "Miro Haverinen"    # publisher y releasedate: van en gameinfo.xml (EmulationStation)
 releasedate = "20181211T000000" # el 11 de diciembre de 2018, en itch.io
@@ -123,6 +124,28 @@ engine = "rpgmaker-mv"
 # Controls deja asignar todos los botones y las palancas (controller.map).
 [controls]
 gamepad = true
+vibration = true   # el mod rumble vibra en los momentos fuertes; Options > Vibration la apaga
+
+# lo que hace cada boton en el juego, con los nombres de su YEP_KeyboardConfig:
+# Controls los pide por su nombre (y siempre las dos palancas)
+[controls.buttons]
+dpup          = "Move up"
+dpdown        = "Move down"
+dpleft        = "Move left"
+dpright       = "Move right"
+a             = "OK"
+b             = "Cancel"
+x             = "Skill"
+y             = "Menu"
+leftshoulder  = "Previous (menu)"
+rightshoulder = "Next (menu)"
+
+# Torch y Phase el juego solo los escucha en el teclado (T y C,
+# YEP_ButtonCommonEvents): Controls pide un boton para cada una, y ese boton
+# pulsa la tecla
+[controls.keys]
+Torch = "T"
+Phase = "C"
 
 [symbols]
 ending_picture = "path:$gameScreen._pictures.26._name"

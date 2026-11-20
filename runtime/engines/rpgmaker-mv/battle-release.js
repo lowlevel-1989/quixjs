@@ -17,10 +17,16 @@
 // Uso (config.toml o port.toml):
 //   [hooks]
 //   "Scene_Battle.prototype.terminate" = "rpgmaker-mv/battle-release"
+//
+// El archivo es una funcion que recibe la original y devuelve la nueva. La
+// llama runtime/hooks/hooks.c (hooks_install) al instalar el hook, cuando el
+// juego ya cargo sus scripts. Ver runtime/engines/README.md.
 function (original) {
   // BattleManager es una funcion con propiedades (las clases estaticas de RPG Maker)
   if (!globalThis.BattleManager || typeof PIXI !== 'object' || !PIXI.DisplayObject) return original;
-  var isDisplay = function (v) { return v instanceof PIXI.DisplayObject; };
+  var isDisplay = function (v) {
+    return v instanceof PIXI.DisplayObject;
+  };
   var onlyDisplay = function (v) {
     if (!v || typeof v !== 'object' || Array.isArray(v) || isDisplay(v)) return false;
     var keys = Object.keys(v);

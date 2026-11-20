@@ -2,14 +2,22 @@
 
 [English](README.md) | Español
 
-Video WebM para el elemento `<video>`: los "Play Movie" de los eventos de
-RPG Maker MV. Está hecho con librerías, no desde cero.
+Video WebM y MP4 para el elemento `<video>`: los "Play Movie" de los
+eventos de RPG Maker MV y los vídeos MP4 de Felvidék. Está hecho con
+librerías, no desde cero.
 
 | librería  | qué hace |
 |-----------|----------|
 | nestegg   | lee el contenedor WebM (`thirdparty/nestegg`, se compila con quixjs) |
 | libvpx    | decodifica el video VP8 y VP9 |
 | libopus   | decodifica el audio Opus (el audio de los WebM de RPG Maker) |
+| minimp4   | lee el contenedor MP4 (`thirdparty/minimp4`) |
+| FFmpeg    | decodifica el video H.264 y el audio AAC (`thirdparty/ffmpeg`, solo esos dos decodificadores) |
+
+Un MP4 más ancho que 1280 (1080p) se ve a la mitad. En una handheld lenta
+el audio va primero: los threads del H.264 van con menos prioridad, y una
+imagen que llega tarde no se convierte ni se muestra (la RX6S con los vídeos
+de Felvidék: a tiempo real, saltando como una cuarta parte de las imágenes).
 
 | archivo   | qué hace |
 |-----------|----------|
@@ -17,7 +25,7 @@ RPG Maker MV. Está hecho con librerías, no desde cero.
 | `video.c` | lee los paquetes con nestegg, los decodifica con libvpx y libopus, pasa la imagen a RGBA; sin video cada función es un sustituto vacío |
 
 La parte de JS es `binding/video.c` (`__quixVideo`) y el elemento `<video>`
-de `binding/polyfill.c` ([binding](../binding/README.es.md)).
+de `binding/polyfill/media.js` ([polyfill](../binding/polyfill/README.es.md)).
 
 ## Cómo se reproduce
 
@@ -58,5 +66,6 @@ El build de PortMaster siempre lleva video y lleva `libvpx.so.5` y
 `libopus.so.0` en `libs.aarch64/` y `libs.armhf/`, con las licencias de libvpx5, libopus0 y nestegg.
 
 El test es `games/tests/media/video`: `clip.webm` (64x48, 1 s, 10 imágenes,
-hecho con ffmpeg desde `testsrc` y un tono `sine`) se reproduce hasta el
-final, y un archivo que no existe se salta.
+hecho con ffmpeg desde `testsrc` y un tono `sine`) y `clip.mp4` (lo mismo,
+H.264 con imágenes B y AAC) se reproducen hasta el final, `big.mp4` (1080p)
+se ve a la mitad, y un archivo que no existe se salta.

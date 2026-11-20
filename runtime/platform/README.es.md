@@ -9,8 +9,9 @@ Lo que quixjs necesita del sistema operativo, detras de una sola cabecera
 | carpeta  | para |
 |----------|------|
 | `linux/` | el PC y las portatiles (glibc) |
+| `android/` | la app de Android (bionic, `make PLATFORM=android`); `launcher.c` es el JNI de su menu y de Transfer Save |
 
-Otro sistema (Android...) anade su carpeta y el resto de quixjs sigue igual.
+Otro sistema (Android...) agrega su carpeta y el resto de quixjs sigue igual.
 La ventana, el GL, la entrada y la salida de audio son del backend
 ([backend](../backend/README.es.md)), no de aqui.
 

@@ -38,7 +38,5 @@ void profiler_drain(JSContext *ctx);
 void profiler_frame_end(JSContext *ctx);
 // El informe, en texto
 void profiler_report(char *out, size_t room, int top);
-// La fase del loop principal (sin uso: JavaScriptCore solo muestrea JS)
-void profiler_phase(const char *phase);
 // Escribe el informe en path (para mirarlo con cat). 0 si va.
 int  profiler_save(JSContext *ctx, const char *path, int top);

@@ -12,11 +12,17 @@
 // original. Los plugins que no quieren desenfoque (YEP_MainMenuManager con
 // Blurry Background apagado) llaman a snap, que no cambia.
 //
+// Referencias (el codigo que reproduce o reescribe; gracias a sus autores):
+//   nucleo de RPG Maker MV (corescript, KADOKAWA, MIT), commit 182e314:
+//   https://github.com/rpgtkoolmv/corescript/blob/182e31449707ba7e406db0485c44c2a9d11e2dcd/js/rpg_managers/SceneManager.js#L373-L376 (snapForBackground)
+//
 // Uso (config.toml o port.toml):
 //   [hooks]
 //   "SceneManager.snapForBackground" = "rpgmaker-mv/snap-half"
 //
-// El archivo es una funcion que recibe la original y devuelve la nueva.
+// El archivo es una funcion que recibe la original y devuelve la nueva. La
+// llama runtime/hooks/hooks.c (hooks_install) al instalar el hook, cuando el
+// juego ya cargo sus scripts. Ver runtime/engines/README.md.
 function (original) {
   var E = globalThis.__quixEngine && __quixEngine['rpgmaker-mv'];
   if (!E || !E.blur || typeof PIXI !== 'object' || !PIXI.RenderTexture) return original;
@@ -24,9 +30,14 @@ function (original) {
   var src = String(original);
   if (src.indexOf('snap()') < 0 || src.indexOf('blur()') < 0) return original;
   return function () {
-    var renderer = Graphics._renderer, stage = this._scene;
-    if (!stage || !Graphics.isWebGL() || !renderer || !renderer.extract) return original.apply(this, arguments);
-    var W = Graphics.width, H = Graphics.height, w = Math.ceil(W / 2), h = Math.ceil(H / 2);
+    var renderer = Graphics._renderer,
+      stage = this._scene;
+    if (!stage || !Graphics.isWebGL() || !renderer || !renderer.extract)
+      return original.apply(this, arguments);
+    var W = Graphics.width,
+      H = Graphics.height,
+      w = Math.ceil(W / 2),
+      h = Math.ceil(H / 2);
     var rt = PIXI.RenderTexture.create(w, h);
     var half = new PIXI.Matrix();
     half.scale(w / W, h / H);

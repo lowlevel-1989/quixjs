@@ -21,18 +21,36 @@
 //                                     si no esta borrado)
 // Los demas, el original.
 //
+// Referencias (el codigo que reproduce o reescribe; gracias a sus autores):
+//   nucleo de RPG Maker MV (corescript, KADOKAWA, MIT), commit 182e314:
+//   https://github.com/rpgtkoolmv/corescript/blob/182e31449707ba7e406db0485c44c2a9d11e2dcd/js/rpg_objects/Game_Event.js#L315-L319 (update)
+//   YEP_EventChasePlayer v1.04, de Yanfly Engine Plugins (sus condiciones de uso):
+//   https://yanfly.moe/wiki/Event_Chase_Player_(YEP) (updateAlert)
+//
 // Uso (config.toml o port.toml):
 //   [hooks]
 //   "Game_Event.prototype.update" = "rpgmaker-mv/event-idle-fast"
 //
-// El archivo es una funcion que recibe la original y devuelve la nueva.
+// El archivo es una funcion que recibe la original y devuelve la nueva. La
+// llama runtime/hooks/hooks.c (hooks_install) al instalar el hook, cuando el
+// juego ya cargo sus scripts. Ver runtime/engines/README.md.
 function (original) {
   return function () {
-    if (this._interpreter || this._trigger === 3 || this._moveType !== 0 ||
-        this._moveRouteForcing || this._locked || this._jumpCount > 0 ||
-        this._realX !== this._x || this._realY !== this._y ||
-        this._chaseRange > 0 || this._fleeRange > 0 || this._chasePlayer ||
-        this._fleePlayer || this._returnPhase) {
+    if (
+      this._interpreter ||
+      this._trigger === 3 ||
+      this._moveType !== 0 ||
+      this._moveRouteForcing ||
+      this._locked ||
+      this._jumpCount > 0 ||
+      this._realX !== this._x ||
+      this._realY !== this._y ||
+      this._chaseRange > 0 ||
+      this._fleeRange > 0 ||
+      this._chasePlayer ||
+      this._fleePlayer ||
+      this._returnPhase
+    ) {
       return original.call(this);
     }
     this._stopCount++;
