@@ -97,14 +97,14 @@ EmulationStation puede no mostrar la imagen del port.
 ## Android
 
 Necesitas el juego y dos archivos de las releases de quixjs
-(https://github.com/lowlevel-1989/quixjs/releases), por ejemplo para la
-versión 0.5.0:
+(https://github.com/lowlevel-1989/quixjs/releases), la última versión
+(`VERSION` en los nombres es su número):
 
-- `quixjs-0.5.0-android-arm64.apk`: la app
-- `abbaye-0.5.0-portmaster.zip`: el port
+- `quixjs-VERSION-android-arm64.apk`: la app
+- `abbaye-VERSION-portmaster.zip`: el port
 
 1. Instala el `.apk` en el teléfono.
-2. En tu PC, descomprime `abbaye-0.5.0-portmaster.zip`. Te queda la carpeta
+2. En tu PC, descomprime `abbaye-VERSION-portmaster.zip`. Te queda la carpeta
    `abbaye/`.
 3. Copia el juego (`abbaye-des-morts-21e1fc42694a2c69078c6451ae8b6f8fb22dff99.zip`, paso 3 de Instalar) en `abbaye/`, junto a `port.toml`. Queda así:
 

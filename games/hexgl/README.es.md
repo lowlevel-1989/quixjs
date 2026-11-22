@@ -102,14 +102,14 @@ EmulationStation puede no mostrar la imagen del port.
 ## Android
 
 Necesitas el juego y dos archivos de las releases de quixjs
-(https://github.com/lowlevel-1989/quixjs/releases), por ejemplo para la
-versión 0.4.0:
+(https://github.com/lowlevel-1989/quixjs/releases), la última versión
+(`VERSION` en los nombres es su número):
 
-- `quixjs-0.4.0-android-arm64.apk`: la app
-- `hexgl-0.4.0-portmaster.zip`: el port
+- `quixjs-VERSION-android-arm64.apk`: la app
+- `hexgl-VERSION-portmaster.zip`: el port
 
 1. Instala el `.apk` en el teléfono.
-2. En tu PC, descomprime `hexgl-0.4.0-portmaster.zip`. Te queda la carpeta
+2. En tu PC, descomprime `hexgl-VERSION-portmaster.zip`. Te queda la carpeta
    `hexgl/`.
 3. Copia el juego (`HexGL-6addc95a2fce3bf05f4d751823cc054c61a16d68.zip`, paso 3 de Instalar) en `hexgl/`, junto a `port.toml`. Queda así:
 

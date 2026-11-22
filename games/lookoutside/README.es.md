@@ -105,14 +105,14 @@ Sin PortMaster: descomprime el zip en la carpeta de ports.
 ## Android
 
 Necesitas el juego y dos archivos de las releases de quixjs
-(https://github.com/lowlevel-1989/quixjs/releases), por ejemplo para la
-versión 0.4.0:
+(https://github.com/lowlevel-1989/quixjs/releases), la última versión
+(`VERSION` en los nombres es su número):
 
-- `quixjs-0.4.0-android-arm64.apk`: la app
-- `lookoutside-0.4.0-portmaster.zip`: el port
+- `quixjs-VERSION-android-arm64.apk`: la app
+- `lookoutside-VERSION-portmaster.zip`: el port
 
 1. Instala el `.apk` en el teléfono.
-2. En tu PC, descomprime `lookoutside-0.4.0-portmaster.zip`. Sale la carpeta
+2. En tu PC, descomprime `lookoutside-VERSION-portmaster.zip`. Sale la carpeta
    `lookoutside/`.
 3. Copia el juego (`Look Outside.zip`, paso 3 de Instalar) en `lookoutside/`, junto a `port.toml`. Queda así:
 

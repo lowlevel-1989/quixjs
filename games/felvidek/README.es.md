@@ -91,3 +91,27 @@ partidas (`gamedata/www/save/`) se quedan.
 
 Sin PortMaster: descomprime el zip en la carpeta de ports. Así puede que
 EmulationStation no enseñe la imagen del port.
+
+## Android
+
+Necesitas el juego y dos archivos de las releases de quixjs
+(https://github.com/lowlevel-1989/quixjs/releases), la última versión
+(`VERSION` en los nombres es su número):
+
+- `quixjs-VERSION-android-arm64.apk`: la app
+- `felvidek-VERSION-portmaster.zip`: el port
+
+1. Instala el `.apk` en el teléfono.
+2. En tu PC, descomprime `felvidek-VERSION-portmaster.zip`. Sale la carpeta
+   `felvidek/`.
+3. Copia el juego (`www.zip`, paso 3 de Instalar) en `felvidek/`, junto a `port.toml`. Queda así:
+
+   ```
+   felvidek/
+     port.toml
+     www.zip
+   ```
+
+4. Comprime la carpeta `felvidek/` en un `.zip` y pásalo al teléfono.
+5. En quixjs, toca "Import game" y elige ese `.zip`. Después toca el juego
+   y Play.
