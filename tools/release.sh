@@ -7,7 +7,9 @@
 #   PORT-VERSION-portmaster.zip           cada port para PortMaster (aarch64)
 #   PORT-VERSION-linux-x86_64.tar.gz      cada port para el PC
 #   quixjs-VERSION-android-arm64.apk      la app de Android (arm64-v8a)
-#   SHA256SUMS                            las sumas de todo, para las notas
+#
+# Las sumas (sha256) van a obj/SHA256SUMS, fuera de release/: se copian en
+# las notas de la release, no se suben como archivo
 #
 # Los ports son los de games/ que tienen [portmaster] en su port.toml
 # (PORTS="a b" para elegir otros). Compila lo que falte: el binario del PC
@@ -161,6 +163,6 @@ EOF
   cp quixjs.apk "$OUT/quixjs-$V-android-arm64.apk"
 fi
 
-(cd "$OUT" && sha256sum -- *.tar.gz *.zip $(ls -- *.apk 2>/dev/null || true) > SHA256SUMS)
+(cd "$OUT" && sha256sum -- *.tar.gz *.zip $(ls -- *.apk 2>/dev/null || true)) > obj/SHA256SUMS
 echo "release/ (quixjs $V):"
 ls -l "$OUT"

@@ -55,6 +55,7 @@ typedef struct {
   ShotCtx      shot_ctx;
   FpsMeter     fps;
   DebugEnv     debug_env;
+  int          saves_new;   // la carpeta de las partidas no estaba (load_port)
 } Run;
 
 typedef struct {

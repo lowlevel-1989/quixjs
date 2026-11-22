@@ -26,6 +26,7 @@
 #include <time.h>
 #include "tomlc17.h"
 #include "backend/toast.h"
+#include "core/sandbox.h"
 #include "cheats/cheats.h"
 #include "symbols/symbols.h"
 #include "achievements.h"
@@ -342,6 +343,8 @@ int ach_load(const char *config_path, const char *game_dir, const char *file, co
   if (file && file[0]) {
     if (file[0] == '/') snprintf(store_path, sizeof store_path, "%s", file);
     else snprintf(store_path, sizeof store_path, "%s/%s", game_dir, file);
+    // [saves] achievements viene del toml: con las partidas, no fuera
+    if (!sandbox_check_write(store_path, "[saves] achievements")) store_path[0] = 0;
   }
   load_unlocked();
   if (count) {

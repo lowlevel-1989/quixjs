@@ -38,9 +38,11 @@ width     = 960
 height    = 720
 mods      = ["big-text"]   # mods/: big-text (el texto de las ventanas mas grande) viene activo;
                            # readable-font (fuente mas legible), apagado
-developer = "Jan Malík"
+developer = "Jozef Pavelka, Vlado Ganaj"
+publisher = "Tutto Passa"
+releasedate = "20240329T000000"
 genres    = ["rpg"]
-desc      = "Felvidek (RPG Maker MV) running on quixjs, a JS runtime in C with SDL2 and OpenGL ES 2."
+desc      = "A story-driven RPG set in 15th-century Upper Hungary: Jaromir, a knight with a taste for wine, investigates a strange cult across a land of wars and plague."
 
 [saves]
 dir   = "save"

@@ -31,11 +31,12 @@ game_dir  = "abbaye-des-morts-21e1fc42694a2c69078c6451ae8b6f8fb22dff99"
 width     = 256               # 32x24 casillas de 8 pixeles (js/main.js)
 height    = 192
 developer = "Locomalito, Gryzor87 (HTML5: Lucera Project)"
+publisher = "Locomalito"
 releasedate = "20140101T000000"
 genres    = ["platform"]
 mods      = ["achievements", "rumble"]   # mods/: achievements (la pausa muestra los
                   # logros), rumble (vibra al morir)
-desc      = "L'Abbaye des Morts, the retro platformer by Locomalito, in its HTML5 version by Lucera Project, running on quixjs, a JS runtime in C with SDL2 and OpenGL ES 2."
+desc      = "A retro platformer: Jean, a Cathar monk fleeing the crusaders, hides in an abandoned church and must collect twelve crosses to face the devil."
 
 # la fuente del CSS (css/stylesheet.css)
 [fonts]

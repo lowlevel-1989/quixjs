@@ -42,12 +42,11 @@ make release
 Compila lo que falte y deja en `release/` los archivos de una release de
 GitHub: quixjs solo para x86_64 y aarch64
 (`quixjs-VERSION-linux-ARCH.tar.gz`), y, por cada port de `games/` con
-`[portmaster]` en su `port.toml` (hoy `fearandhunger`, `firework-shiying` y
-`lookoutside`), el port para PortMaster (`PORT-VERSION-portmaster.zip`, se
+`[portmaster]` en su `port.toml`, el port para PortMaster (`PORT-VERSION-portmaster.zip`, se
 instala con su autoinstall) y el port para el PC
 (`PORT-VERSION-linux-x86_64.tar.gz`); y la app de Android
 (`quixjs-VERSION-android-arm64.apk`, necesita el SDK y el NDK de Android), y
-`SHA256SUMS` con las sumas de todo.
+las sumas de todo en `obj/SHA256SUMS`, para las notas de la release.
 
 ```
 PORTS="lookoutside" tools/release.sh   # solo esos ports

@@ -24,6 +24,7 @@
 #include "tomlc17.h"
 #include "binding/canvas.h"
 #include "hooks.h"
+#include "core/sandbox.h"
 #include "engines.h"   // runtime/engines/<motor>/*.js, generado por tools/embed_engines.py
 
 #define MAX_HOOKS 128
@@ -183,6 +184,8 @@ int hooks_load(const char *config_path) {
 
 // el archivo entero (malloc), o NULL
 static char *read_file(const char *path) {
+  // un enlace simbolico del mod que apunta fuera del port tampoco vale
+  if (!sandbox_check(path, "mod script")) return NULL;
   FILE *f = fopen(path, "rb");
   if (!f) return NULL;
   fseek(f, 0, SEEK_END);

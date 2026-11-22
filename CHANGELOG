@@ -1,3 +1,16 @@
+0.5.3
+- fixed: en un port recien instalado con la rom (www.zip) no se guardaba la partida: no existia la
+  carpeta gamedata/save; quixjs la crea al arrancar
+- fixed: un www.zip con partidas dentro (de jugarlo antes en el PC) no dejaba guardar: la carpeta de
+  las partidas es solo la del disco y la primera vez se copian a ella las del zip
+- fixed: Transfer Save manda los logros tambien en los ports sin partidas (Abbaye)
+- fixed: Firework: Transfer Save manda tambien la imagen de cada partida (savePic*)
+- changed: los ports: desc describe el juego (en ingles); publisher en todos, y developer y fecha
+  corregidos con los datos de Steam (Felvidek, Gunfield, Super Smiling Dungeon)
+- changed: make release ya no deja SHA256SUMS en release/: las sumas van a obj/SHA256SUMS, para las notas
+- fixed: sandbox: los scripts de los mods, [saves] local_storage y [saves] achievements tampoco pueden
+  salir del port (un enlace simbolico o una ruta con ".." en el toml)
+
 0.5.2
 - added: el log de los ports trae el dispositivo y el CFW (device_info.txt de PortMaster)
 - added: README de los ports: que dicen rom y game_dir en port.toml y donde van las partidas

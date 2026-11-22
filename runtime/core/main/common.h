@@ -58,6 +58,7 @@
 #include "binding/polyfill.h"
 #include "binding/script.h"
 #include "binding/nwjs.h"
+#include "rom/rom.h"
 #include "binding/blob.h"
 #include "binding/audio.h"
 #include "binding/webgl.h"

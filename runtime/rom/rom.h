@@ -52,6 +52,14 @@ int rom_list(const char *dir, void (*each)(void *user, const char *name, int is_
 // delta)); NULL si no se puede (comprimido en el zip)
 void *rom_map(const char *path, size_t *len, size_t *delta);
 
+// La carpeta de las partidas ([saves] dir, dentro de mount) es solo la del
+// disco: lo que la rom tenga ahi (las partidas de quien jugo antes de hacer
+// el zip) no se ve, porque el juego no podria borrarlo ni cambiarlo.
+// rom_copy_dir lo copia al disco (la primera vez, para no perderlo) y
+// rom_hide deja de buscar en la rom dentro de dir
+int rom_copy_dir(const char *dir);
+void rom_hide(const char *dir);
+
 // ---- lo que hace cada tipo de rom (rom_zip.c, rom_dir.c). rel: la ruta
 // dentro del juego (desde root, sin "/" delante; "" el principio)
 typedef struct {

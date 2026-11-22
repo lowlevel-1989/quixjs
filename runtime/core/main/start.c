@@ -152,6 +152,19 @@ STEP int start_window(Run *r, Loop *l) {
 }
 
 // Lo del port: partidas, logros, simbolos, trucos, hooks, --script y los
+// mkdir -p
+static void make_dirs(const char *path) {
+  char tmp[PATH_MAX];
+  snprintf(tmp, sizeof tmp, "%s", path);
+  for (char *s = tmp + 1; *s; s++) {
+    if (*s != '/') continue;
+    *s = 0;
+    mkdir(tmp, 0755);
+    *s = '/';
+  }
+  mkdir(tmp, 0755);
+}
+
 // ajustes del jugador. 0 si falla (ya cerrado)
 STEP int load_port(Run *r, Loop *l) {
   Config *cfg = &r->cfg;
@@ -168,12 +181,20 @@ STEP int load_port(Run *r, Loop *l) {
     quit_early(l);
     return 0;
   }
+  // la carpeta de las partidas, creada si aun no existe: con la rom
+  // (www.zip) va fuera del juego, en gamedata/, y en un port recien
+  // instalado no esta. Fear & Hunger escribe su copia .bak antes de crearla
+  // y no guardaba
+  struct stat st;
+  r->saves_new = stat(saves_dir, &st) != 0;
+  make_dirs(saves_dir);
   int npatterns = cfg->saves.files_count;
   // los logros van con las partidas: en su carpeta, y Transfer Save los manda
   // con ellas (el que llega pisa al que habia, como una partida)
   const char *ach_file = cfg->saves.achievements;
   if (ach_file[0] && ach_file[0] != '/') {
-    if (npatterns > 0 && npatterns < MAX_SAVE_PATTERNS) patterns[npatterns++] = ach_file;
+    // tambien sin partidas (Abbaye: solo logros)
+    if (npatterns < MAX_SAVE_PATTERNS) patterns[npatterns++] = ach_file;
     // antes se guardaban en game_dir: se mueven la primera vez
     char old_path[MAX_PATH_LEN * 2], new_path[MAX_PATH_LEN * 2];
     snprintf(old_path, sizeof old_path, "%s/%s", cfg->game.game_dir, ach_file);
@@ -249,6 +270,14 @@ static void mount_rom(Run *r, Loop *l) {
   for (int i = 0; !first[0] && i < sc->includes_count; i++) if (strncmp(sc->includes[i], "../", 3) != 0) first = sc->includes[i];
   if (!first[0] && sc->entry && strncmp(sc->entry, "../", 3) != 0) first = sc->entry;
   launcher_mount_rom(r->args.test ? NULL : l->backend, cfg, first);
+  // [saves] dir: solo la del disco (runtime/rom/rom.h); la primera vez, con
+  // las partidas que traiga la rom. Sin dir, las partidas van en gamedata/
+  // misma y no se toca
+  const char *saves = cfg->saves.dir;
+  if (saves[0] && strcmp(saves, cfg->game.game_dir) != 0 && rom_mounted()) {
+    if (r->saves_new) rom_copy_dir(saves);
+    rom_hide(saves);
+  }
 }
 
 STEP int start_js(Run *r, Loop *l) {

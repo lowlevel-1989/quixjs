@@ -37,8 +37,9 @@ rom       = "app.asar"
 game_dir  = "app"
 width     = 1280              # data.js: windowWidth y windowHeight
 height    = 950
-developer = "ChoKo"
-releasedate = "20250101T000000"
+developer = "ChoKo Indie Game"
+publisher = "Sleepy Giant Creations"
+releasedate = "20251209T000000"
 genres    = ["rpg", "puzzle"]
 mods      = ["controller", "big-text", "achievements", "fast-text"]   # mods/: controller (jugar con mando), big-text (letra mas grande), achievements (logros en letra grande), fast-text (B completa el texto o pasa al siguiente)
 # 686 imagenes de 512 px o mas, ~2,2 GB decodificadas, y GDevelop las carga
@@ -50,7 +51,7 @@ image_scale_min  = 512
 # dibujar a la resolucion con la que se ve (render-scale.js): en una pantalla
 # de 720x720, a 720x534; en una igual o mas grande, como siempre
 render_scale     = "auto"
-desc      = "Super Smiling Dungeon, a dungeon card game by ChoKo made with GDevelop, running on quixjs, a JS runtime in C with SDL2 and OpenGL ES 2."
+desc      = "A dungeon card game: pick a hero and fight your way down floor by floor, choosing which card to take from each row of monsters, potions and treasures."
 
 # las partidas: localStorage y los archivos que guarda el juego con su
 # extension FileSystem (muertes, partida terminada...), en gamedata/

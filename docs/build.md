@@ -41,12 +41,11 @@ make release
 It builds what is missing and leaves in `release/` the files of a GitHub
 release: quixjs alone for x86_64 and aarch64
 (`quixjs-VERSION-linux-ARCH.tar.gz`), and, for every port in `games/` with
-`[portmaster]` in its `port.toml` (today `fearandhunger`, `firework-shiying`
-and `lookoutside`), the port for PortMaster (`PORT-VERSION-portmaster.zip`,
+`[portmaster]` in its `port.toml`, the port for PortMaster (`PORT-VERSION-portmaster.zip`,
 installed with its autoinstall) and the port for the PC
 (`PORT-VERSION-linux-x86_64.tar.gz`); and the Android app
 (`quixjs-VERSION-android-arm64.apk`, needs the Android SDK and NDK), and
-`SHA256SUMS` with the sums of all of them.
+the sums of all of them in `obj/SHA256SUMS`, for the notes of the release.
 
 ```
 PORTS="lookoutside" tools/release.sh   # only these ports

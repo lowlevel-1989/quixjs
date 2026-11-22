@@ -26,6 +26,7 @@
 #include <string.h>
 #include <time.h>
 #include "core/save.h"
+#include "core/sandbox.h"
 #include "core/app_context.h"
 #include "core/keymap.h"
 #include "core/timer.h"
@@ -69,6 +70,8 @@ static JSValue js_quix_storageRead(JSContext *ctx, JSValueConst this_val, int ar
   char path[MAX_PATH_LEN * 2 + 2];
   size_t len = 0;
   if (!storage_path(JS_GetContextOpaque(ctx), path, sizeof(path))) return JS_NULL;
+  // [saves] local_storage viene del toml: no puede salir de las partidas
+  if (!sandbox_check_write(path, "[saves] local_storage")) return JS_NULL;
   char *text = (char *)url_read_file(path, &len);
   if (!text) return JS_NULL;
   JSValue r = JS_NewStringLen(ctx, text, len);
@@ -82,6 +85,7 @@ static JSValue js_quix_storageWrite(JSContext *ctx, JSValueConst this_val, int a
   (void)this_val;
   char path[MAX_PATH_LEN * 2 + 2];
   if (argc < 1 || !storage_path(JS_GetContextOpaque(ctx), path, sizeof(path))) return JS_FALSE;
+  if (!sandbox_check_write(path, "[saves] local_storage")) return JS_FALSE;
   size_t len = 0;
   const char *text = JS_ToCStringLen(ctx, &len, argv[0]);
   if (!text) return JS_EXCEPTION;

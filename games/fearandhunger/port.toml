@@ -57,7 +57,7 @@ releasedate = "20181211T000000" # el 11 de diciembre de 2018, en itch.io
 genres    = ["rpg"]                 # los de PortMaster: action, adventure, arcade, casino/card,
                                 # fps, platformer, puzzle, racing, rhythm, rpg, simulation,
                                 # sports, strategy, visual novel, other (otro se descarta)
-desc      = "Fear & Hunger (RPG Maker MV) running on quixjs, a JS runtime in C with SDL2 and OpenGL ES 2. With a menu to play, pass your saves to another device on the same network, and see the achievements of the port."
+desc      = "A dark and unforgiving dungeon crawler RPG: a party of mercenaries descends into the dungeons of Fear & Hunger, where hunger, sanity and every limb count."
 
 # Transfer Save: que archivos pasa a otro dispositivo.
 #   dir    la carpeta de las partidas, desde [game] game_dir

@@ -23,6 +23,7 @@
 #define _GNU_SOURCE
 #endif
 #include <limits.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -104,10 +105,14 @@ int rom_mounted(void) { return kind != NULL; }
 // la ruta dentro del juego de una ruta del juego, desde gamedata/ ("" la
 // raiz). Lo que sale de gamedata/ (un "../assets/x" del juego) sale igual de
 // la raiz de la rom: "../assets/x"
+static char hidden_abs[PATH_MAX];   // rom_hide: la carpeta de las partidas
+
 static int game_rel(const char *path, char *out, size_t room) {
   if (!kind) return 0;
   char abs[PATH_MAX];
   normalize(path, abs, sizeof abs);
+  size_t h = strlen(hidden_abs);
+  if (h && strncmp(abs, hidden_abs, h) == 0 && (abs[h] == 0 || abs[h] == '/')) return 0;
   // lo comun con gamedata/, por carpetas
   size_t common = 0;
   for (size_t i = 0;; i++) {
@@ -152,4 +157,49 @@ int rom_list(const char *dir, void (*each)(void *user, const char *name, int is_
 void *rom_map(const char *path, size_t *len, size_t *delta) {
   char rel[PATH_MAX];
   return game_rel(path, rel, sizeof rel) ? kind->map(rel, len, delta) : NULL;
+}
+
+// rom_copy_dir: cada archivo de la rom en dir (y sus carpetas), al disco si
+// alli no esta
+typedef struct {
+  const char *dir;
+  int copied;
+} CopyDir;
+
+static void copy_each(void *user, const char *name, int is_dir) {
+  CopyDir *c = user;
+  char path[PATH_MAX];
+  snprintf(path, sizeof path, "%s/%s", c->dir, name);
+  struct stat st;
+  if (is_dir) {
+    mkdirs(path);
+    CopyDir sub = { path, 0 };
+    rom_list(path, copy_each, &sub);
+    c->copied += sub.copied;
+    return;
+  }
+  if (stat(path, &st) == 0) return;
+  size_t len = 0;
+  uint8_t *data = rom_read(path, &len);
+  if (!data) return;
+  FILE *f = fopen(path, "wb");
+  if (f) {
+    if (fwrite(data, 1, len, f) == len) c->copied++;
+    fclose(f);
+  }
+  free(data);
+}
+
+int rom_copy_dir(const char *dir) {
+  if (!kind || !dir || !dir[0]) return 0;
+  mkdirs(dir);
+  CopyDir c = { dir, 0 };
+  rom_list(dir, copy_each, &c);
+  if (c.copied) printf("[rom] %d saves copied from the rom to %s\n", c.copied, dir);
+  return c.copied;
+}
+
+void rom_hide(const char *dir) {
+  if (dir && dir[0]) normalize(dir, hidden_abs, sizeof hidden_abs);
+  else hidden_abs[0] = 0;
 }

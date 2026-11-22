@@ -46,7 +46,7 @@ developer = "Shiying Studio"
 publisher = "Shiying Studio"
 releasedate = "20210203T000000"   # el 3 de febrero de 2021, en Steam
 genres    = ["adventure"]
-desc      = "Firework (RPG Maker MV) running on quixjs, a JS runtime in C with SDL2 and OpenGL ES 2."
+desc      = "A Chinese horror adventure: a police officer investigates a family's deaths years after a fire, searching an abandoned house for clues to the truth."
 # Las ilustraciones y fondos a la resolucion de la pantalla (gfx/
 # image_scale.h): ~1,5 GB decodificados a 1280x720; con "auto", en una
 # pantalla de 720x720 van al 56 % (un tercio de la memoria, mas de lo que la
@@ -63,7 +63,7 @@ render_scale     = "auto"
 # Transfer Save: que archivos pasa a otro dispositivo
 [saves]
 dir   = "save"
-files = ["*.rpgsave"]
+files = ["*.rpgsave", "savePic*"]   # savePic<n>: la imagen de cada partida (su menu)
 
 # fuentes de los @font-face de su CSS
 [fonts]

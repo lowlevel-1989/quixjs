@@ -32,9 +32,10 @@ mods      = ["volume", "multiplayer", "rumble"]   # mods/, activos: volume (Musi
                                                 # en el menu), multiplayer (carreras entre
                                                 # handhelds) y rumble (vibracion)
 developer = "Thibaut Despoulain (BKcore)"
+publisher = "Thibaut Despoulain (BKcore)"
 releasedate = "20121101T000000"
 genres    = ["racing"]
-desc      = "HexGL, the futuristic racing game, running on quixjs, a JS runtime in C with SDL2 and OpenGL ES 2."
+desc      = "A futuristic racing game in the style of the classic anti-gravity racers: race your ship around a neon track at high speed."
 
 # la fuente del HUD y del menu (css/fonts.css)
 [fonts]

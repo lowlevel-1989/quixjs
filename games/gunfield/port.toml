@@ -55,9 +55,10 @@ mods      = ["rumble", "performance-mode"]   # mods/: rumble (vibra cuando
                   # tiembla la pantalla), performance-mode (sin los efectos de
                   # color caros)
 developer = "Shiv"
-releasedate = "20230101T000000"
+publisher = "Shiv"
+releasedate = "20241101T000000"
 genres    = ["shooter"]
-desc      = "Gunfield, a roguelite shoot 'em up, running on quixjs, a JS runtime in C with SDL2 and OpenGL ES 2."
+desc      = "A roguelite shoot 'em up: fly through waves of enemies, roll new weapons and skills after every level and take on the bosses of four routes."
 
 # Los <script> del index.html, en el orden en que se cargan:
 #   includes  los scripts del juego (jQuery y el motor de Construct 2)

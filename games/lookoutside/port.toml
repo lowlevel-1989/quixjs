@@ -40,7 +40,7 @@ developer = "Francis Coulombe"
 publisher = "Raw Fury"
 releasedate = "20250321T000000"   # el 21 de marzo de 2025, en Steam
 genres    = ["rpg"]   # horror no esta en la lista de PortMaster
-desc      = "Look Outside (RPG Maker MZ) running on quixjs, a JS runtime in C with SDL2 and OpenGL ES 2."
+desc      = "A horror RPG: something has appeared in the sky and looking at it changes people. Stay inside your apartment, survive the days and meet your strange neighbours."
 
 # Transfer Save: que archivos pasa a otro dispositivo
 [saves]
