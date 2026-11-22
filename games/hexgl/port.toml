@@ -5,7 +5,7 @@
 # baja de su GitHub y copia su carpeta en gamedata/ (README.md).
 #
 # Su menu es HTML (index.html y launch.js): quixjs no dibuja HTML. El del
-# port es menu.js, en un canvas, junto a este archivo; los demas scripts son
+# port es entry.js, en un canvas, junto a este archivo; los demas scripts son
 # los <script> del index.html, en el mismo orden (sin los que no se usan:
 # Google Analytics, Leap Motion, Stats y DAT.GUI).
 
@@ -18,14 +18,19 @@ fps     = 60
 title     = "HexGL"
 version   = "0.1.0"           # la del port
 id        = "hexgl"
-game_dir  = "gamedata"
-cache_dir = "cache/gamedata"
+# la rom: el zip del juego, tal cual se descarga de GitHub, junto a este
+# port.toml. game_dir: donde empieza el juego dentro de la rom (la carpeta del
+# zip de GitHub). Lo que el juego escribe (partidas) va a gamedata/, la
+# carpeta de quixjs junto a este port.toml
+rom       = "HexGL-6addc95a2fce3bf05f4d751823cc054c61a16d68.zip"
+game_dir  = "HexGL-6addc95a2fce3bf05f4d751823cc054c61a16d68"
 # 4:3 como la pantalla de muchas portatiles; HexGL dibuja al tamano de la
 # ventana (window.innerWidth/innerHeight)
 width     = 640
 height    = 480
-mods      = ["volume", "multiplayer"]   # mods/, activos: volume (Music y Effects en el
-                                      # menu) y multiplayer (carreras entre handhelds)
+mods      = ["volume", "multiplayer", "rumble"]   # mods/, activos: volume (Music y Effects
+                                                # en el menu), multiplayer (carreras entre
+                                                # handhelds) y rumble (vibracion)
 developer = "Thibaut Despoulain (BKcore)"
 releasedate = "20121101T000000"
 genres    = ["racing"]
@@ -67,13 +72,25 @@ includes = [
   "bkcore/hexgl/tracks/Cityscape.js",
   "bkcore/hexgl/HexGL.js"
 ]
-entry    = "../menu.js"   # games/hexgl/menu.js (en el zip, junto a port.toml)
+entry    = "../entry.js"   # games/hexgl/entry.js (en el zip, junto a port.toml)
+
+# Transfer Save: HexGL guarda en localStorage sus records y repeticiones, y
+# entry.js los ajustes del menu y los mejores tiempos; quixjs lo guarda en
+# gamedata/localstorage.json
+[saves]
+files         = ["localstorage.json"]
+local_storage = "localstorage.json"
 
 [controls]
 gamepad = true
+# Select + R1: captura de pantalla; Select + L1: la lupa. Con true, Controls
+# pide tambien un boton suelto para cada una (el combo sigue)
+screenshot = true
+magnifier  = true
+vibration = true   # el mod rumble (choques, nave destruida, turbo); Options > Vibration
 
 # los botones de HexGL (bkcore.coffee/controllers/GamepadController.js); la
-# cruceta gira igual que la palanca (menu.js)
+# cruceta gira igual que la palanca (entry.js)
 [controls.buttons]
 dpleft       = "Turn left"
 dpright      = "Turn right"
@@ -95,6 +112,6 @@ set         = { shield_damage = 0 }
 [portmaster]
 script       = "HexGL.sh"
 porter       = ["lowlevel.1989"]
-inst         = "Needs HexGL, free: download https://github.com/BKcore/HexGL/archive/refs/heads/master.zip, unzip it and copy what is inside its folder HexGL-master/ into ports/hexgl/gamedata/ (it must end up as gamedata/bkcore/, gamedata/textures/...)."
+inst         = "Needs HexGL, free: open https://github.com/BKcore/HexGL/tree/6addc95a2fce3bf05f4d751823cc054c61a16d68, download it with Code, Download ZIP, and copy that zip, as it is, into ports/hexgl/, next to port.toml."
 store        = { name = "GitHub", url = "https://github.com/BKcore/HexGL" }
 availability = "free"

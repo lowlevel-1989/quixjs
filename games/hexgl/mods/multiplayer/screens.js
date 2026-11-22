@@ -1,5 +1,5 @@
 // screens.js: las pantallas del mod multiplayer en el menu del port
-// (PortMenu, en menu.js) y su carrera.
+// (PortMenu, en entry.js) y su carrera.
 //
 //   'lobby'      la sala: quien esta y si ya cargo la pista; A sale para
 //                todos, B vuelve al menu

@@ -46,7 +46,7 @@ function (original) {
   // sameCode (runtime/engines/same-code.js): la funcion del juego es igual que
   // el modelo, sin contar espacios? Si un plugin la cambio, el hook deja la
   // suya y no hace nada
-  var sameCode = __quixEngine.sameCode;
+  var sameCode = quix.engine.sameCode;
   // skills() tiene que ser la de RPG Maker MV: se mira la primera vez que se
   // usa (ya con los plugins cargados); si no lo es, la original siempre
   var mv = null,

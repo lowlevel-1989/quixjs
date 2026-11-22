@@ -1,10 +1,9 @@
 [game]
-cache_dir = "cache/tests/core/scripts"
-game_dir  = "games/tests/core/scripts"
+rom       = "."
 width     = 320
 height    = 240
 
 [scripts]
 libs     = []
-includes = ["../../lib/assert.js"]
+includes = ["../lib/assert.js"]
 entry    = "main.js"

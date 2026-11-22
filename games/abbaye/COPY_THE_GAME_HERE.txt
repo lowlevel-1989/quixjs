@@ -1,0 +1,15 @@
+Copy the game here, next to port.toml.
+
+You need L'Abbaye des Morts (HTML5 version), a free game by Lucera Project. Open its repository at the
+version this port uses and download it with Code, Download ZIP:
+https://github.com/luceraproject/abbaye-des-morts/tree/21e1fc42694a2c69078c6451ae8b6f8fb22dff99
+
+Copy that zip here as it is, without unzipping it:
+
+abbaye/
+  port.toml
+  abbaye-des-morts-21e1fc42694a2c69078c6451ae8b6f8fb22dff99.zip
+
+If your file has another name, write it in port.toml, in
+rom = "abbaye-des-morts-21e1fc42694a2c69078c6451ae8b6f8fb22dff99.zip".
+See README.md for the full steps.

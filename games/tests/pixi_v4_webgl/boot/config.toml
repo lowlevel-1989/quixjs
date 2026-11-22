@@ -1,11 +1,10 @@
 # el test de games/tests/pixi_v4/boot con el renderer WebGL
 [game]
-cache_dir = "cache/tests/pixi_v4_webgl/boot"
-game_dir  = "games/tests/pixi_v4/boot"
+rom       = "rom"
 width     = 200
 height    = 200
 
 [scripts]
-libs     = ["../../lib/pixi_v4/pixi.js"]
-includes = ["../../lib/assert.js", "../../lib/webgl.js"]
+libs     = ["../lib/pixi_v4/pixi.js"]
+includes = ["../lib/assert.js", "../lib/webgl.js"]
 entry    = "main.js"

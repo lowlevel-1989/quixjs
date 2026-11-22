@@ -1,0 +1,5 @@
+# controller: jugar con mando, como Tamatama: el cursor del juego salta entre
+# lo que se puede pulsar en pantalla y A lo pulsa. Ver README.md.
+scripts = ["targets.js", "move.js"]
+[hooks]
+"gdjs.RuntimeScene.prototype.renderAndStep" = "step.js"   # cada imagen: el puntero y el clic

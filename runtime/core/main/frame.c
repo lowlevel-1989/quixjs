@@ -150,6 +150,7 @@ STEP void pace_frame(Run *r, Loop *l) {
 // log) y calcular cuando toca la siguiente
 STEP void present_frame(Run *r, Loop *l) {
   present_screen(l->ctx, l->backend, &r->scratch);
+  if (worker_pending() > 0) backend_loading_hold(l->backend);   // aun carga cosas
   backend_loading_tick(l->backend);
   perf_frame();
   if (r->args.debug_sock) {

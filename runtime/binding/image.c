@@ -127,10 +127,21 @@ int js_image_natural_size(JSContext *ctx, JSValueConst val, int *w, int *h) {
   return 0;
 }
 
+// [engine] lazy_images: un juego WebGL que sube sus imagenes y no las
+// vuelve a leer (Construct 2: hojas de 2048x2048, 16 MB cada una) no
+// necesita los pixeles en la CPU; se sueltan al subirlas, no cuando ya falta
+// RAM (una pantalla que sube 20 hojas en una imagen no daba tiempo)
 void js_image_uploaded(JSContext *ctx, JSValueConst val) {
-  (void)ctx;
   ImageData *img = JS_GetOpaque(val, js_image_class_id);
-  if (img && img->loaded) img->uploaded = 1;
+  if (!img || !img->loaded) return;
+  img->uploaded = 1;
+  AppContext *app = JS_GetContextOpaque(ctx);
+  size_t b = (size_t)img->surface.w * (size_t)img->surface.h * 4;
+  if (app->cfg->engine.lazy_images && !img->used_2d && img->surface.px &&
+      b >= IMAGE_DROP_MIN_BYTES) {
+    surface_free(&img->surface);
+    img->dropped = 1;
+  }
 }
 
 size_t js_image_release_uploaded(int *count) {
@@ -166,6 +177,10 @@ typedef struct {
   char     *path;     // el archivo (con su transformacion, si tiene: descifrar)
   int       blob;     // data son los bytes de un Blob
   int       scale;    // [game] image_scale: se reduce si es grande (gfx/image_scale.h)
+  int       lazy;     // [engine] lazy_images: de un PNG solo el tamano (se decodifica al usarla)
+  // js_image_decode_pixels: los pixeles van a quien los pidio, no a la imagen
+  void    (*deliver)(void *user, uint8_t *px, int w, int h);
+  void     *user;
   uint8_t  *px;       // el resultado
   int       w, h, ok;
   int       nat_w;    // el tamano de la imagen entera (el de px si no se redujo)
@@ -174,11 +189,29 @@ typedef struct {
 } ImageJob;
 
 
+// el tamano de un PNG por su cabecera (IHDR); 0 si no es un PNG
+static int png_size(const char *path, int *w, int *h) {
+  if (url_has_transform(path)) return 0;
+  size_t len = 0;
+  uint8_t *head = url_read_head_transformed(path, 24, &len);
+  int ok = head && len >= 24 && memcmp(head, "\x89PNG\r\n\x1a\n", 8) == 0 &&
+           memcmp(head + 12, "IHDR", 4) == 0;
+  if (ok) {
+    *w = (head[16] << 24) | (head[17] << 16) | (head[18] << 8) | head[19];
+    *h = (head[20] << 24) | (head[21] << 16) | (head[22] << 8) | head[23];
+    ok = *w > 0 && *h > 0;
+  }
+  free(head);
+  return ok;
+}
+
 // en el thread de trabajo
 static void image_work(void *arg) {
   ImageJob *j = arg;
   double t = now_ms();
-  if (j->scale && j->path) {
+  if (j->lazy && j->path && png_size(j->path, &j->nat_w, &j->nat_h)) {
+    j->ok = 1;   // sin pixeles: la imagen queda soltada (image_reload)
+  } else if (j->scale && j->path) {
     // reducida (y desde la cache, si ya esta): descifra ella misma
     j->ok = image_scale_decode(j->path, &j->px, &j->w, &j->h, &j->nat_w, &j->nat_h) == 0;
   } else {
@@ -204,10 +237,25 @@ static void image_work(void *arg) {
 // en el thread principal
 static void image_done(JSContext *ctx, void *arg) {
   ImageJob *j = arg;
+  if (j->deliver) {   // js_image_decode_pixels: los pixeles (o NULL) a quien los pidio
+    j->deliver(j->user, j->ok ? j->px : NULL, j->w, j->h);
+    free(j->px);
+    free(j->path);
+    free(j->data);
+    free(j);
+    return;
+  }
   ImageData *img = JS_GetOpaque(j->obj, js_image_class_id);
   if (img && img->gen == j->gen) {
     JSValue ev;
-    if (j->ok) {
+    if (j->ok && !j->px) {          // lazy_images: solo el tamano
+      img->nat_w = j->nat_w;
+      img->nat_h = j->nat_h;
+      img->dropped = 1;
+      img->loaded = 1;
+      img->fired = 1;
+      ev = events_new(ctx, "load");
+    } else if (j->ok) {
       surface_adopt(&img->surface, j->px, j->w, j->h);
       j->px = NULL;
       img->nat_w = j->nat_w;
@@ -261,6 +309,7 @@ static int image_decode_async(JSContext *ctx, JSValueConst obj, ImageData *img, 
     }
     j->path = strdup(path);
     j->scale = image_scale_wanted(src);
+    j->lazy = app->cfg->engine.lazy_images;
   }
   j->obj = JS_DupValue(ctx, obj);
   j->gen = img->gen;
@@ -271,6 +320,38 @@ static int image_decode_async(JSContext *ctx, JSValueConst obj, ImageData *img, 
     free(j);
     return 1;   // sin thread: al momento
   }
+  return 0;
+}
+
+// Una imagen sin sus pixeles (soltados, o lazy_images): se decodifica en el
+// thread de trabajo y los pixeles se entregan a deliver en el thread
+// principal (deliver no se queda con ellos). 0 si se pidio; -1 si la imagen
+// tiene sus pixeles o no es de archivo (el que llama sigue como siempre)
+int js_image_decode_pixels(JSContext *ctx, JSValueConst val, int *w, int *h,
+                           void (*deliver)(void *user, uint8_t *px, int w, int h), void *user) {
+  ImageData *img = JS_GetOpaque(val, js_image_class_id);
+  if (!img || !img->loaded || !img->dropped || !img->src || img->enc) return -1;
+  AppContext *app = JS_GetContextOpaque(ctx);
+  // solo con [engine] lazy_images: las soltadas por falta de RAM (RPG Maker)
+  // se vuelven a decodificar al momento, como siempre (una textura vacia unas
+  // imagenes se veria)
+  if (!app->cfg->engine.lazy_images) return -1;
+  char path[1024];
+  if (url_resolve(app->cfg->game.game_dir, img->src, path, sizeof(path)) != URL_FILE) return -1;
+  // reducida (image_scale): su tamano final se sabe al decodificarla
+  if (image_scale_wanted(img->src)) return -1;
+  ImageJob *j = calloc(1, sizeof(ImageJob));
+  if (!j) return -1;
+  j->path = strdup(path);
+  j->deliver = deliver;
+  j->user = user;
+  if (!j->path || worker_submit(image_work, image_done, j) != 0) {
+    free(j->path);
+    free(j);
+    return -1;
+  }
+  *w = img->nat_w;
+  *h = img->nat_h;
   return 0;
 }
 

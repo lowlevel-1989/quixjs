@@ -5,7 +5,7 @@ English | [Español](README.es.md)
 Window, input and presentation of the frame. `backend.h` is the common
 interface (a table of functions) and `backend.c` calls the backend chosen with
 `-b`. The backends put the keys in an input queue; `core/main.c` takes them
-out and turns them into KeyboardEvent. `quix.pressKey()` uses the same queue.
+out and turns them into KeyboardEvent. `quix.input.pressKey()` uses the same queue.
 
 | file              | what it does |
 |-------------------|--------------|

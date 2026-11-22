@@ -79,7 +79,7 @@ function step() {
   if (frame < 6) return requestAnimationFrame(step);
 
   T.test('quix.achievements', function () {
-    var l = quix.achievements();
+    var l = quix.achievements.list();
     T.equal(l.length, 2, 'both');
     T.equal(l[0].id, 'boss', 'in the order of the toml');
     T.equal(l[0].description, 'Defeat the first boss.', 'description');
@@ -95,7 +95,7 @@ function step() {
     T.equal(syms.join(','), 'item,quixAchievements,options,gameEnd', 'before Options');
     T.equal(s._commandWindow.height, 5 * 36, 'the window grows');
     T.ok(s._commandWindow.drawn.indexOf('Achievements') >= 0, 'drawn');
-    T.equal(quix.achievementsIcon(), 5, '[achievements_menu] icon');
+    T.equal(quix.achievements.icon, 5, '[achievements_menu] icon');
     T.equal((s._commandWindow.icons || []).join(','), '5', 'its icon, only on its row');
     s._commandWindow._handlers.quixAchievements();
     T.ok(pushed.length === 1 && pushed[0] === window.Scene_QuixAchievements, 'opens the scene');

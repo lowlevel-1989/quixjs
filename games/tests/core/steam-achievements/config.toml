@@ -1,0 +1,30 @@
+[engine]
+nwjs = true
+
+[game]
+rom       = "."
+width     = 64
+height    = 64
+
+[scripts]
+includes = ["../lib/assert.js"]
+entry    = "main.js"
+
+# sin fichero: cada vez empiezan sin conseguir
+[saves]
+achievements = ""
+
+# los logros de Steam que el juego activa con greenworks (como Gunfield)
+[symbols]
+win_nova  = "path:quix.steam.achievements.WIN_CHARACTER_0"
+skills_10 = "path:quix.steam.achievements.OPEN_SKILLS_10"
+
+[[achievements]]
+id         = "win_nova"
+title      = "Victory Nova"
+conditions = ["win_nova"]
+
+[[achievements]]
+id         = "skills_10"
+title      = "More Guns Vol. 1"
+conditions = ["skills_10"]

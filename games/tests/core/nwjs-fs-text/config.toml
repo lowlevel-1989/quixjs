@@ -4,12 +4,11 @@
 nwjs = true
 
 [game]
-cache_dir = "cache/tests/core/nwjs-fs-text"
-game_dir  = "games/tests/core/nwjs-fs-text"
+rom       = "."
 width     = 64
 height    = 64
 
 [scripts]
 libs     = []
-includes = ["../../lib/assert.js"]
+includes = ["../lib/assert.js"]
 entry    = "main.js"

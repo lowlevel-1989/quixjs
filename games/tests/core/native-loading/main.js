@@ -37,7 +37,7 @@ WebAudio.prototype._onLoad = function () { this._loaded = true; };
 
 // el PNG sin cifrar, para comparar
 var plain = new Image();
-plain.src = '../../assets/quad.png';
+plain.src = 'assets/quad.png';
 
 var bitmap = new Bitmap();
 var encrypted = new WebAudio();
@@ -46,8 +46,8 @@ var clear = new WebAudio();
 // los hooks se ponen en la primera imagen (como en el juego, que carga mucho
 // despues)
 function start() {
-  Decrypter.decryptImg('../../assets/quad.png', bitmap);
-  encrypted._load('../../assets/loop.ogg');
+  Decrypter.decryptImg('assets/quad.png', bitmap);
+  encrypted._load('assets/loop.ogg');
   setTimeout(check, 10);
 }
 
@@ -84,7 +84,7 @@ function check() {
   });
   // sin cifrar: el mismo archivo (.ogg), el mismo loop
   Decrypter.hasEncryptedAudio = false;
-  clear._load('../../assets/loop.ogg');
+  clear._load('assets/loop.ogg');
   waited = 0;
   checkClear();
 }

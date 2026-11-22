@@ -24,6 +24,9 @@
 #include "common.h"
 #include "args.h"
 
+#include "binding/webgl2_constants.h"
+static JSValue webgl2_proto;   // el prototipo de WebGL2RenderingContext
+
 #define FN(name, len) JS_CFUNC_DEF(#name, len, js_gl_##name)
 static const JSCFunctionListEntry js_webgl_proto[] = {
   JS_CGETSET_DEF("canvas", js_gl_get_canvas, NULL),
@@ -89,9 +92,24 @@ static void classes_init(JSContext *ctx) {
   JS_SetConstructor(ctx, ctor, proto);
   JS_SetClassProto(ctx, js_webgl_class_id, proto);
   JS_SetPropertyStr(ctx, global, "WebGLRenderingContext", ctor);
+  // WebGL 2: lo de WebGL 1 mas lo suyo (webgl2.c); getContext("webgl2") da un
+  // objeto de la misma clase con este prototipo
+  webgl2_proto = JS_NewObject(ctx);
+  JS_SetPropertyFunctionList(ctx, webgl2_proto, js_webgl_proto, countof(js_webgl_proto));
+  JS_SetPropertyFunctionList(ctx, webgl2_proto, js_webgl_constants, countof(js_webgl_constants));
+  JS_SetPropertyFunctionList(ctx, webgl2_proto, js_webgl2_proto, countof(js_webgl2_proto));
+  JS_SetPropertyFunctionList(ctx, webgl2_proto, js_webgl2_constants, countof(js_webgl2_constants));
+  JSValue ctor2 = JS_NewCFunction2(ctx, js_illegal_ctor, "WebGL2RenderingContext", 0, JS_CFUNC_constructor, 0);
+  JS_SetPropertyFunctionList(ctx, ctor2, js_webgl_constants, countof(js_webgl_constants));
+  JS_SetPropertyFunctionList(ctx, ctor2, js_webgl2_constants, countof(js_webgl2_constants));
+  JS_SetConstructor(ctx, ctor2, webgl2_proto);
+  JS_SetPropertyStr(ctx, global, "WebGL2RenderingContext", ctor2);
+  JS_FreeValue(ctx, webgl2_proto);   // vive mientras el constructor este en global
 
   static const char *names[OBJ_COUNT] = { "WebGLBuffer", "WebGLFramebuffer", "WebGLProgram",
-                                          "WebGLRenderbuffer", "WebGLShader", "WebGLTexture" };
+                                          "WebGLRenderbuffer", "WebGLShader", "WebGLTexture",
+                                          "WebGLVertexArrayObject", "WebGLQuery", "WebGLSampler",
+                                          "WebGLSync" };
   for (int i = 0; i < OBJ_COUNT; i++) {
     obj_protos[i] = JS_NewObject(ctx);
     JSValue c = JS_NewCFunction2(ctx, js_illegal_ctor, names[i], 0, JS_CFUNC_constructor, 0);
@@ -125,19 +143,21 @@ static int attr_bool(JSContext *ctx, JSValueConst attrs, const char *name, int d
   return r;
 }
 
-JSValue js_create_webgl_context(JSContext *ctx, JSValueConst canvas, JSValueConst attrs) {
+JSValue js_create_webgl_context(JSContext *ctx, JSValueConst canvas, JSValueConst attrs, int version2) {
   if (!enabled) return JS_NULL;
   if (gl_init(headless) != 0) {
     enabled = 0;   // sin GL: los juegos usan su renderer de canvas
     return JS_NULL;
   }
+  if (version2 && !gl_es3()) return JS_NULL;   // WebGL 2 pide OpenGL ES 3.x
   classes_init(ctx);
   gl_make_current();
 
   CanvasData *cd = js_canvas_get(ctx, canvas);
   if (!cd) return JS_NULL;
 
-  JSValue obj = JS_NewObjectClass(ctx, js_webgl_class_id);
+  JSValue obj = version2 ? JS_NewObjectProtoClass(ctx, webgl2_proto, js_webgl_class_id)
+                         : JS_NewObjectClass(ctx, js_webgl_class_id);
   if (JS_IsException(obj)) return obj;
   WebGLCtx *w = js_mallocz(ctx, sizeof(WebGLCtx));
   if (!w) {

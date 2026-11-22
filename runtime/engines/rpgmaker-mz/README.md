@@ -5,7 +5,7 @@ English | [Español](README.es.md)
 Hooks for RPG Maker MZ (1.8): what an MZ game needs to start in quixjs, and
 what the profiler (`--profile`) found on a handheld (tested with Look
 Outside, MZ 1.8.1). Each one checks that the function is the one of RPG
-Maker MZ (or of the PixiJS v5 it ships) with `__quixEngine.sameCode`; if
+Maker MZ (or of the PixiJS v5 it ships) with `quix.engine.sameCode`; if
 not, it keeps the original.
 
 `[hooks] engine = "rpgmaker-mz"` installs the hooks of `hooks.toml`.

@@ -317,15 +317,10 @@ requestAnimationFrame(function () {
         if (rnd(2)) { gx = rnd(W); gy = rnd(H); }
         else { gx = who._x + rnd(5) - 2; gy = who._y + rnd(5) - 2; }   // cerca, como al perseguir
         if (rnd(4) === 0) { var on = $gameMap._events[rnd($gameMap._events.length)]; gx = on._x; gy = on._y; }   // sobre un evento
-        var a = stockFind.call(who, gx, gy);
-        listCalls = 0;
-        var b = hooked.call(who, gx, gy);
-        if (listCalls > 1) outside++;
-        if (a !== b) wrong++;
-        total++;
-        // y, durante la busqueda, eventsXyNt da las mismas listas que la
+        // durante la busqueda, eventsXyNt da las mismas listas que la
         // original, en cada casilla que mira canPass y en una al azar
-        // (tambien fuera del mapa y con decimales)
+        // (tambien fuera del mapa y con decimales). Primero: la segunda
+        // pregunta igual ya no busca (la ultima respuesta)
         Game_CharacterBase.prototype.canPass = function (x, y, d) {
           var x2 = $gameMap.roundXWithDirection(x, d), y2 = $gameMap.roundYWithDirection(y, d);
           var rx = rnd(W + 6) - 3, ry = rnd(H + 6) - 3;
@@ -338,14 +333,53 @@ requestAnimationFrame(function () {
           looked += 5;
           return stockPass.call(this, x, y, d);
         };
-        hooked.call(who, gx, gy);
+        listCalls = 0;
+        var b = hooked.call(who, gx, gy);
+        if (listCalls > 1) outside++;
         Game_CharacterBase.prototype.canPass = stockPass;
+        var a = stockFind.call(who, gx, gy);
+        if (a !== b) wrong++;
+        if (hooked.call(who, gx, gy) !== a) wrong++;   // de la ultima respuesta
+        total++;
       }
     }
     T.equal(wrong, 0, total + ' searches on ' + maps + ' maps, the same direction');
     T.equal(lists, 0, looked + ' eventsXyNt and allTiles during the search, the same lists');
     T.ok(outside > 0, 'some searches asked the original outside the box (' + outside + ')');
     T.ok(!$gameMap.hasOwnProperty('eventsXyNt') && !$gameMap.hasOwnProperty('allTiles'), 'nothing left on $gameMap');
+  });
+  // la ultima respuesta: la misma pregunta no busca otra vez; si un evento
+  // del cuadrado se mueve (o el mapa cambia), si, y da lo de la original
+  T.test('the same question, the last answer', function () {
+    var stockPass = Game_CharacterBase.prototype.canPass, asked = 0, wrong = 0, again = 0;
+    Game_CharacterBase.prototype.canPass = function (x, y, d) { asked++; return stockPass.call(this, x, y, d); };
+    for (var m = 0; m < 40; m++) {
+      newMap(30, 30, 3, 60, false);
+      var who = new Game_Event(15, 15, false), gx = rnd(30), gy = rnd(30);
+      hooked.call(who, gx, gy);
+      asked = 0;
+      if (hooked.call(who, gx, gy) !== stockFind.call(who, gx, gy)) wrong++;
+      var before = asked;
+      asked = 0;
+      hooked.call(who, gx, gy);
+      if (asked !== 0) again++;
+      // un evento cerca cambia de casilla: otra busqueda, la de la original
+      var near = $gameMap._events.filter(function (e) { return Math.abs(e._x - 15) < 6 && Math.abs(e._y - 15) < 6; })[0];
+      if (near) {
+        near._x = (near._x + 1) % 30;
+        asked = 0;
+        var b = hooked.call(who, gx, gy);
+        if (b !== stockFind.call(who, gx, gy)) wrong++;
+      }
+      // otro mapa con todo igual alrededor: otra busqueda
+      $dataMap = { width: $dataMap.width, height: $dataMap.height, data: $dataMap.data.slice() };
+      asked = 0;
+      hooked.call(who, gx, gy);
+      if (asked === 0 && stockFind.call(who, gx, gy) !== 0 && before > 0) again++;
+    }
+    Game_CharacterBase.prototype.canPass = stockPass;
+    T.equal(wrong, 0, 'the same direction as the original');
+    T.equal(again, 0, 'the same question does not search again; a moved event or another map does');
   });
   T.done();
 });

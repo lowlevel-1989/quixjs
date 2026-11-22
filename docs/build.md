@@ -6,11 +6,11 @@ How to build quixjs on Linux, and how to build the zip of a PortMaster port.
 
 ```
 # Debian / Ubuntu / RetroPie
-sudo apt-get install build-essential python3 libsdl2-dev libsdl2-image-dev libsdl2-ttf-dev fonts-dejavu-core
+sudo apt-get install build-essential python3 libsdl2-dev libsdl2-image-dev libsdl2-ttf-dev zlib1g-dev fonts-dejavu-core
 sudo apt-get install libvpx-dev libopus-dev   # optional: video
 
 # Fedora
-sudo dnf install gcc make python3 SDL2-devel SDL2_image-devel SDL2_ttf-devel dejavu-sans-fonts
+sudo dnf install gcc make python3 SDL2-devel SDL2_image-devel SDL2_ttf-devel zlib-devel dejavu-sans-fonts
 sudo dnf install libvpx-devel opus-devel      # optional: video
 
 make                      # the first time it also builds JavaScriptCore (it takes a while)
@@ -79,7 +79,7 @@ The game does not go inside: the user copies it into `gamedata/`, and the
 |------------------------|--------------|
 | `portmaster/`          | PortMaster: `portmaster.mk` (the `PLATFORM=portmaster` build, included by the `Makefile`) and `portmaster.sh` (template of the `.sh` script of the port) |
 | `tools/portmaster.py`  | makes the `.sh`, `port.json` and `gameinfo.xml` from `games/<port>/port.toml` when the zip is built (they are not in the repository); `[portmaster] title`, if there is one, is the name in PortMaster instead of `[game] title` (`firework-shiying`: "Firework (Shiying Studio)") |
-| `games/<port>/`        | the port: `port.toml`, its `README.md` and `README.es.md` (how to install it), `screenshot.jpg` (the image in EmulationStation) and `cover.png` (the cover in PortMaster) |
+| `games/<port>/`        | the port: `port.toml`, its `README.md` and `README.es.md` (PortMaster template: `## Notes`, `## Controls`, `## Compile` first, then how to install it), `gamedata/COPY_THE_GAME_HERE.txt`, `screenshot.jpg` (the image in EmulationStation, 640x480) and `cover.jpg` (the cover in PortMaster, under 100 KB) |
 
 ## Index files
 

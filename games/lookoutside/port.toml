@@ -26,8 +26,13 @@ version   = "0.1.0"           # la del port
 id        = "look_outside"
 # la carpeta del juego (la que tiene index.html), copiada como gamedata/; MZ
 # no tiene www/
-game_dir  = "gamedata"
-cache_dir = "cache/gamedata"
+# la rom: la carpeta del juego (Look Outside, la que tiene data/ y js/)
+# comprimida en un .zip, junto a este port.toml: Windows la llama Look
+# Outside.zip. game_dir: donde empieza el juego dentro de la rom (esa
+# carpeta). Lo que el juego escribe (partidas) va a gamedata/, la carpeta de
+# quixjs junto a este port.toml
+rom       = "Look Outside.zip"
+game_dir  = "Look Outside"
 width     = 816   # package.json
 height    = 624
 mods      = []
@@ -53,7 +58,7 @@ entry    = "js/main.js"
 [portmaster]
 script       = "Look Outside.sh"
 porter       = ["lowlevel.1989"]
-inst         = "Needs Look Outside for Windows (GOG or Steam). Copy the contents of its folder (the one with index.html) into ports/lookoutside/gamedata/ (it must end up as gamedata/index.html). Game.exe and the .dll files are not needed."
+inst         = "Needs Look Outside for Windows (GOG or Steam). Compress the folder of the game (Look Outside, the one with data/ and js/) into Look Outside.zip (a zip without compression is best; a compressed one also works, the first start takes longer) and copy it into ports/lookoutside/, next to port.toml."
 store        = { name = "GOG", url = "https://www.gog.com/game/look_outside" }
 availability = "paid"
 
@@ -78,6 +83,10 @@ engine = "rpgmaker-mz"
 
 [controls]
 gamepad = true
+# Select + R1: captura de pantalla; Select + L1: la lupa (cartas, notas). Con
+# true, Controls pide tambien un boton suelto para cada una (el combo sigue)
+screenshot = true
+magnifier  = true
 
 # lo que hace cada boton en el juego, con los nombres de su Mano_InputConfig:
 # Controls los pide por su nombre (y siempre las dos palancas)
@@ -92,3 +101,1228 @@ x             = "Dash"
 y             = "Menu"
 leftshoulder  = "Next"
 rightshoulder = "Prev"
+
+# ---------- logros ----------
+# Los de Steam (152): el juego los da con greenworks (Cyclone-Steam,
+# setAchievement de bunchastuff.js); quixjs contesta por Steam y deja cada
+# id que activa en quix.steam.achievements, como en Gunfield. Los ids, titulos
+# y descripciones salen de su pagina de Steam (app 3373660), ocultos
+# incluidos (140): aqui se ven todos. El codigo del juego nombra 36 mas que
+# Steam no tiene: no van.
+[symbols]
+progress_thirdfloor      = "path:quix.steam.achievements.Progress_Thirdfloor"
+progress_secondfloor     = "path:quix.steam.achievements.Progress_Secondfloor"
+progress_firstfloor      = "path:quix.steam.achievements.Progress_FirstFloor"
+progress_groundfloor     = "path:quix.steam.achievements.Progress_GroundFloor"
+progress_basement        = "path:quix.steam.achievements.Progress_Basement"
+progress_elevator        = "path:quix.steam.achievements.Progress_Elevator"
+progress_roof            = "path:quix.steam.achievements.Progress_Roof"
+recruit_joel             = "path:quix.steam.achievements.Recruit_Joel"
+recruit_leigh            = "path:quix.steam.achievements.Recruit_Leigh"
+recruit_dan              = "path:quix.steam.achievements.Recruit_Dan"
+recruit_hellen           = "path:quix.steam.achievements.Recruit_Hellen"
+recruit_rat              = "path:quix.steam.achievements.Recruit_Rat"
+recruit_roaches          = "path:quix.steam.achievements.Recruit_Roaches"
+recruit_ernest           = "path:quix.steam.achievements.Recruit_Ernest"
+recruit_sophie           = "path:quix.steam.achievements.Recruit_Sophie"
+recruit_papineau         = "path:quix.steam.achievements.Recruit_Papineau"
+recruit_xariamonty       = "path:quix.steam.achievements.Recruit_XariaMonty"
+recruit_morton           = "path:quix.steam.achievements.Recruit_Morton"
+recruit_philippe         = "path:quix.steam.achievements.Recruit_Philippe"
+recruit_shadow           = "path:quix.steam.achievements.Recruit_Shadow"
+death_lookoutside        = "path:quix.steam.achievements.Death_LookOutside"
+death_behindthemask      = "path:quix.steam.achievements.Death_BehindTheMask"
+death_worm               = "path:quix.steam.achievements.Death_Worm"
+death_photograph         = "path:quix.steam.achievements.Death_Photograph"
+death_telescope          = "path:quix.steam.achievements.Death_Telescope"
+death_projector          = "path:quix.steam.achievements.Death_Projector"
+death_darkroom           = "path:quix.steam.achievements.Death_Darkroom"
+death_oculus             = "path:quix.steam.achievements.Death_Oculus"
+death_bus                = "path:quix.steam.achievements.Death_Bus"
+death_sporequeen         = "path:quix.steam.achievements.Death_SporeQueen"
+death_hellcar            = "path:quix.steam.achievements.Death_Hellcar"
+ending_xinamon           = "path:quix.steam.achievements.Ending_Xinamon"
+ending_ritualtruth       = "path:quix.steam.achievements.Ending_RitualTruth"
+ending_ritualdenial      = "path:quix.steam.achievements.Ending_RitualDenial"
+ending_flawedritual      = "path:quix.steam.achievements.Ending_FlawedRitual"
+ending_nogoingback       = "path:quix.steam.achievements.Ending_NoGoingBack"
+ending_screamingsky      = "path:quix.steam.achievements.Ending_ScreamingSky"
+ending_eternity          = "path:quix.steam.achievements.Ending_Eternity"
+ending_failure           = "path:quix.steam.achievements.Ending_Failure"
+collect_day              = "path:quix.steam.achievements.Collect_Day"
+collect_10games          = "path:quix.steam.achievements.Collect_10Games"
+collect_allgames         = "path:quix.steam.achievements.Collect_AllGames"
+misc_ben                 = "path:quix.steam.achievements.Misc_Ben"
+misc_nestor              = "path:quix.steam.achievements.Misc_Nestor"
+misc_crosswords          = "path:quix.steam.achievements.Misc_Crosswords"
+misc_danger              = "path:quix.steam.achievements.Misc_Danger"
+misc_ratchat             = "path:quix.steam.achievements.Misc_RatChat"
+misc_hattrick            = "path:quix.steam.achievements.Misc_HatTrick"
+misc_godheadguy          = "path:quix.steam.achievements.Misc_GodheadGuy"
+misc_kisslyle            = "path:quix.steam.achievements.Misc_KissLyle"
+misc_peeklyle            = "path:quix.steam.achievements.Misc_PeekLyle"
+misc_fedthewall          = "path:quix.steam.achievements.Misc_FedTheWall"
+misc_savedrat            = "path:quix.steam.achievements.Misc_SavedRat"
+misc_ratgrown            = "path:quix.steam.achievements.Misc_RatGrown"
+misc_receivedkatana      = "path:quix.steam.achievements.Misc_ReceivedKatana"
+misc_powerfriendship     = "path:quix.steam.achievements.Misc_PowerFriendship"
+misc_paidrent            = "path:quix.steam.achievements.Misc_PaidRent"
+misc_philippedenial      = "path:quix.steam.achievements.Misc_PhilippeDenial"
+misc_plantrejection      = "path:quix.steam.achievements.Misc_PlantRejection"
+misc_ultimategamer       = "path:quix.steam.achievements.Misc_UltimateGamer"
+misc_roachwar            = "path:quix.steam.achievements.Misc_Roachwar"
+misc_roachpeace          = "path:quix.steam.achievements.Misc_Roachpeace"
+misc_sweatandtears       = "path:quix.steam.achievements.Misc_SweatAndTears"
+misc_noshowers           = "path:quix.steam.achievements.Misc_NoShowers"
+misc_nofriends           = "path:quix.steam.achievements.Misc_NoFriends"
+misc_nosleep             = "path:quix.steam.achievements.Misc_NoSleep"
+misc_noeat               = "path:quix.steam.achievements.Misc_NoEat"
+misc_nogames             = "path:quix.steam.achievements.Misc_NoGames"
+misc_3dayclear           = "path:quix.steam.achievements.Misc_3DayClear"
+boss_grin                = "path:quix.steam.achievements.Boss_Grin"
+boss_babyteeth           = "path:quix.steam.achievements.Boss_Babyteeth"
+boss_shutterbug          = "path:quix.steam.achievements.Boss_Shutterbug"
+boss_painter             = "path:quix.steam.achievements.Boss_Painter"
+boss_stargazer           = "path:quix.steam.achievements.Boss_Stargazer"
+boss_typewrither         = "path:quix.steam.achievements.Boss_Typewrither"
+boss_panopticon          = "path:quix.steam.achievements.Boss_Panopticon"
+boss_ratking             = "path:quix.steam.achievements.Boss_RatKing"
+boss_crawlinghand        = "path:quix.steam.achievements.Boss_CrawlingHand"
+boss_crawler             = "path:quix.steam.achievements.Boss_Crawler"
+boss_argot               = "path:quix.steam.achievements.Boss_Argot"
+boss_pompom              = "path:quix.steam.achievements.Boss_Pompom"
+boss_gravedigger         = "path:quix.steam.achievements.Boss_Gravedigger"
+boss_boilerbeast         = "path:quix.steam.achievements.Boss_BoilerBeast"
+boss_furnace             = "path:quix.steam.achievements.Boss_Furnace"
+boss_laughingmold        = "path:quix.steam.achievements.Boss_LaughingMold"
+boss_sporemother         = "path:quix.steam.achievements.Boss_Sporemother"
+boss_policecar           = "path:quix.steam.achievements.Boss_PoliceCar"
+boss_policetruck         = "path:quix.steam.achievements.Boss_PoliceTruck"
+boss_hellcar             = "path:quix.steam.achievements.Boss_Hellcar"
+boss_garbageworm         = "path:quix.steam.achievements.Boss_Garbageworm"
+death_hugteeth           = "path:quix.steam.achievements.Death_HugTeeth"
+misc_frederic            = "path:quix.steam.achievements.Misc_Frederic"
+progress_whereitbegan    = "path:quix.steam.achievements.Progress_WhereItBegan"
+progress_cursedritual    = "path:quix.steam.achievements.Progress_CursedRitual"
+progress_ranka           = "path:quix.steam.achievements.Progress_RankA"
+progress_ranks           = "path:quix.steam.achievements.Progress_RankS"
+progress_rankx           = "path:quix.steam.achievements.Progress_RankX"
+recruit_audrey           = "path:quix.steam.achievements.Recruit_Audrey"
+recruit_lyle             = "path:quix.steam.achievements.Recruit_Lyle"
+death_drowning           = "path:quix.steam.achievements.Death_Drowning"
+death_ratking            = "path:quix.steam.achievements.Death_RatKing"
+death_obliterated        = "path:quix.steam.achievements.Death_Obliterated"
+death_massacred          = "path:quix.steam.achievements.Death_Massacred"
+ending_wordsofpower      = "path:quix.steam.achievements.Ending_WordsOfPower"
+ending_unity             = "path:quix.steam.achievements.Ending_Unity"
+ending_truefinal         = "path:quix.steam.achievements.Ending_TrueFinal"
+misc_coldshoulder        = "path:quix.steam.achievements.Misc_ColdShoulder"
+misc_verminslair         = "path:quix.steam.achievements.Misc_VerminsLair"
+misc_inthedark           = "path:quix.steam.achievements.Misc_InTheDark"
+misc_sewerkids           = "path:quix.steam.achievements.Misc_SewerKids"
+misc_powersurge          = "path:quix.steam.achievements.Misc_PowerSurge"
+misc_facetoface          = "path:quix.steam.achievements.Misc_FaceToFace"
+misc_astrolabe           = "path:quix.steam.achievements.Misc_Astrolabe"
+misc_insight             = "path:quix.steam.achievements.Misc_Insight"
+misc_coulrophobia        = "path:quix.steam.achievements.Misc_Coulrophobia"
+misc_friendstilltheend   = "path:quix.steam.achievements.Misc_FriendsTillTheEnd"
+misc_suitofshame         = "path:quix.steam.achievements.Misc_SuitOfShame"
+misc_makebelieve         = "path:quix.steam.achievements.Misc_MakeBelieve"
+misc_campaignsend        = "path:quix.steam.achievements.Misc_CampaignsEnd"
+misc_magictrick          = "path:quix.steam.achievements.Misc_MagicTrick"
+misc_wormydeal           = "path:quix.steam.achievements.Misc_WormyDeal"
+misc_shoplifting         = "path:quix.steam.achievements.Misc_Shoplifting"
+misc_godmutt             = "path:quix.steam.achievements.Misc_Godmutt"
+misc_bigfriend           = "path:quix.steam.achievements.Misc_BigFriend"
+misc_meatworld           = "path:quix.steam.achievements.Misc_Meatworld"
+misc_gamersburden        = "path:quix.steam.achievements.Misc_GamersBurden"
+misc_secretgarden        = "path:quix.steam.achievements.Misc_SecretGarden"
+misc_wrongnumber         = "path:quix.steam.achievements.Misc_WrongNumber"
+misc_roachquest          = "path:quix.steam.achievements.Misc_RoachQuest"
+misc_lookinside          = "path:quix.steam.achievements.Misc_LookInside"
+boss_apc                 = "path:quix.steam.achievements.Boss_APC"
+boss_syncope             = "path:quix.steam.achievements.Boss_Syncope"
+boss_jointhem            = "path:quix.steam.achievements.Boss_JoinThem"
+boss_shockipede          = "path:quix.steam.achievements.Boss_Shockipede"
+boss_sewerbeast          = "path:quix.steam.achievements.Boss_SewerBeast"
+boss_formaldehyde        = "path:quix.steam.achievements.Boss_Formaldehyde"
+boss_ratchimera          = "path:quix.steam.achievements.Boss_RatChimera"
+boss_ratchampion         = "path:quix.steam.achievements.Boss_RatChampion"
+boss_megalodon           = "path:quix.steam.achievements.Boss_Megalodon"
+boss_vanguard            = "path:quix.steam.achievements.Boss_Vanguard"
+boss_stagnation          = "path:quix.steam.achievements.Boss_Stagnation"
+boss_hideandseek         = "path:quix.steam.achievements.Boss_HideAndSeek"
+boss_obsession           = "path:quix.steam.achievements.Boss_Obsession"
+boss_whisperblade        = "path:quix.steam.achievements.Boss_Whisperblade"
+boss_dreameater          = "path:quix.steam.achievements.Boss_DreamEater"
+boss_spinetaker          = "path:quix.steam.achievements.Boss_SpineTaker"
+boss_hundredmaws         = "path:quix.steam.achievements.Boss_HundredMaws"
+boss_crimsonscourge      = "path:quix.steam.achievements.Boss_CrimsonScourge"
+boss_oraclesend          = "path:quix.steam.achievements.Boss_OraclesEnd"
+recruit_aster            = "path:quix.steam.achievements.Recruit_Aster"
+ending_promise           = "path:quix.steam.achievements.Ending_Promise"
+boss_wordsalad           = "path:quix.steam.achievements.Boss_WordSalad"
+
+[[achievements]]
+id          = "Progress_Thirdfloor"
+title       = "Exploring"
+description = "Stepped out of your home."
+type        = "progression"
+conditions  = ["progress_thirdfloor"]
+
+[[achievements]]
+id          = "Progress_Secondfloor"
+title       = "Down the stairs"
+description = "Reached the second floor."
+type        = "progression"
+conditions  = ["progress_secondfloor"]
+
+[[achievements]]
+id          = "Progress_FirstFloor"
+title       = "Labyrinth"
+description = "Reached the first floor."
+type        = "progression"
+conditions  = ["progress_firstfloor"]
+
+[[achievements]]
+id          = "Progress_GroundFloor"
+title       = "Terra Firma"
+description = "Reached the ground floor."
+type        = "progression"
+conditions  = ["progress_groundfloor"]
+
+[[achievements]]
+id          = "Progress_Basement"
+title       = "Depths"
+description = "Reached the basement."
+type        = "progression"
+conditions  = ["progress_basement"]
+
+[[achievements]]
+id          = "Progress_Elevator"
+title       = "Shortcut"
+description = "Fixed the Elevator"
+type        = "progression"
+conditions  = ["progress_elevator"]
+
+[[achievements]]
+id          = "Progress_Roof"
+title       = "Exposure"
+description = "Reached the roof."
+type        = "progression"
+conditions  = ["progress_roof"]
+
+[[achievements]]
+id          = "Recruit_Joel"
+title       = "Teeth Child"
+description = "Welcomed Joel into your home."
+type        = "secondary"
+conditions  = ["recruit_joel"]
+
+[[achievements]]
+id          = "Recruit_Leigh"
+title       = "Grinner"
+description = "Welcomed Leigh into your home."
+type        = "secondary"
+conditions  = ["recruit_leigh"]
+
+[[achievements]]
+id          = "Recruit_Dan"
+title       = "Creep"
+description = "Welcomed Dan into your home."
+type        = "secondary"
+conditions  = ["recruit_dan"]
+
+[[achievements]]
+id          = "Recruit_Hellen"
+title       = "Maniac"
+description = "Welcomed Hellen into your home."
+type        = "secondary"
+conditions  = ["recruit_hellen"]
+
+[[achievements]]
+id          = "Recruit_Rat"
+title       = "Rodent"
+description = "Welcomed Rat into your home."
+type        = "secondary"
+conditions  = ["recruit_rat"]
+
+[[achievements]]
+id          = "Recruit_Roaches"
+title       = "Vermin"
+description = "Welcomed Roaches into your home."
+type        = "secondary"
+conditions  = ["recruit_roaches"]
+
+[[achievements]]
+id          = "Recruit_Ernest"
+title       = "Beggar"
+description = "Welcomed Ernest into your home."
+type        = "secondary"
+conditions  = ["recruit_ernest"]
+
+[[achievements]]
+id          = "Recruit_Sophie"
+title       = "Little Menace"
+description = "Welcomed Sophie into your home."
+type        = "secondary"
+conditions  = ["recruit_sophie"]
+
+[[achievements]]
+id          = "Recruit_Papineau"
+title       = "Janitor"
+description = "Welcomed Papineau into your home."
+type        = "secondary"
+conditions  = ["recruit_papineau"]
+
+[[achievements]]
+id          = "Recruit_XariaMonty"
+title       = "Troublemakers"
+description = "Welcomed Xaria and Montgomery into your home."
+type        = "secondary"
+conditions  = ["recruit_xariamonty"]
+
+[[achievements]]
+id          = "Recruit_Morton"
+title       = "Scavenger"
+description = "Welcomed Morton into your home."
+type        = "secondary"
+conditions  = ["recruit_morton"]
+
+[[achievements]]
+id          = "Recruit_Philippe"
+title       = "Moth"
+description = "Welcomed Philippe into your home."
+type        = "secondary"
+conditions  = ["recruit_philippe"]
+
+[[achievements]]
+id          = "Recruit_Shadow"
+title       = "Shadow"
+description = "Welcomed Shadow into your home."
+type        = "secondary"
+conditions  = ["recruit_shadow"]
+
+[[achievements]]
+id          = "Death_LookOutside"
+title       = "Look Outside"
+description = "Followed Instructions."
+type        = "secondary"
+conditions  = ["death_lookoutside"]
+
+[[achievements]]
+id          = "Death_BehindTheMask"
+title       = "Behind the Mask"
+description = "Embraced the shadow."
+type        = "secondary"
+conditions  = ["death_behindthemask"]
+
+[[achievements]]
+id          = "Death_Worm"
+title       = "Worm debate"
+description = "Was killed by Nestor"
+type        = "secondary"
+conditions  = ["death_worm"]
+
+[[achievements]]
+id          = "Death_Photograph"
+title       = "It DID last longer."
+description = "Become trapped in a photograph."
+type        = "secondary"
+conditions  = ["death_photograph"]
+
+[[achievements]]
+id          = "Death_Telescope"
+title       = "Through the looking glass"
+description = "Killed by a telescope."
+type        = "secondary"
+conditions  = ["death_telescope"]
+
+[[achievements]]
+id          = "Death_Projector"
+title       = "Projector Doom"
+description = "Projected the negative on the wall"
+type        = "secondary"
+conditions  = ["death_projector"]
+
+[[achievements]]
+id          = "Death_Darkroom"
+title       = "Dark Room"
+description = "Looked at the photograph"
+type        = "secondary"
+conditions  = ["death_darkroom"]
+
+[[achievements]]
+id          = "Death_Oculus"
+title       = "Oculus"
+description = "Stared at the big eye for too long."
+type        = "secondary"
+conditions  = ["death_oculus"]
+
+[[achievements]]
+id          = "Death_Bus"
+title       = "Vehicular Manslaughter"
+description = "Got run over by the bus."
+type        = "secondary"
+conditions  = ["death_bus"]
+
+[[achievements]]
+id          = "Death_SporeQueen"
+title       = "One With The Fungus"
+description = "Embraced the spore queen."
+type        = "secondary"
+conditions  = ["death_sporequeen"]
+
+[[achievements]]
+id          = "Death_Hellcar"
+title       = "Car Hell"
+description = "Was brought to hell (by car)."
+type        = "secondary"
+conditions  = ["death_hellcar"]
+
+[[achievements]]
+id          = "Ending_Xinamon"
+title       = "XIN-AMON"
+description = "Defeated the True XIN-AMON"
+type        = "win_condition"
+conditions  = ["ending_xinamon"]
+
+[[achievements]]
+id          = "Ending_RitualTruth"
+title       = "Truth"
+description = "Looked upon the visitors' true form."
+type        = "win_condition"
+conditions  = ["ending_ritualtruth"]
+
+[[achievements]]
+id          = "Ending_RitualDenial"
+title       = "Denial"
+description = "Looked away from the visitor's true form."
+type        = "win_condition"
+conditions  = ["ending_ritualdenial"]
+
+[[achievements]]
+id          = "Ending_FlawedRitual"
+title       = "Open Your Eyes"
+description = "Performed a flawed ritual."
+type        = "win_condition"
+conditions  = ["ending_flawedritual"]
+
+[[achievements]]
+id          = "Ending_NoGoingBack"
+title       = "No Going Back"
+description = "Survived 15 days."
+type        = "win_condition"
+conditions  = ["ending_nogoingback"]
+
+[[achievements]]
+id          = "Ending_ScreamingSky"
+title       = "Screaming Sky"
+description = "Ran from the exalted four."
+type        = "win_condition"
+conditions  = ["ending_screamingsky"]
+
+[[achievements]]
+id          = "Ending_Eternity"
+title       = "Eternity"
+description = "Was defeated by XIN-AMON"
+type        = "win_condition"
+conditions  = ["ending_eternity"]
+
+[[achievements]]
+id          = "Ending_Failure"
+title       = "Failure"
+description = "Completely failed the ritual."
+type        = "win_condition"
+conditions  = ["ending_failure"]
+
+[[achievements]]
+id          = "Collect_Day"
+title       = "One day at a time"
+description = "Survived one day."
+type        = "secondary"
+conditions  = ["collect_day"]
+
+[[achievements]]
+id          = "Collect_10Games"
+title       = "Game Collector"
+description = "Found 10 game cartidges."
+type        = "secondary"
+conditions  = ["collect_10games"]
+
+[[achievements]]
+id          = "Collect_AllGames"
+title       = "Completionist"
+description = "Found all game cartidges."
+type        = "secondary"
+conditions  = ["collect_allgames"]
+
+[[achievements]]
+id          = "Misc_Ben"
+title       = "One last game"
+description = "Played with Benjamin"
+type        = "secondary"
+conditions  = ["misc_ben"]
+
+[[achievements]]
+id          = "Misc_Nestor"
+title       = "Would you still love me if..."
+description = "Led Nestor to Rafta."
+type        = "secondary"
+conditions  = ["misc_nestor"]
+
+[[achievements]]
+id          = "Misc_Crosswords"
+title       = "Unhinged Crossword Maniac"
+description = "Completed the crossword book."
+type        = "secondary"
+conditions  = ["misc_crosswords"]
+
+[[achievements]]
+id          = "Misc_Danger"
+title       = "Living Dangerously"
+description = "Stayed away from home for more than 8 hours."
+type        = "secondary"
+conditions  = ["misc_danger"]
+
+[[achievements]]
+id          = "Misc_RatChat"
+title       = "A Chat with a Rat"
+description = "Spoke to a rat."
+type        = "secondary"
+conditions  = ["misc_ratchat"]
+
+[[achievements]]
+id          = "Misc_HatTrick"
+title       = "Hat Trick"
+description = "Was tricked by a hat."
+type        = "secondary"
+conditions  = ["misc_hattrick"]
+
+[[achievements]]
+id          = "Misc_GodheadGuy"
+title       = "Just some guy"
+description = "Got angelic Fred to drop the act."
+type        = "secondary"
+conditions  = ["misc_godheadguy"]
+
+[[achievements]]
+id          = "Misc_KissLyle"
+title       = "Smeck"
+description = "Kissed Lyle."
+type        = "secondary"
+conditions  = ["misc_kisslyle"]
+
+[[achievements]]
+id          = "Misc_PeekLyle"
+title       = "How could you"
+description = "Peeked at Lyle’s true form."
+type        = "secondary"
+conditions  = ["misc_peeklyle"]
+
+[[achievements]]
+id          = "Misc_FedTheWall"
+title       = "Crunch"
+description = "Fed the wall."
+type        = "secondary"
+conditions  = ["misc_fedthewall"]
+
+[[achievements]]
+id          = "Misc_SavedRat"
+title       = "Selfless"
+description = "Saved the rat child."
+type        = "secondary"
+conditions  = ["misc_savedrat"]
+
+[[achievements]]
+id          = "Misc_RatGrown"
+title       = "They grow up so fast..."
+description = "The Rat child grew big and strong."
+type        = "secondary"
+conditions  = ["misc_ratgrown"]
+
+[[achievements]]
+id          = "Misc_ReceivedKatana"
+title       = "Bestowal"
+description = "Exchanged Massacre princess for the katana"
+type        = "secondary"
+conditions  = ["misc_receivedkatana"]
+
+[[achievements]]
+id          = "Misc_PowerFriendship"
+title       = "Power of Friendship"
+description = "Completed Massacre Princess"
+type        = "secondary"
+conditions  = ["misc_powerfriendship"]
+
+[[achievements]]
+id          = "Misc_PaidRent"
+title       = "Model Tenant"
+description = "Fully Paid your rent"
+type        = "secondary"
+conditions  = ["misc_paidrent"]
+
+[[achievements]]
+id          = "Misc_PhilippeDenial"
+title       = "He's real god damn it"
+description = "In denial about Philippe."
+type        = "secondary"
+conditions  = ["misc_philippedenial"]
+
+[[achievements]]
+id          = "Misc_PlantRejection"
+title       = "Heartbroken"
+description = "Was rejected by your plant"
+type        = "secondary"
+conditions  = ["misc_plantrejection"]
+
+[[achievements]]
+id          = "Misc_UltimateGamer"
+title       = "Ultimate Gamer"
+description = "Beat at least 10 different games in one playthrough."
+type        = "secondary"
+conditions  = ["misc_ultimategamer"]
+
+[[achievements]]
+id          = "Misc_Roachwar"
+title       = "One million little enemies"
+description = "At war with the roaches."
+type        = "secondary"
+conditions  = ["misc_roachwar"]
+
+[[achievements]]
+id          = "Misc_Roachpeace"
+title       = "One million little friends"
+description = "Made peace with the roaches"
+type        = "secondary"
+conditions  = ["misc_roachpeace"]
+
+[[achievements]]
+id          = "Misc_SweatAndTears"
+title       = "With your sweat and tears"
+description = "Bought the trophy from Mutt’s shop"
+type        = "secondary"
+conditions  = ["misc_sweatandtears"]
+
+[[achievements]]
+id          = "Misc_NoShowers"
+title       = "Miasma"
+description = "Reach an ending without taking a shower."
+type        = "secondary"
+conditions  = ["misc_noshowers"]
+
+[[achievements]]
+id          = "Misc_NoFriends"
+title       = "Loner"
+description = "Reach an ending without making any friends."
+type        = "secondary"
+conditions  = ["misc_nofriends"]
+
+[[achievements]]
+id          = "Misc_NoSleep"
+title       = "Insomnia"
+description = "Reach an ending without sleeping once."
+type        = "secondary"
+conditions  = ["misc_nosleep"]
+
+[[achievements]]
+id          = "Misc_NoEat"
+title       = "Ascetic"
+description = "Reach an ending without eating a single meal."
+type        = "secondary"
+conditions  = ["misc_noeat"]
+
+[[achievements]]
+id          = "Misc_NoGames"
+title       = "Gamer's Bane"
+description = "Reach an ending without playing a video game."
+type        = "secondary"
+conditions  = ["misc_nogames"]
+
+[[achievements]]
+id          = "Misc_3DayClear"
+title       = "Long Weekend"
+description = "Reach an ending in only 3 days."
+type        = "secondary"
+conditions  = ["misc_3dayclear"]
+
+[[achievements]]
+id          = "Boss_Grin"
+title       = "Grin"
+description = "Defeated the Grinning Beast"
+type        = "progression"
+conditions  = ["boss_grin"]
+
+[[achievements]]
+id          = "Boss_Babyteeth"
+title       = "Teething"
+description = "Defeated Baby Teeth"
+type        = "progression"
+conditions  = ["boss_babyteeth"]
+
+[[achievements]]
+id          = "Boss_Shutterbug"
+title       = "Photography Enthusiast"
+description = "Defeated Shutterbug"
+type        = "progression"
+conditions  = ["boss_shutterbug"]
+
+[[achievements]]
+id          = "Boss_Painter"
+title       = "Identity Crisis"
+description = "Defeated Painter"
+type        = "progression"
+conditions  = ["boss_painter"]
+
+[[achievements]]
+id          = "Boss_Stargazer"
+title       = "The stars gazed back"
+description = "Defeated Stargazer"
+type        = "progression"
+conditions  = ["boss_stargazer"]
+
+[[achievements]]
+id          = "Boss_Typewrither"
+title       = "Writers' Block"
+description = "Defeated Typewrither"
+type        = "progression"
+conditions  = ["boss_typewrither"]
+
+[[achievements]]
+id          = "Boss_Panopticon"
+title       = "Surveillance"
+description = "Defeated Panopticon"
+type        = "progression"
+conditions  = ["boss_panopticon"]
+
+[[achievements]]
+id          = "Boss_RatKing"
+title       = "Iron Crown"
+description = "Defeated the Rat King"
+type        = "progression"
+conditions  = ["boss_ratking"]
+
+[[achievements]]
+id          = "Boss_CrawlingHand"
+title       = "Got out of hand quickly"
+description = "Defeated Crawling Hand"
+type        = "progression"
+conditions  = ["boss_crawlinghand"]
+
+[[achievements]]
+id          = "Boss_Crawler"
+title       = "The Crawler"
+description = "Defeated Crawler"
+type        = "progression"
+conditions  = ["boss_crawler"]
+
+[[achievements]]
+id          = "Boss_Argot"
+title       = "Polyglot"
+description = "Defeated Argot"
+type        = "progression"
+conditions  = ["boss_argot"]
+
+[[achievements]]
+id          = "Boss_Pompom"
+title       = "Absolute Zero"
+description = "Defeated Pompom"
+type        = "progression"
+conditions  = ["boss_pompom"]
+
+[[achievements]]
+id          = "Boss_Gravedigger"
+title       = "Foxhole"
+description = "Defeated the Grave Digger"
+type        = "progression"
+conditions  = ["boss_gravedigger"]
+
+[[achievements]]
+id          = "Boss_BoilerBeast"
+title       = "Waterlogged"
+description = "Defeated the Boiler Beast"
+type        = "progression"
+conditions  = ["boss_boilerbeast"]
+
+[[achievements]]
+id          = "Boss_Furnace"
+title       = "Burned Out"
+description = "Defeated the Furnace"
+type        = "progression"
+conditions  = ["boss_furnace"]
+
+[[achievements]]
+id          = "Boss_LaughingMold"
+title       = "Mycelihumor"
+description = "Defeated Laughing Mold"
+type        = "progression"
+conditions  = ["boss_laughingmold"]
+
+[[achievements]]
+id          = "Boss_Sporemother"
+title       = "Mushroom Queen"
+description = "Defeated the Spore Mother"
+type        = "progression"
+conditions  = ["boss_sporemother"]
+
+[[achievements]]
+id          = "Boss_PoliceCar"
+title       = "Traffic Stop"
+description = "Defeated The Police Car"
+type        = "progression"
+conditions  = ["boss_policecar"]
+
+[[achievements]]
+id          = "Boss_PoliceTruck"
+title       = "In the Salad Basket"
+description = "Defeated SWAT Truck"
+type        = "progression"
+conditions  = ["boss_policetruck"]
+
+[[achievements]]
+id          = "Boss_Hellcar"
+title       = "Highway to hell"
+description = "Defeated the Hell Car"
+type        = "progression"
+conditions  = ["boss_hellcar"]
+
+[[achievements]]
+id          = "Boss_Garbageworm"
+title       = "Garbage Disposal"
+description = "Defeated Garbage Worm"
+type        = "progression"
+conditions  = ["boss_garbageworm"]
+
+[[achievements]]
+id          = "Death_HugTeeth"
+title       = "All you need is love"
+description = "Tried hugging the Fred who bites."
+type        = "secondary"
+conditions  = ["death_hugteeth"]
+
+[[achievements]]
+id          = "Misc_Frederic"
+title       = "Frederic"
+description = "Helped Frederic get rid of his portraits."
+type        = "secondary"
+conditions  = ["misc_frederic"]
+
+[[achievements]]
+id          = "Progress_WhereItBegan"
+title       = "Where it all began"
+description = "Enter the depths of apartment 12."
+type        = "progression"
+conditions  = ["progress_whereitbegan"]
+
+[[achievements]]
+id          = "Progress_CursedRitual"
+title       = "Cursed Ritual"
+description = "Complete a perfect ritual in Cursed Mode"
+type        = "progression"
+conditions  = ["progress_cursedritual"]
+
+[[achievements]]
+id          = "Progress_RankA"
+title       = "Rank A"
+description = "Complete the game with a Rank of at least A."
+type        = "progression"
+conditions  = ["progress_ranka"]
+
+[[achievements]]
+id          = "Progress_RankS"
+title       = "Rank S"
+description = "Complete the game with a Rank of at least S."
+type        = "progression"
+conditions  = ["progress_ranks"]
+
+[[achievements]]
+id          = "Progress_RankX"
+title       = "Rank X"
+description = "Complete the game with a Rank of at least X."
+type        = "progression"
+conditions  = ["progress_rankx"]
+
+[[achievements]]
+id          = "Recruit_Audrey"
+title       = "1$ a can"
+description = "Welcomed Audrey into your home."
+type        = "secondary"
+conditions  = ["recruit_audrey"]
+
+[[achievements]]
+id          = "Recruit_Lyle"
+title       = "Photography"
+description = "Welcomed Lyle into your home."
+type        = "secondary"
+conditions  = ["recruit_lyle"]
+
+[[achievements]]
+id          = "Death_Drowning"
+title       = "Drowning"
+description = "Run out of air."
+type        = "secondary"
+conditions  = ["death_drowning"]
+
+[[achievements]]
+id          = "Death_RatKing"
+title       = "Successor"
+description = "A worthy successor."
+type        = "secondary"
+conditions  = ["death_ratking"]
+
+[[achievements]]
+id          = "Death_Obliterated"
+title       = "Obliterated"
+description = "Get utterly annihilated."
+type        = "secondary"
+conditions  = ["death_obliterated"]
+
+[[achievements]]
+id          = "Death_Massacred"
+title       = "Massacred"
+description = "The party was defeated..."
+type        = "secondary"
+conditions  = ["death_massacred"]
+
+[[achievements]]
+id          = "Ending_WordsOfPower"
+title       = "Words of Power"
+description = "Speak the forbidden words."
+type        = "win_condition"
+conditions  = ["ending_wordsofpower"]
+
+[[achievements]]
+id          = "Ending_Unity"
+title       = "Unity"
+description = "Truth shall set us free."
+type        = "win_condition"
+conditions  = ["ending_unity"]
+
+[[achievements]]
+id          = "Ending_TrueFinal"
+title       = "True Final Ending"
+description = "The true canon ending of Look Outside."
+type        = "win_condition"
+conditions  = ["ending_truefinal"]
+
+[[achievements]]
+id          = "Misc_ColdShoulder"
+title       = "Cold Shoulder"
+description = "Only spoke to Sybil once."
+type        = "secondary"
+conditions  = ["misc_coldshoulder"]
+
+[[achievements]]
+id          = "Misc_VerminsLair"
+title       = "Vermins Lair"
+description = "Enter Rat Hell."
+type        = "secondary"
+conditions  = ["misc_verminslair"]
+
+[[achievements]]
+id          = "Misc_InTheDark"
+title       = "In The Dark"
+description = "The power went out."
+type        = "secondary"
+conditions  = ["misc_inthedark"]
+
+[[achievements]]
+id          = "Misc_SewerKids"
+title       = "Sewer Kids"
+description = "Find the children in the sewers."
+type        = "secondary"
+conditions  = ["misc_sewerkids"]
+
+[[achievements]]
+id          = "Misc_PowerSurge"
+title       = "Power Surge"
+description = "End the blackout."
+type        = "secondary"
+conditions  = ["misc_powersurge"]
+
+[[achievements]]
+id          = "Misc_FaceToFace"
+title       = "Face to face"
+description = "Speak with Sybil face to face."
+type        = "secondary"
+conditions  = ["misc_facetoface"]
+
+[[achievements]]
+id          = "Misc_Astrolabe"
+title       = "Astrolabe"
+description = "Solve the planetarium."
+type        = "secondary"
+conditions  = ["misc_astrolabe"]
+
+[[achievements]]
+id          = "Misc_Insight"
+title       = "Insight"
+description = "Shake some memories loose."
+type        = "secondary"
+conditions  = ["misc_insight"]
+
+[[achievements]]
+id          = "Misc_Coulrophobia"
+title       = "Coulrophobia"
+description = "A heart-to-heart with Pierre."
+type        = "secondary"
+conditions  = ["misc_coulrophobia"]
+
+[[achievements]]
+id          = "Misc_FriendsTillTheEnd"
+title       = "Friends Till The End"
+description = "Nurse Philippe back to health."
+type        = "secondary"
+conditions  = ["misc_friendstilltheend"]
+
+[[achievements]]
+id          = "Misc_SuitOfShame"
+title       = "Suit of Shame"
+description = "Killed Eugene and robbed his home."
+type        = "secondary"
+conditions  = ["misc_suitofshame"]
+
+[[achievements]]
+id          = "Misc_MakeBelieve"
+title       = "Make Believe"
+description = "Play Mazes and Wizards."
+type        = "secondary"
+conditions  = ["misc_makebelieve"]
+
+[[achievements]]
+id          = "Misc_CampaignsEnd"
+title       = "Campaigns End"
+description = "Complete a Mazes and Wizards campaign."
+type        = "secondary"
+conditions  = ["misc_campaignsend"]
+
+[[achievements]]
+id          = "Misc_MagicTrick"
+title       = "Is this your card?"
+description = "Completed Juicebox's magic trick."
+type        = "secondary"
+conditions  = ["misc_magictrick"]
+
+[[achievements]]
+id          = "Misc_WormyDeal"
+title       = "Wormy Deal"
+description = "Make a deal with Kevin."
+type        = "secondary"
+conditions  = ["misc_wormydeal"]
+
+[[achievements]]
+id          = "Misc_Shoplifting"
+title       = "Shoplifting"
+description = "Killed Mutt."
+type        = "secondary"
+conditions  = ["misc_shoplifting"]
+
+[[achievements]]
+id          = "Misc_Godmutt"
+title       = "Godmutt"
+description = "Killed Mutt on day 14."
+type        = "secondary"
+conditions  = ["misc_godmutt"]
+
+[[achievements]]
+id          = "Misc_BigFriend"
+title       = "Big Friend"
+description = "Have a chat with Charan."
+type        = "secondary"
+conditions  = ["misc_bigfriend"]
+
+[[achievements]]
+id          = "Misc_Meatworld"
+title       = "Meat World"
+description = "Exploring the other place."
+type        = "secondary"
+conditions  = ["misc_meatworld"]
+
+[[achievements]]
+id          = "Misc_GamersBurden"
+title       = "A Gamer's Burden"
+description = "Retrieve Dan's NeoDuo."
+type        = "secondary"
+conditions  = ["misc_gamersburden"]
+
+[[achievements]]
+id          = "Misc_SecretGarden"
+title       = "Secret Garden"
+description = "Do some gardening with a friend."
+type        = "secondary"
+conditions  = ["misc_secretgarden"]
+
+[[achievements]]
+id          = "Misc_WrongNumber"
+title       = "Wrong Number"
+description = "Help someone get some closure on their old life."
+type        = "secondary"
+conditions  = ["misc_wrongnumber"]
+
+[[achievements]]
+id          = "Misc_RoachQuest"
+title       = "Ad Hominem"
+description = "Help solve some conflicts in your community."
+type        = "secondary"
+conditions  = ["misc_roachquest"]
+
+[[achievements]]
+id          = "Misc_LookInside"
+title       = "Look Inside"
+description = "Have some time to yourself and let go."
+type        = "secondary"
+conditions  = ["misc_lookinside"]
+
+[[achievements]]
+id          = "Boss_APC"
+title       = "Personel Carrier"
+description = "Defeated the APC"
+type        = "progression"
+conditions  = ["boss_apc"]
+
+[[achievements]]
+id          = "Boss_Syncope"
+title       = "Syncope"
+description = "Defeated all of Nestors' transformed parts."
+type        = "progression"
+conditions  = ["boss_syncope"]
+
+[[achievements]]
+id          = "Boss_JoinThem"
+title       = "Join Them"
+description = "Defeat the Olm"
+type        = "progression"
+conditions  = ["boss_jointhem"]
+
+[[achievements]]
+id          = "Boss_Shockipede"
+title       = "Electroshocks"
+description = "Defeat Shockipede"
+type        = "progression"
+conditions  = ["boss_shockipede"]
+
+[[achievements]]
+id          = "Boss_SewerBeast"
+title       = "Sewer Beast"
+description = "Defeat the Sewer Beast"
+type        = "progression"
+conditions  = ["boss_sewerbeast"]
+
+[[achievements]]
+id          = "Boss_Formaldehyde"
+title       = "Formaldehyde"
+description = "Defeat Suture Wire"
+type        = "progression"
+conditions  = ["boss_formaldehyde"]
+
+[[achievements]]
+id          = "Boss_RatChimera"
+title       = "Chimera"
+description = "Defeat the Rat Chimera"
+type        = "progression"
+conditions  = ["boss_ratchimera"]
+
+[[achievements]]
+id          = "Boss_RatChampion"
+title       = "Duel"
+description = "Defeat the Rat Champion"
+type        = "progression"
+conditions  = ["boss_ratchampion"]
+
+[[achievements]]
+id          = "Boss_Megalodon"
+title       = "Megalodon"
+description = "Defeat Shark Abomination"
+type        = "progression"
+conditions  = ["boss_megalodon"]
+
+[[achievements]]
+id          = "Boss_Vanguard"
+title       = "Vanguard"
+description = "Defeat Shrimp Knight"
+type        = "progression"
+conditions  = ["boss_vanguard"]
+
+[[achievements]]
+id          = "Boss_Stagnation"
+title       = "Stagnation"
+description = "Defeat Lethargy"
+type        = "progression"
+conditions  = ["boss_stagnation"]
+
+[[achievements]]
+id          = "Boss_HideAndSeek"
+title       = "Hide and Seek"
+description = "Defeat Darryl"
+type        = "progression"
+conditions  = ["boss_hideandseek"]
+
+[[achievements]]
+id          = "Boss_Obsession"
+title       = "Obsession"
+description = "Defeat Obsession"
+type        = "progression"
+conditions  = ["boss_obsession"]
+
+[[achievements]]
+id          = "Boss_Whisperblade"
+title       = "Whisperblade"
+description = "Defeat Swordmaster Comatus"
+type        = "progression"
+conditions  = ["boss_whisperblade"]
+
+[[achievements]]
+id          = "Boss_DreamEater"
+title       = "Dream Eater"
+description = "Defeat the Dream Eater"
+type        = "progression"
+conditions  = ["boss_dreameater"]
+
+[[achievements]]
+id          = "Boss_SpineTaker"
+title       = "Spine Taker"
+description = "Defeat Spine Taker"
+type        = "progression"
+conditions  = ["boss_spinetaker"]
+
+[[achievements]]
+id          = "Boss_HundredMaws"
+title       = "Hundred Maws"
+description = "Defeat Hundred Maws"
+type        = "progression"
+conditions  = ["boss_hundredmaws"]
+
+[[achievements]]
+id          = "Boss_CrimsonScourge"
+title       = "Crimson Scourge"
+description = "Defeat The Crimson Scourge"
+type        = "progression"
+conditions  = ["boss_crimsonscourge"]
+
+[[achievements]]
+id          = "Boss_OraclesEnd"
+title       = "Oracle's End"
+description = "Defeat Sybil"
+type        = "progression"
+conditions  = ["boss_oraclesend"]
+
+[[achievements]]
+id          = "Recruit_Aster"
+title       = "Astronomy"
+description = "Welcomed Aster into your home."
+type        = "secondary"
+conditions  = ["recruit_aster"]
+
+[[achievements]]
+id          = "Ending_Promise"
+title       = "Promise"
+description = "Keep your promise."
+type        = "win_condition"
+conditions  = ["ending_promise"]
+
+[[achievements]]
+id          = "Boss_WordSalad"
+title       = "Word Salad"
+description = "Defeat Wilhelmina"
+type        = "progression"
+conditions  = ["boss_wordsalad"]

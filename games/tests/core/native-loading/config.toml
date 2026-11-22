@@ -1,12 +1,11 @@
 [game]
-cache_dir = "cache/tests/core/native-loading"
-game_dir  = "games/tests/core/native-loading"
+rom       = "."
 width     = 64
 height    = 64
 
 [scripts]
 libs     = []
-includes = ["../../lib/assert.js"]
+includes = ["../lib/assert.js"]
 entry    = "main.js"
 
 # las imagenes y los sonidos cifrados de RPG Maker MV leidos en C

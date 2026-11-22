@@ -1,3 +1,59 @@
+0.5.0
+- added: ports gunfield, abbaye y supersmilingdungeon
+- added: Gunfield: sus 27 logros de Steam y los mods rumble y performance-mode
+- added: Abbaye: 12 logros y los mods achievements (la pausa muestra los logros) y rumble
+- added: Super Smiling Dungeon: 63 logros de Steam y los mods controller, big-text, achievements y
+  fast-text; guarda su progreso; arreglo de un fallo del tutorial que bajaba a 3 fps
+- added: Look Outside y Firework: sus logros de Steam (152 y 10)
+- added: Fear & Hunger: mod party-bars
+- added: Firework: mods run, delete-save y achievements (los logros en su menu); camina a 30 fps en
+  la RG CubeXX y cambia de mapa antes
+- added: HexGL: mod rumble
+- added: sandbox: un juego solo lee dentro de la carpeta de su toml y solo escribe en la de sus
+  partidas (tambien Transfer Save); la cache va siempre en cache/, junto al toml
+- added: la rom ([game] rom): el juego en un .zip, .nw, .asar, .exe o carpeta, sin descomprimirlo;
+  lo que escribe el juego va a gamedata/
+- added: el teclado como mando: se asigna en Controls (keyboard.map)
+- added: la lupa (Select + L1), las capturas (Select + R1) y volver al menu del port (Select + R2)
+- added: [controls] screenshot y magnifier: un boton suelto en Controls para cada una
+- added: logros con contador ("3/12") y barra de progreso
+- added: [engine] scaling y Options > Scaling: sharp, smooth y pixel_perfect
+- added: [engine] quality y Options > Quality (juegos 3D)
+- added: [engine] lazy_images: las imagenes se decodifican al usarlas
+- added: [saves] local_storage: localStorage en disco
+- added: [game] language y [html] elements
+- added: el aviso "Loading..." es del motor
+- added: greenworks (Steam para nw.js) sin Steam, y electron / @electron/remote en la capa de nw.js
+- added: Construct 2: jQuery 3, DOMParser, XPath, <select> y sus hooks
+- added: WebGL2, fetch, URLSearchParams, AbortController, TextDecoder y structuredClone
+- added: audio mp3 y wav, ademas de ogg; <audio> / new Audio()
+- added: FontFace con un ArrayBuffer
+- added: dispatch: vibracion, sonido, red local y partidas pasan por un canal cada uno
+- added: la app de Android reproduce video MP4
+- added: portada, captura y gamedata/COPY_THE_GAME_HERE.txt en todos los ports
+- changed: la API de quix por grupos (quix.input, quix.gpu, quix.memory, quix.fonts, quix.storage,
+  quix.achievements, quix.steam, quix.engine)
+- changed: los README de los ports siguen la plantilla de PortMaster
+- changed: hasta 256 scripts, 256 simbolos y 128 hooks por port
+- changed: Controls pide siempre la cruceta, A y B
+- changed: HexGL se descarga de un commit fijo
+- fixed: lazy_images: las imagenes que aun se decodifican salian con basura
+- fixed: la vibracion seguida colgaba la RG CubeXX
+- fixed: la lupa y Options > Scaling no funcionaban en las consolas
+- fixed: Look Outside se quedaba en negro (WebGL2: getInternalformatParameter)
+- fixed: Felvidek: con big-text los dialogos salian sin traducir
+- added: Felvidek: mod readable-font (apagado): el texto con M+ 1m, mas legible
+- fixed: Abbaye: Start no quitaba la pausa
+- fixed: Gunfield: el menu de mejoras se abria dos veces
+- fixed: las variables de los shaders sin valor inicial empiezan en 0
+- fixed: archivos con nombre no ASCII en una SD FAT
+- fixed: el JSON de un XHR con BOM UTF-8
+- added: Options > FPS: 30 o 60 (sin elegir, el del port.toml), tambien en Android
+- fixed: Android: los ports con el juego en una rom (www.zip) no salian en la lista
+- fixed: Controls pide los botones en el orden del mando (la cruceta junta)
+- fixed: HexGL: el aviso de la licencia MIT de HexGL en entry.js (adapta su launch.js)
+- fixed: Android 9 pide el permiso para guardar las capturas
+
 0.4.0
 - added: app de Android (make PLATFORM=android): menu nativo, importa la carpeta del port en un .zip
 - added: motor rpgmaker-mz (Look Outside) con sus hooks: arranca sin WebAssembly, mapa y menu mas

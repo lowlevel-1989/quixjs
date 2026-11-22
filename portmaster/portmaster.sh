@@ -40,9 +40,9 @@ $ESUDO chmod +x "$GAMEDIR/quixjs.$ARCH"
 export QUIXJS_FONT="$GAMEDIR/fonts/DejaVuSans-Bold.ttf"
 export LD_LIBRARY_PATH="$GAMEDIR/libs.$ARCH:$LD_LIBRARY_PATH"
 
-# sin el juego copiado (su index.html), un aviso en pantalla
-if [ ! -f "$GAMEDIR/@GAME_DIR@/index.html" ]; then
-  pm_message "Copy @GAME_WHAT@ of your copy of @TITLE@ into ports/@PORT@/@GAME_DIR_PARENT@/"
+# sin la rom del juego (su .zip, junto a port.toml), un aviso en pantalla
+if [ ! -f "$GAMEDIR/@ROM@" ]; then
+  pm_message "Copy @ROM@ of your copy of @TITLE@ into ports/@PORT@/ (see README.md)"
   sleep 8
   pm_finish
   exit 1

@@ -44,7 +44,8 @@ void image_scale_init(const char *cache_dir, double s, int min, const char d[][1
     snprintf(dirs[dirs_count], sizeof dirs[0], "%s", d[i]);
     size_t n = strlen(dirs[dirs_count]);
     while (n > 0 && dirs[dirs_count][n - 1] == '/') dirs[dirs_count][--n] = 0;
-    if (n > 0) dirs_count++;
+    if (strcmp(dirs[dirs_count], ".") == 0) dirs[dirs_count][0] = 0;
+    dirs_count++;   // "" (o "."): todo el juego
   }
   cache[0] = 0;
   if (scale && cache_dir && cache_dir[0])
@@ -59,6 +60,7 @@ int image_scale_wanted(const char *src) {
   if (src[0] == '.' && src[1] == '/') src += 2;
   for (int i = 0; i < dirs_count; i++) {
     size_t n = strlen(dirs[i]);
+    if (n == 0) return 1;   // "": todo el juego (GDevelop deja sus imagenes en la raiz)
     if (strncmp(src, dirs[i], n) == 0 && src[n] == '/') return 1;
   }
   return 0;
@@ -90,9 +92,10 @@ static int cache_path(const char *path, char *out, size_t size) {
 
 // La reducida esta en la cache y es mas nueva que la imagen
 static int cache_fresh(const char *path, const char *cached) {
-  struct stat a, b;
-  if (stat(path, &a) != 0 || stat(cached, &b) != 0) return 0;
-  return b.st_mtime >= a.st_mtime;
+  struct stat b;
+  long long a = 0;
+  if (url_stat(path, NULL, &a, NULL) != 0 || stat(cached, &b) != 0) return 0;
+  return (long long)b.st_mtime >= a;
 }
 
 static void mkdirs_for(const char *file) {

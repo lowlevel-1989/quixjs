@@ -13,7 +13,7 @@ El hooks.toml de cada motor (sus hooks de siempre, [hooks] como en el
 config.toml) va tambien: lo usa un juego con [hooks] engine = "<motor>".
 
 runtime/engines/lib/*.js no son hooks: son modulos que cualquier hook puede
-usar con __quixEngine.lib("<archivo sin .js>") (ENGINE_LIBS).
+usar con quix.engine.lib("<archivo sin .js>") (ENGINE_LIBS).
 """
 import os
 import sys
@@ -66,7 +66,7 @@ def main():
         lines.append(c_string(text) + " },")
     lines.append("  { 0, 0 }")
     lines.append("};")
-    lines += ["", "// runtime/engines/lib: los modulos de __quixEngine.lib (nombre y codigo)",
+    lines += ["", "// runtime/engines/lib: los modulos de quix.engine.lib (nombre y codigo)",
               "static const EngineHook ENGINE_LIBS[] = {"]
     for name, src in libs:
         lines.append('  { "' + name + '",')

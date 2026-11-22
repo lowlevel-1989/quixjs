@@ -29,27 +29,44 @@
 #include "backend/backend.h"
 
 // El archivo entero, terminado en 0 (NULL si no existe)
+// (en disco o en la rom: url_read_file)
 static char *read_file(const char *path, size_t *plen) {
-  FILE *f = fopen(path, "rb");
-  if (!f) return NULL;
-  fseek(f, 0, SEEK_END);
-  long len = ftell(f);
-  fseek(f, 0, SEEK_SET);
-  char *buf = malloc(len > 0 ? len + 1 : 1);
-  if (!buf) {
-    fclose(f);
-    return NULL;
-  }
-  size_t n = len > 0 ? fread(buf, 1, len, f) : 0;
-  buf[n] = 0;
-  fclose(f);
-  *plen = n;
-  return buf;
+  return (char *)url_read_file(path, plen);
 }
 
 // Lee rel_path (de game_dir) y comprueba su sintaxis: 0 bien, -1 no se puede
 // leer, -2 error de sintaxis (ya escrito). Con url_resolve, como todo lo que
 // carga el juego: si un mod activo trae el script, el del mod
+// import.meta en un script (un bundle de Vite para un <script type=module>):
+// en un script clasico es un error de sintaxis. Los modulos (import/export)
+// no se cargan, pero un bundle de un solo archivo solo lo usa para
+// import.meta.url (new URL("sonido.mp3", import.meta.url)): se cambia por un
+// objeto con la direccion del script. Devuelve src o una copia cambiada.
+static char *import_meta(char *src, size_t *len, const char *rel_path) {
+  static const char key[] = "import.meta";
+  size_t klen = sizeof(key) - 1, count = 0;
+  for (char *p = src; (p = strstr(p, key)) != NULL; p += klen) count++;
+  if (!count) return src;
+  char rep[1200];
+  snprintf(rep, sizeof rep, "({url:new URL(\"%s\",location.href).href})", rel_path);
+  size_t rlen = strlen(rep);
+  char *out = malloc(*len + count * rlen + 1);
+  if (!out) return src;
+  char *o = out, *from = src, *p;
+  while ((p = strstr(from, key)) != NULL) {
+    memcpy(o, from, (size_t)(p - from));
+    o += p - from;
+    memcpy(o, rep, rlen);
+    o += rlen;
+    from = p + klen;
+  }
+  size_t rest = strlen(from);
+  memcpy(o, from, rest + 1);
+  *len = (size_t)(o - out) + rest;
+  free(src);
+  return out;
+}
+
 static int load_script(JSContext *ctx, const char *game_dir, const char *rel_path, char **out_src, size_t *out_len,
                        char **out_path) {
   char path[1024];
@@ -69,6 +86,7 @@ static int load_script(JSContext *ctx, const char *game_dir, const char *rel_pat
     fprintf(stderr, "Error: cannot read %s\n", path);
     return -1;
   }
+  src = import_meta(src, &len, rel_path);
   if (JS_CheckSyntax(ctx, src, len, path) != 0) {
     fprintf(stderr, "Error compiling %s:\n", path);
     js_std_dump_error(ctx);

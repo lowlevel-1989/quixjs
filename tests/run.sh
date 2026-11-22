@@ -24,7 +24,7 @@ pass=0
 fail=0
 failed_list=""
 
-for cfg in $(find games/tests -name config.toml | sort); do
+for cfg in $(find games/tests -name config.toml -not -path "*/rom/*" | sort); do
   dir=$(dirname "$cfg")
   name=${dir#games/tests/}
   case "$name" in
@@ -46,6 +46,17 @@ for cfg in $(find games/tests -name config.toml | sort); do
     *"-b sdl"*) [ -z "$BACKEND" ] && video=offscreen ;;
   esac
   [ -n "$BACKEND" ] && own=""
+  # el sandbox no deja salir de la carpeta del test: lo que comparten
+  # (games/tests/lib y assets) y, los de pixi_v4_webgl, el juego de pixi_v4,
+  # se copian dentro (lib/, assets/ y rom/, fuera del repositorio)
+  rm -rf "$dir/lib" "$dir/assets" && cp -r games/tests/lib games/tests/assets "$dir/"
+  case "$name" in
+    pixi_v4_webgl/*)
+      rm -rf "$dir/rom" && cp -r "games/tests/pixi_v4/${name#pixi_v4_webgl/}" "$dir/rom"
+      rm -rf "$dir/rom/assets" && cp -r games/tests/assets "$dir/rom/" ;;
+  esac
+  # lo que el test prepara antes (su setup.sh: los zips de los tests de la rom)
+  [ -f "$dir/setup.sh" ] && sh "$dir/setup.sh" > "$log.setup" 2>&1
   # shellcheck disable=SC2086
   (
     [ -n "$video" ] && export SDL_VIDEODRIVER="$video"

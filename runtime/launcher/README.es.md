@@ -21,20 +21,23 @@ su número: si dos mods traen el mismo archivo, gana el número más alto. Lo
 elegido vale al pulsar Play; hasta que se cambia, los mods activos son los
 de `[game] mods`.
 
-Options tiene Show FPS, Profiler, Vibration (si el juego vibra: `[controls] vibration`), Fullscreen (solo en el PC) y Reset
+Options tiene Show FPS, Profiler, Vibration (si el juego vibra: `[controls] vibration`), Quality (si el port trae `[engine] quality`: los pixeles que dibuja un juego 3D, con `devicePixelRatio`; low dibuja la cuarta parte), Scaling (Sharp, Smooth o Pixel perfect: como se amplia el juego), Fullscreen (solo en el PC) y Reset
 achievements. No hay opción de fps: el port fija `[engine] fps`. Lo que se
 cambia en Options, Mods y Cheats se guarda enseguida en `quixjs-settings.toml`,
 junto al config. Controls asigna todos los botones y palancas del mando y lo
 guarda en `controller.map`, el formato de PortMaster (`backend/sdl/mapper.c`).
 Con `[controls.buttons]` pide Start, esos botones por el nombre que les da el
 port ("Confirm (A)") y siempre las dos palancas; los que no pide siguen como
-estaban. Select se pide siempre (Select + Start cierra el juego). Las acciones
+estaban. Select se pide siempre (Select + Start cierra el juego), y también
+la cruceta, A y B, que usa este menú. Las acciones
 de `[controls.keys]` van al final, por su nombre, y se guardan en
-`controller.keys`.
+`controller.keys`; con `[controls] screenshot = true` y `magnifier = true`, tambien
+Screenshot y Magnifier (un botón suelto además de sus combos).
 
 | archivo      | de qué se encarga |
 |--------------|-------------------|
 | `launcher.c` | el menú: sus opciones, las pantallas de logros, opciones y trucos, y lo que se elige; después de Transfer Save vuelve a leer los logros |
+| `rom.c` | montar la rom (`[game] rom`) al empezar el juego; si el zip va comprimido, la pantalla "preparing the game" con el porcentaje mientras se descomprime una vez |
 | `settings.c` | `quixjs-settings.toml`: `show_fps`, `profile`, `fullscreen`, `vibration`, `cheats` y `mods`, y lo que cambia elegir un truco o un mod (lo usa también el menú de Android, `platform/android/launcher.c`) |
 | `ui.c`       | dibuja una pantalla (logo, título, líneas, una lista que se desliza si no cabe, un aviso y la ayuda) y espera a que se elija: teclado, la cruceta y el stick del mando, y `--script` |
 
@@ -55,6 +58,7 @@ imagen cuesta en una portátil.
 | Enter, Espacio, Z / A, X, Y, Start | elegir |
 | Escape, Retroceso, tecla X / B | volver |
 | Select + Start | salir |
+| Select + R2 (en el juego) | volver a este menú |
 
 `--script` también funciona aquí: sus frames cuentan desde el primero del
 menú, y los del juego van detrás.

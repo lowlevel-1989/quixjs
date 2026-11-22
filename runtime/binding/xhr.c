@@ -78,6 +78,12 @@ static void xhr_set_response(JSContext *ctx, JSValueConst xhr, const uint8_t *da
   if (rt && strcmp(rt, "arraybuffer") == 0) {
     response = JS_NewArrayBufferCopy(ctx, data, len);
   } else if (rt && strcmp(rt, "json") == 0) {
+    // como el navegador: el BOM UTF-8 del principio no es parte del JSON
+    // (el data.js de Construct 2 lo trae)
+    if (len >= 3 && data[0] == 0xEF && data[1] == 0xBB && data[2] == 0xBF) {
+      data += 3;
+      len -= 3;
+    }
     response = JS_ParseJSON(ctx, (const char *)data, len, "<xhr>");
     if (JS_IsException(response)) {
       JSValue ex = JS_GetException(ctx);

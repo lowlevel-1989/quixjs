@@ -61,9 +61,12 @@ leer. No forma parte de `make test` (necesita UDP en 127.0.0.1). El protocolo: [
 | carpeta          | que prueba |
 |------------------|------------|
 | `core/timers`    | setTimeout (orden, argumentos, clear), setInterval, requestAnimationFrame, reloj fijo |
-| `core/events`    | addEventListener, once, handleEvent, on<type>, Event, KeyboardEvent, teclado con `quix.pressKey` |
+| `core/events`    | addEventListener, once, handleEvent, on<type>, Event, KeyboardEvent, teclado con `quix.input.pressKey` |
 | `core/dom`       | window, document, createElement, appendChild, getElementById (tambien con `el.id = ...`), instanceof, localStorage, mandos |
-| `core/gamepad-frame` | con el backend sdl (`args`) y un mando virtual de SDL (`quix.pressPad`): los mandos se leen una vez por imagen y todas las lecturas de la imagen ven lo mismo; una pulsacion mas corta que una imagen se ve en esa imagen y no en la siguiente |
+| `core/local-storage` | `[saves] local_storage`: localStorage en disco (se escribe al poco de un cambio), `localStorage.x` y `localStorage['x'] = v` |
+| `core/construct2-hooks` | Construct 2: `clear-array` deja los arrays como `arr.length = n`; `effects-direct` dibuja directo solo un objeto que pre-dibuja con un efecto de color y opacidad 1; `include-sol` limpia solo los tipos de la hoja incluida, todos si hay condiciones por encima |
+| `core/loose-names` | un archivo con nombre no ASCII que una tarjeta FAT no pudo guardar se encuentra con un nombre parecido |
+| `core/gamepad-frame` | con el backend sdl (`args`) y un mando virtual de SDL (`quix.input.pressPad`): los mandos se leen una vez por imagen y todas las lecturas de la imagen ven lo mismo; una pulsacion mas corta que una imagen se ve en esa imagen y no en la siguiente |
 | `core/lan` | `quix.lan` con un solo dispositivo: abrir, su id y su nombre, nadie mas, enviar sin nadie, cerrar |
 | `core/vibration` | `navigator.vibrate` (ms y patrones), `gamepad.vibrationActuator` (`playEffect` da `complete`, o `preempted` si otro lo corta; `reset`) y los presets de `lib/rumble` |
 | `core/pad-keys` | `[controls.keys]` con los botones de `controller.keys`: el boton pulsa su tecla (keydown y keyup con `code` y `keyCode`); un boton sin accion no da ninguna |
@@ -74,7 +77,8 @@ leer. No forma parte de `make test` (necesita UDP en 127.0.0.1). El protocolo: [
 | `core/legacy`    | JS antiguo que usan muchos plugins: `RegExp.$1..$9`, `lastMatch`... |
 | `core/engine-hooks` | los hooks de motor de `runtime/engines/rpgmaker-mv`: cada uno da lo mismo que la funcion de RPG Maker MV que cambia |
 | `core/hooks-late-plugin` | un plugin que se carga tarde pisa una funcion con hook: quixjs vuelve a poner el hook encima, y el hook no se llama a si mismo |
-| `core/achievements` | `[symbols]` y `[[achievements]]`: condiciones, `prev()`, simbolos que aun no existen, `quix.achievementUnlocked` |
+| `core/achievements` | `[symbols]` y `[[achievements]]`: condiciones, `prev()`, simbolos que aun no existen, `quix.achievements.unlocked` |
+| `core/steam-achievements` | greenworks en modo nw.js: `activateAchievement` desbloquea los `[[achievements]]` que leen `quix.steam.achievements`, y el id queda en `steam-achievements.txt` |
 | `core/cheats`    | un truco encendido: fija su simbolo (otra vez si el juego lo cambia), la partida queda marcada y no consigue logros |
 | `core/cheats-free` | un juego sin logros: el truco se aplica sin motor conocido, en cuanto existe su objeto, y otra vez si el juego lo cambia |
 | `core/cheats-off` | sin trucos: una partida marcada no consigue logros y sus simbolos vuelven a su valor; una limpia si los consigue |
@@ -95,7 +99,7 @@ leer. No forma parte de `make test` (necesita UDP en 127.0.0.1). El protocolo: [
 | `canvas/image`   | Image (load, error, data URI), drawImage, ImageData, createPattern, gradientes, composicion |
 | `canvas/text`    | measureText, fillText, textAlign, textBaseline, strokeText, fuentes |
 | `canvas/gpu`     | los hooks `gpu-canvas`, `once-per-frame` y `skip`: una mascara de luces dibujada en la GPU y por software, la copia a una textura WebGL, la vuelta a la CPU, cambiar el tamano, un repintado igual al anterior |
-| `webgl/basic`    | WebGL 1 sin librerias: contexto, shaders, buffers, texturas, framebuffers, readPixels, consultas |
+| `webgl/basic`    | WebGL 1 sin librerias: contexto, shaders, buffers, texturas, framebuffers (tambien color + profundidad, como three.js), readPixels, consultas |
 | `audio/webaudio` | WebAudio: decodeAudioData (ogg vorbis), fuentes, ganancia, paneo, rampas de volumen, loops, onended |
 | `media/video`    | `<video>`: canPlayType, un WebM (`clip.webm`, hecho con ffmpeg desde `testsrc` y un tono `sine`) y un MP4 con audio AAC e imagenes B (`clip.mp4`) reproducidos hasta el final, un MP4 de 1080p (`big.mp4`) a la mitad, `removeAttribute('src')` lo cierra, un archivo que no existe saltado; sin video comprueba que se salta |
 | `pixi_v4/boot`   | Application, CanvasRenderer, ticker, backgroundColor |
@@ -148,7 +152,6 @@ El `config.toml` de un test:
 
 ```toml
 [game]
-cache_dir = "cache/tests/canvas/rect"
 game_dir  = "games/tests/canvas/rect"
 width     = 320
 height    = 240

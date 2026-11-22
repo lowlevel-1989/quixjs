@@ -56,6 +56,13 @@ before), a number, `"text"`, `true` or `false`.
 - `type`: `win_condition` (gold), `progression` (blue), `secondary`
   (silver); another one gets a color of its own.
 - `conditions = []`: it is listed but never unlocks.
+- `progress` and `goal` (optional): a counter. While the achievement is
+  locked, each time the symbol `progress` goes up (and is still below
+  `goal`) a notice shows how many you have, as `Achievement progress 3/12`.
+  It has a progress bar and looks locked (hollow badge). It only shows when
+  the other conditions hold (the ones that do not read that symbol, such as
+  `debug == false`), and not when another achievement unlocks at that moment
+  (it would look doubled).
 - Loading a save also changes the values: an achievement that the save has
   already earned unlocks then.
 
@@ -105,7 +112,7 @@ ach reset    forget the unlocked ones
 eval $gameVariables.value(88)
 ```
 
-From JS, `quix.achievementUnlocked(id)` says if one is unlocked,
-`quix.achievements()` gives the list (id, title, description, type, color,
-unlock date) and `quix.achievementsIcon()` the icon of `[achievements_menu]`.
+From JS, `quix.achievements.unlocked(id)` says if one is unlocked,
+`quix.achievements.list()` gives the list (id, title, description, type, color,
+unlock date) and `quix.achievements.icon` the icon of `[achievements_menu]`.
 `games/tests/core/achievements` and `core/achievements-menu` are its tests.

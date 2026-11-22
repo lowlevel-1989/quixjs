@@ -57,12 +57,12 @@ int  hooks_load(const char *config_path);
 // corren una vez, la primera vez que se ponen hooks. Van encima de los del juego y del motor en la misma ruta. Devuelve cuantos
 // agrego, o -1 si alguno esta mal escrito o no se puede leer.
 int  hooks_load_mods(const char *root, const char (*names)[64], int n);
-// Las funciones nativas que usan los hooks (__quixGpuScope)
+// Las funciones nativas que usan los hooks (quix.gpu.scope)
 void hooks_add_api(JSContext *ctx);
-// __quixEngine.lib(nombre): el modulo runtime/engines/lib/<nombre>.js (un
+// quix.engine.lib(nombre): el modulo runtime/engines/lib/<nombre>.js (un
 // archivo que es una funcion y devuelve lo que exporta), evaluado la primera
 // vez que se pide y el mismo despues; undefined si no existe. La pone
-// engine_api.c en __quixEngine
+// engine_api.c en quix.engine
 JSValue hooks_lib_function(JSContext *ctx);
 // Pone los que aun no estan; 1 cuando estan todos
 int  hooks_install(JSContext *ctx);

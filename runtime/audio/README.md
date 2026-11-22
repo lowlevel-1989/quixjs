@@ -9,14 +9,21 @@ audio thread.
 
 | file        | what it does |
 |-------------|--------------|
-| `mixer.h/.c` | clips (compressed ogg), voices (play, set, stop, loop), the PCM stream of a video, mixing in the SDL audio callback |
-| `vorbis.c`  | builds stb_vorbis (`thirdparty/stb/`) apart, reading from memory only |
+| `mixer.h/.c` | clips (the compressed file), voices (play, set, stop, loop), the PCM stream of a video, mixing in the SDL audio callback |
+| `decoder.h/.c` | a sound from memory without knowing its format: picks it by its first bytes and converts to 1 or 2 channels |
+| `vorbis.c`  | ogg vorbis, with stb_vorbis (`thirdparty/stb/`) built here, reading from memory only; the LOOPSTART / LOOPLENGTH comments |
+| `mp3.c`     | mp3, with minimp3 (`thirdparty/minimp3/`) |
+| `wav.c`     | wav: PCM of 8, 16, 24 or 32 bits, or float |
 
 ## Streaming
 
 An `AudioClip` is the compressed ogg vorbis that `decodeAudioData` returns; it
 is not decoded whole. Each playing voice has its own decoder and position, and
 decodes while it plays. A 3 minute song takes its ~3 MB, not ~30 MB of PCM.
+A long one loaded from its file (not encrypted) is not even copied: it is
+mapped (mmap), so its pages belong to the file and the kernel can drop them
+when memory is short (Gunfield keeps every song it has played: 26 songs,
+91 MB). A short one (up to 3 s, sound effects) is decoded whole when loaded.
 
 ## The stream of a video
 

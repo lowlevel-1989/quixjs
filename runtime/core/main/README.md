@@ -34,5 +34,6 @@ be read and opened in an editor by itself.
 | `run.h` | `Run` and `Loop` (the state the steps share) and `STEP` |
 | `start.c` | start: `info_option`, `start_window`, `load_port`, `launcher`, `start_js`, `start_tools` |
 | `loop.c` | the steps of each turn: `housekeeping` (memory and profiler), `events`, `run_timers`, `wait_next` |
+| `screenshot.c` | the screenshot (Select + R1): the PNG in `screenshots/`, the notice and, on Android, the gallery |
 | `frame.c` | the steps of each frame: `game_frame`, `pace_frame` (the fixed pace on screen), `present_frame`, `frame_limit` |
 | `finish.c` | the end: `--hold`, `--screenshot`, reports, free everything |

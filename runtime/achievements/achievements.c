@@ -62,6 +62,8 @@ typedef struct {
   char      type[32];        // progression, win_condition... (para agrupar)
   Condition conditions[MAX_CONDITIONS];
   int       condition_count;
+  int       progress;        // progress: el simbolo que cuenta, o -1
+  int       goal;            // goal: cuantos hacen falta
   long long unlocked;
 } Achievement;
 
@@ -304,8 +306,18 @@ int ach_load(const char *config_path, const char *game_dir, const char *file, co
       toml_datum_t type = toml_get(t, "type");
       if (type.type == TOML_STRING) snprintf(a->type, sizeof a->type, "%s", type.u.s);
       int ok = 1;
+      a->progress = -1;
+      toml_datum_t prog = toml_get(t, "progress"), goal = toml_get(t, "goal");
+      if (prog.type == TOML_STRING) {
+        a->progress = symbols_find(prog.u.s);
+        a->goal = goal.type == TOML_INT64 ? (int)goal.u.int64 : 0;
+        if (a->progress < 0 || a->goal <= 0) {
+          fprintf(stderr, "[achievements] %s: progress needs a symbol of [symbols] and goal > 0\n", a->id);
+          ok = 0;
+        }
+      }
       if (conds.u.arr.size == 0) fprintf(stderr, "[achievements] %s: no conditions, it never unlocks\n", a->id);
-      for (int k = 0; k < conds.u.arr.size; k++) {
+      for (int k = 0; ok && k < conds.u.arr.size; k++) {
         toml_datum_t cd = conds.u.arr.elem[k];
         if (a->condition_count == MAX_CONDITIONS || cd.type != TOML_STRING ||
             parse_condition(cd.u.s, &a->conditions[a->condition_count]) != 0) {
@@ -450,6 +462,37 @@ static void push_unlocked(const Achievement *a) {
   toast_push(&t);
 }
 
+// una condicion que lee el simbolo s (en alguna alternativa)
+static int condition_uses(const Condition *c, int s) {
+  for (int i = 0; i < c->count; i++) {
+    const Clause *k = &c->alt[i];
+    if ((k->a.kind != OPD_CONST && k->a.symbol == s) || (k->b.kind != OPD_CONST && k->b.symbol == s)) return 1;
+  }
+  return 0;
+}
+
+// progress: el contador subio (y aun no llega a goal) y se cumplen las demas
+// condiciones (las que no lo leen: "debug == false"...): "3/12"
+static void check_progress(const Achievement *a) {
+  const SymValue *now = symbols_now(a->progress), *prev = symbols_prev(a->progress);
+  if (now->type != SV_NUM || prev->type != SV_NUM || now->num <= prev->num || now->num >= a->goal) return;
+  for (int k = 0; k < a->condition_count; k++) {
+    if (!condition_uses(&a->conditions[k], a->progress) && !condition_holds(&a->conditions[k])) return;
+  }
+  printf("Achievement progress: %s %d/%d\n", a->id, (int)now->num, a->goal);
+  Toast t;
+  memset(&t, 0, sizeof t);
+  snprintf(t.header, sizeof t.header, "Achievement progress   %d/%d", (int)now->num, a->goal);
+  snprintf(t.title, sizeof t.title, "%s", a->title);
+  snprintf(t.text, sizeof t.text, "%s", a->description);
+  initial(a->title, t.badge, sizeof t.badge);
+  t.color = type_color(a->type);
+  t.locked = 1;
+  t.done = (int)now->num;
+  t.goal = a->goal;
+  toast_push(&t);
+}
+
 void ach_tick(JSContext *ctx, Backend *backend, double now_ms) {
   (void)ctx;
   (void)backend;
@@ -469,7 +512,13 @@ void ach_tick(JSContext *ctx, Backend *backend, double now_ms) {
     printf("Achievement unlocked: %s (%s)\n", a->id, a->title);
     push_unlocked(a);
   }
-  if (changed) save_unlocked();
+  if (changed) {
+    save_unlocked();
+    return;   // con un logro nuevo, sin el aviso del contador (serian dos)
+  }
+  for (int i = 0; i < count; i++) {
+    if (!list[i].unlocked && list[i].progress >= 0) check_progress(&list[i]);
+  }
 }
 
 // ---------- la consola ----------

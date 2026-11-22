@@ -21,6 +21,7 @@
 // el contexto, las capas y el thread que presenta) y sus tipos. Ver README.md.
 
 #include "backend/sdl/mapper.h"
+#include "backend/sdl/keypad.h"
 #include <SDL2/SDL.h>
 #include <errno.h>
 #include <stdio.h>
@@ -90,6 +91,8 @@ typedef struct SDLPlatformData {
     Uint32   last;                 // SDL_GetTicks de la ultima imagen con el aviso
   } toast;
   GLint               u_alpha;
+  GLint               u_size, u_prescale;   // present.frag: el canvas ampliado (sharp bilinear)
+  float               blit_size[2], blit_prescale[2];   // los del siguiente sdl_blit (prescale 0: tal cual)
   float               blit_alpha;  // la opacidad del siguiente sdl_blit (1 casi siempre)
   int                 frames_until_resizable;
   Uint32              fit_until;   // SDL_GetTicks limite para esperar a que quepa (0: ya cabe)
@@ -106,6 +109,7 @@ typedef struct SDLPlatformData {
   // Select y Start segun los eventos (no el estado de ahora): el atajo de
   // salir funciona aunque el juego vaya tan lento que se procesen tarde
   Uint8               held[GAMEPAD_MAX][SDL_CONTROLLER_BUTTON_MAX];
+  Uint8               trigger_down[GAMEPAD_MAX][2];   // L2 y R2 pasados de la mitad
   // [controls.keys]: cuantos mandos tienen pulsada cada accion (la tecla
   // baja con el primero y sube con el ultimo)
   Uint8               pad_key_down[8];

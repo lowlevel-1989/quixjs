@@ -22,14 +22,14 @@ app.ticker.add(function () {
 });
 
 if (typeof quix === 'undefined') {
-  console.log('this test needs quix.pressKey');
+  console.log('this test needs quix.input.pressKey');
   T.done();
 } else {
-  quix.pressKey('ArrowRight', 'down');
+  quix.input.pressKey('ArrowRight', 'down');
   var frames = 0;
   app.ticker.add(function () {
     frames++;
-    if (frames === 10) quix.pressKey('ArrowRight', 'up');
+    if (frames === 10) quix.input.pressKey('ArrowRight', 'up');
     if (frames === 20) {
       T.test('moved', function () {
         T.ok(box.x >= 108 && box.x <= 111, 'moved right while the key was down (x=' + box.x + ')');

@@ -38,7 +38,7 @@ static void dummy_init(Backend* backend, int width, int height) {
 }
 
 static void dummy_process_events(Backend* backend) {
-  // No hay eventos que procesar (los tests usan quix.pressKey)
+  // No hay eventos que procesar (los tests usan quix.input.pressKey)
 }
 
 static void dummy_present(Backend* backend, const uint8_t *rgba, int w, int h) {

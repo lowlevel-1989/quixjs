@@ -1,0 +1,3 @@
+# achievements: el boton de logros del menu abre nuestra pagina de logros
+[hooks]
+"gdjs.NEW_32MAIN_32MENUCode.func" = "page.js"

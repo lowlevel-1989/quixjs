@@ -19,7 +19,15 @@
 // cada casilla se pregunta hasta 8 veces (4 direcciones desde ella y la
 // vuelta desde sus vecinas); se calcula la primera y despues se da una copia
 // (en Level8_A, con un guardia persiguiendo, de ~78 a ~74 ms de JS por imagen
-// en una RX6S). Solo si findDirectionTo, eventsXyNt, posNt, pos, allTiles,
+// en una RX6S).
+//
+// Y la misma pregunta con lo mismo alrededor da la misma respuesta: un
+// guardia bloqueado preguntaba lo mismo en cada actualizacion (1787 de 1884
+// llamadas en 30 s). Se guarda la ultima respuesta de cada personaje con una
+// firma: su casilla y la meta, si se atraviesa, los eventos del cuadrado
+// (casilla, si se atraviesan, prioridad, tile, borrados), el jugador y sus
+// seguidores, y el mapa y el tileset; si la firma es la misma, la misma
+// direccion sin buscar. Solo si findDirectionTo, eventsXyNt, posNt, pos, allTiles,
 // layeredTiles, tileEventsXy y tileId son los de RPG Maker MV; si no, la
 // original. RPG Maker MZ tiene su
 // propio findDirectionTo (otro codigo, con let y const): este hook no lo
@@ -192,15 +200,29 @@ function (original) {
         return tiles.concat(this.layeredTiles(x, y));
     }
   };
-  var sameCode = __quixEngine.sameCode;
+  var sameCode = quix.engine.sameCode;
   if (!sameCode(original, MODEL['Game_Character.findDirectionTo'])) return original;
-  var tiles = __quixEngine.lib('tile-index');   // runtime/engines/lib/tile-index.js
+  var tiles = quix.engine.lib('tile-index');   // runtime/engines/lib/tile-index.js
   if (!tiles) return original;
   var ok = null;   // las demas se miran la primera vez (ya con los plugins)
   // el lado del cuadrado indexado: searchLimit (12 en RPG Maker MV) + 1. Con
   // otro searchLimit sigue dando lo mismo (fuera, la original), solo cambia
   // cuanto se ahorra
   var BOX = 13;
+
+  // la ultima respuesta de cada personaje, fuera del objeto (los eventos se
+  // guardan con la partida)
+  var memos = new WeakMap();
+
+  // el jugador y sus seguidores (los eventos chocan con ellos)
+  function playerSig() {
+    var p = typeof $gamePlayer === 'object' && $gamePlayer;
+    if (!p) return '';
+    var s = 'p' + p._x + ',' + p._y + (p.isThrough() ? 't' : '');
+    var f = p._followers && p._followers._data;
+    for (var i = 0; f && i < f.length; i++) s += ';f' + f[i]._x + ',' + f[i]._y + (f[i].isVisible() ? 'v' : '');
+    return s;
+  }
 
   function check() {
     var M = typeof Game_Map === 'function' && Game_Map.prototype;
@@ -239,11 +261,28 @@ function (original) {
       index = tiles.create(),
       events = map.events(),
       stock = Game_Map.prototype.eventsXyNt;
+    // la firma de lo que puede cortar el paso cerca: cada evento del
+    // cuadrado (donde esta, si se atraviesa, su prioridad, su tile, si esta
+    // borrado) y el jugador con sus seguidores
+    var sig = sx + ',' + sy + '>' + goalX + ',' + goalY + '|' + this.isThrough() + '|';
     for (var i = 0; i < events.length; i++) {
       var e = events[i];
-      if (!(Math.abs(e._x - sx) <= BOX && Math.abs(e._y - sy) <= BOX) || e.isThrough()) continue;
+      if (!(Math.abs(e._x - sx) <= BOX && Math.abs(e._y - sy) <= BOX)) continue;
+      var through = e.isThrough();
+      sig += e._eventId + ':' + e._x + ',' + e._y + (through ? 't' : '') + e._priorityType + '.' + e._tileId +
+        (e._erased ? 'e' : '') + ';';
+      if (through) continue;
       index.add(e._x, e._y, e);
     }
+    sig += playerSig();
+    // la misma pregunta con lo mismo alrededor: la misma respuesta. Un
+    // guardia bloqueado preguntaba lo mismo en cada actualizacion (en
+    // Level8_A, 1787 de 1884 llamadas en 30 s)
+    // (y en el mismo mapa: el jugador sigue siendo el mismo objeto en otro)
+    var data = typeof $dataMap === 'object' ? $dataMap : null,
+      tileset = map.tileset();
+    var memo = memos.get(this);
+    if (memo && memo.sig === sig && memo.data === data && memo.tileset === tileset) return memo.dir;
     map.eventsXyNt = function (x, y) {
       if (!(Math.abs(x - sx) <= BOX && Math.abs(y - sy) <= BOX)) return stock.call(this, x, y);
       return index.at(x, y);
@@ -261,7 +300,9 @@ function (original) {
       return got;
     };
     try {
-      return original.call(this, goalX, goalY);
+      var dir = original.call(this, goalX, goalY);
+      memos.set(this, { sig: sig, dir: dir, data: data, tileset: tileset });
+      return dir;
     } finally {
       delete map.eventsXyNt;
       delete map.allTiles;

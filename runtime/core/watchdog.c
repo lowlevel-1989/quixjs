@@ -67,7 +67,7 @@ static void *watch(void *arg) {
     if (strncmp(e->d_name, "event", 5) != 0) continue;
     char path[300];
     snprintf(path, sizeof(path), "/dev/input/%s", e->d_name);
-    int fd = open(path, O_RDONLY | O_NONBLOCK);
+    int fd = open(path, O_RDONLY | O_NONBLOCK | O_CLOEXEC);
     if (fd < 0) continue;
     if (!has_select_start(fd)) {
       close(fd);

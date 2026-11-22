@@ -1,12 +1,11 @@
 [game]
-cache_dir = "cache/tests/core/find-path-index"
-game_dir  = "games/tests/core/find-path-index"
+rom       = "."
 width     = 64
 height    = 64
 
 [scripts]
 libs     = []
-includes = ["../../lib/assert.js"]
+includes = ["../lib/assert.js"]
 entry    = "main.js"
 
 # rpgmaker-mv/find-path-index: findDirectionTo con los eventos indexados por

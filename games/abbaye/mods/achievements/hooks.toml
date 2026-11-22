@@ -1,0 +1,4 @@
+# achievements: la pausa (Start) muestra los logros. Ver README.md.
+[hooks]
+"Abbaye.Game.prototype.pauseGame"  = "achievements.js"   # abre la pagina
+"Abbaye.Game.prototype.hideScroll" = "achievements.js"   # solo P (Start) la cierra

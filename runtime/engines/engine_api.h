@@ -20,8 +20,8 @@
 
 // Lo nativo de los motores (engines/<motor>/*.c): funciones en C que los
 // hooks de JS de ese motor (engines/<motor>/*.js) pueden usar. Quedan en
-// __quixEngine["<motor>"] (las comunes a RPG Maker MV y MZ en
-// __quixEngine["rpgmaker"]). El runtime no las usa: solo las da a los hooks.
+// quix.engine["<motor>"] (las comunes a RPG Maker MV y MZ en
+// quix.engine["rpgmaker"]). El runtime no las usa: solo las da a los hooks.
 
 #include "js/js.h"
 

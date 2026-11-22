@@ -51,6 +51,23 @@ void settings_load(Settings *s, const char *config_path) {
   if (v.type == TOML_BOOLEAN) s->profile = v.u.boolean;
   v = toml_get(r.toptab, "vibration");
   if (v.type == TOML_BOOLEAN) s->no_vibration = !v.u.boolean;
+  // pixel_perfect = true/false: el de antes de Scaling
+  v = toml_get(r.toptab, "pixel_perfect");
+  if (v.type == TOML_BOOLEAN) s->scaling = v.u.boolean ? 3 : 1;
+  v = toml_get(r.toptab, "scaling");
+  if (v.type == TOML_STRING) {
+    if (!strcmp(v.u.s, "sharp")) s->scaling = 1;
+    else if (!strcmp(v.u.s, "smooth")) s->scaling = 2;
+    else if (!strcmp(v.u.s, "pixel_perfect")) s->scaling = 3;
+  }
+  v = toml_get(r.toptab, "quality");
+  if (v.type == TOML_STRING) {
+    if (!strcmp(v.u.s, "low")) s->quality = 1;
+    else if (!strcmp(v.u.s, "medium")) s->quality = 2;
+    else if (!strcmp(v.u.s, "high")) s->quality = 3;
+  }
+  v = toml_get(r.toptab, "fps");
+  if (v.type == TOML_INT64 && (v.u.int64 == 30 || v.u.int64 == 60)) s->fps = (int)v.u.int64;
   v = toml_get(r.toptab, "mods");
   if (v.type == TOML_ARRAY) {
     s->mods_set = 1;
@@ -83,6 +100,10 @@ int settings_save(const Settings *s, const char *config_path) {
   fprintf(f, "profile  = %s\n", s->profile ? "true" : "false");
   if (s->fullscreen) fprintf(f, "fullscreen = true\n");
   fprintf(f, "vibration = %s\n", s->no_vibration ? "false" : "true");
+  if (s->scaling >= 1 && s->scaling <= 3)
+    fprintf(f, "scaling  = \"%s\"\n", s->scaling == 1 ? "sharp" : s->scaling == 2 ? "smooth" : "pixel_perfect");
+  if (s->quality >= 1 && s->quality <= 3) fprintf(f, "quality = \"%s\"\n", s->quality == 1 ? "low" : s->quality == 2 ? "medium" : "high");
+  if (s->fps) fprintf(f, "fps      = %d\n", s->fps);
   fprintf(f, "cheats   = [");
   for (int i = 0; i < s->cheats_count; i++) fprintf(f, "%s\"%s\"", i ? ", " : "", s->cheats[i]);
   fprintf(f, "]\n");

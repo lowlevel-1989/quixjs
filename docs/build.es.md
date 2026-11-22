@@ -7,11 +7,11 @@ PortMaster.
 
 ```
 # Debian / Ubuntu / RetroPie
-sudo apt-get install build-essential python3 libsdl2-dev libsdl2-image-dev libsdl2-ttf-dev fonts-dejavu-core
+sudo apt-get install build-essential python3 libsdl2-dev libsdl2-image-dev libsdl2-ttf-dev zlib1g-dev fonts-dejavu-core
 sudo apt-get install libvpx-dev libopus-dev   # opcional: video
 
 # Fedora
-sudo dnf install gcc make python3 SDL2-devel SDL2_image-devel SDL2_ttf-devel dejavu-sans-fonts
+sudo dnf install gcc make python3 SDL2-devel SDL2_image-devel SDL2_ttf-devel zlib-devel dejavu-sans-fonts
 sudo dnf install libvpx-devel opus-devel      # opcional: video
 
 make                      # la primera vez compila tambien JavaScriptCore (tarda un rato)
@@ -80,7 +80,7 @@ ejecuta `quixjs -c port.toml`, que lee de ahi el juego.
 |------------------------|----------|
 | `portmaster/`          | lo de PortMaster: `portmaster.mk` (la construccion de `PLATFORM=portmaster`, la incluye el `Makefile`) y `portmaster.sh` (plantilla del script `.sh` del port) |
 | `tools/portmaster.py`  | genera el `.sh`, `port.json` y `gameinfo.xml` desde `games/<port>/port.toml` al construir el zip (no estan en el repositorio); `[portmaster] title`, si lo hay, es el nombre en PortMaster en vez de `[game] title` (`firework-shiying`: "Firework (Shiying Studio)") |
-| `games/<port>/`        | el port: `port.toml`, su `README.md` y `README.es.md` (como instalarlo), `screenshot.jpg` (la imagen en EmulationStation) y `cover.png` (la portada en PortMaster) |
+| `games/<port>/`        | el port: `port.toml`, su `README.md` y `README.es.md` (plantilla de PortMaster: primero `## Notes`, `## Controls`, `## Compile`, despues como instalarlo), `gamedata/COPY_THE_GAME_HERE.txt`, `screenshot.jpg` (la imagen en EmulationStation, 640x480) y `cover.jpg` (la portada en PortMaster, menos de 100 KB) |
 
 ## Archivos indice
 

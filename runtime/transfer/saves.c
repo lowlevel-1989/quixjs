@@ -40,6 +40,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include "saves.h"
+#include "core/sandbox.h"
 
 static char game_dir[PATH_MAX];
 static char patterns[SAVES_MAX_PATTERNS][PATH_MAX];
@@ -101,6 +102,9 @@ static int find_in(const char *root, SaveSet *set) {
       const char *rel = g.gl_pathv[k] + root_len + 1;
       struct stat info;
       if (stat(g.gl_pathv[k], &info) != 0 || !S_ISREG(info.st_mode)) continue;
+      // un enlace simbolico que lleva fuera de la carpeta de las partidas
+      // (en el zip de un port) no se manda: runtime/core/sandbox.c
+      if (!sandbox_check_write(g.gl_pathv[k], "transfer save: send")) continue;
       int seen = 0;
       for (int j = 0; j < set->count; j++) {
         if (strcmp(set->files[j].path, rel) == 0) seen = 1;
@@ -149,7 +153,7 @@ uint8_t *saves_pack(const SaveSet *set, long *size) {
   for (int i = 0; i < set->count; i++) {
     char full[PATH_MAX * 2];
     snprintf(full, sizeof full, "%s/%s", game_dir, set->files[i].path);
-    uint8_t *data = read_file(full, set->files[i].size);
+    uint8_t *data = sandbox_check_write(full, "transfer save: send") ? read_file(full, set->files[i].size) : NULL;
     if (!data) {
       free(out);
       return NULL;
@@ -192,6 +196,11 @@ static int move_set(const SaveSet *set, const char *from, const char *to) {
     char a[PATH_MAX * 2], b[PATH_MAX * 2];
     snprintf(a, sizeof a, "%s/%s", from, set->files[i].path);
     snprintf(b, sizeof b, "%s/%s", to, set->files[i].path);
+    // ni por un enlace simbolico fuera de la carpeta de las partidas
+    if (!sandbox_check_write(a, "transfer save: move") || !sandbox_check_write(b, "transfer save: move")) {
+      ok = 0;
+      continue;
+    }
     make_parents(b);
     if (rename(a, b) != 0) {
       fprintf(stderr, "[saves] cannot move %s to %s: %s\n", a, b, strerror(errno));
@@ -251,6 +260,10 @@ int saves_store(const uint8_t *bundle, long size) {
   for (int i = 0; i < incoming.count; i++) {
     char path[PATH_MAX * 2];
     snprintf(path, sizeof path, "%s/%s", inbox, incoming.files[i].path);
+    if (!sandbox_check_write(path, "transfer save: receive")) {
+      remove_tree(inbox);
+      return 0;
+    }
     make_parents(path);
     FILE *out = fopen(path, "wb");
     int ok = out && fwrite(bundle + at, 1, (size_t)incoming.files[i].size, out) == (size_t)incoming.files[i].size;

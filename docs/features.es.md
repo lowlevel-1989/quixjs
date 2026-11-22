@@ -16,8 +16,8 @@ esta en [compatibilidad](compatibility.es.md).
 - texto con SDL_ttf: fillText, strokeText, measureText, `@font-face`, `FontFace` y
   `[fonts]` en el toml del juego
 - audio: WebAudio (AudioContext, decodeAudioData, nodos de ganancia y paneo, loops,
-  rampas) sobre un mezclador propio (`runtime/audio`); ogg vorbis decodificado con
-  stb_vorbis mientras suena. `new Audio()` existe pero solo responde a
+  rampas) sobre un mezclador propio (`runtime/audio`); ogg vorbis (stb_vorbis), mp3
+  (minimp3) y wav decodificados mientras suenan. `new Audio()` existe pero solo responde a
   `canPlayType` (no suena)
 - video: `<video>` reproduce WebM con VP8 o VP9 y audio Opus (nestegg, libvpx,
   libopus) y MP4 con H.264 y audio AAC (minimp4 y un pedazo de FFmpeg); la

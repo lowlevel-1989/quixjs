@@ -1,12 +1,11 @@
 [game]
-cache_dir = "cache/tests/core/hooks-before-load"
-game_dir  = "games/tests/core/hooks-before-load"
+rom       = "."
 width     = 64
 height    = 64
 
 [scripts]
 libs     = []
-includes = ["../../lib/assert.js"]
+includes = ["../lib/assert.js"]
 entry    = "main.js"
 
 # una funcion que crea un <script> del arranque ya tiene su hook cuando llega

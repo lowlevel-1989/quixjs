@@ -8,7 +8,7 @@ var got = [];
 window.addEventListener('keydown', function (e) { got.push('down ' + e.code + ' ' + e.keyCode); });
 window.addEventListener('keyup', function (e) { got.push('up ' + e.code + ' ' + e.keyCode); });
 
-var pad = quix.pressPad(X, 'down');
+var pad = quix.input.pressPad(X, 'down');
 if (pad < 0) {
   T.ok(true, 'no test gamepad (' + quix.backend + '), skipped');
   T.done();
@@ -16,18 +16,18 @@ if (pad < 0) {
   var steps = [
     function () {
       T.deepEqual(got, ['down KeyT 84'], 'X held: keydown of T');
-      quix.pressPad(X, 'up');
+      quix.input.pressPad(X, 'up');
     },
     function () {
       T.deepEqual(got, ['down KeyT 84', 'up KeyT 84'], 'X released: keyup of T');
       got = [];
-      quix.pressPad(SELECT, 'down');
-      quix.pressPad(Y, 'down');
+      quix.input.pressPad(SELECT, 'down');
+      quix.input.pressPad(Y, 'down');
     },
     function () {
       T.deepEqual(got, ['down KeyC 67'], 'Select held: keydown of C; Y gives no key');
-      quix.pressPad(SELECT, 'up');
-      quix.pressPad(Y, 'up');
+      quix.input.pressPad(SELECT, 'up');
+      quix.input.pressPad(Y, 'up');
     },
     function () {
       T.deepEqual(got, ['down KeyC 67', 'up KeyC 67'], 'Select released: keyup of C');

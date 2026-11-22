@@ -209,7 +209,7 @@ function (original) {
   // sameCode (runtime/engines/same-code.js): la funcion del juego es igual que
   // el modelo, sin contar espacios? Si un plugin la cambio, el hook deja la
   // suya y no hace nada
-  var sameCode = __quixEngine.sameCode;
+  var sameCode = quix.engine.sameCode;
   var partialOk = false; // se decide al preparar, con los plugins ya cargados
   function checkStock() {
     var E = typeof Game_Event === 'function' && Game_Event.prototype;

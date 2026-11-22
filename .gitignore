@@ -9,7 +9,17 @@ cache/
 
 # juegos de terceros para probar en local: nunca van al repositorio
 tmp/
-games/*/gamedata
+games/*/gamedata/*
+# la carpeta gamedata/ de quixjs en los tests (lo que escribe el juego)
+games/tests/**/gamedata/
+# lo que tests/run.sh copia dentro de cada test (el sandbox no deja salir)
+games/tests/*/*/lib/
+games/tests/*/*/assets/
+games/tests/pixi_v4_webgl/*/rom/
+# la rom de cada juego (su .zip o package.nw, junto a port.toml): la copia
+# cada uno
+games/*/*.zip
+games/*/*.nw
 
 # editores
 .idea/
@@ -28,3 +38,4 @@ results/
 *.apk
 *.apk.idsig
 /android/deps/
+games/*/screenshots/

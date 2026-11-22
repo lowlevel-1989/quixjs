@@ -24,6 +24,7 @@
 #include "audio/mixer.h"
 #include "core/app_context.h"
 #include "core/url.h"
+#include "core/dispatch.h"
 #include "core/worker.h"
 #include "audio.h"
 
@@ -65,7 +66,22 @@ static JSValue js_audio_decode(JSContext *ctx, JSValueConst this_val, int argc, 
   size_t len = 0;
   uint8_t *data = JS_GetBufferBytes(ctx, argv[0], &len);
   if (!data) return JS_NULL;
-  return clip_object(ctx, clip_from_ogg(data, len));
+  return clip_object(ctx, clip_from_data(data, len));
+}
+
+// fromPCM(left, right | null, rate) -> clip | null: las muestras de un
+// AudioBuffer que el juego relleno (Float32Array, de -1 a 1)
+static JSValue js_audio_from_pcm(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+  if (argc < 3) return JS_NULL;
+  size_t ln = 0, rn = 0;
+  float *l = (float *)JS_GetBufferBytes(ctx, argv[0], &ln);
+  float *r = JS_IsNull(argv[1]) || JS_IsUndefined(argv[1]) ? NULL : (float *)JS_GetBufferBytes(ctx, argv[1], &rn);
+  int32_t rate = 44100;
+  JS_ToInt32(ctx, &rate, argv[2]);
+  if (!l) return JS_NULL;
+  long frames = (long)(ln / sizeof(float));
+  if (r && (long)(rn / sizeof(float)) < frames) r = NULL;
+  return clip_object(ctx, clip_from_pcm(l, r, frames, rate));
 }
 
 // ---------- cargar un sonido desde su archivo, en segundo plano ----------
@@ -84,8 +100,13 @@ typedef struct {
 static void load_work(void *arg) {
   LoadJob *j = arg;
   size_t len = 0;
+  // sin transformacion (no cifrado): mapeado, no copiado (mixer.c)
+  if (!url_has_transform(j->path)) {
+    j->clip = clip_from_file(j->path);
+    return;
+  }
   uint8_t *data = url_read_file_transformed(j->path, &len);
-  j->clip = data ? clip_from_ogg_owned(data, len) : NULL;
+  j->clip = data ? clip_from_data_owned(data, len) : NULL;
 }
 
 static void load_done(JSContext *ctx, void *arg) {
@@ -121,6 +142,29 @@ static JSValue js_audio_load_file(JSContext *ctx, JSValueConst this_val, int arg
   return JS_TRUE;
 }
 
+// ---------- el canal audio del dispatch (core/dispatch.h) ----------
+// play, set y stop pasan por el; salen al instante (play devuelve el id)
+
+enum { AUDIO_PLAY, AUDIO_SET, AUDIO_STOP };
+typedef struct {
+  int        op, id, loop;
+  float      volume, pan, rate;
+  AudioClip *clip;
+  double     offset, loop_start, loop_end;
+  int       *ret;
+} AudioOp;
+
+static int audio_send(void *user, const void *item) {
+  (void)user;
+  const AudioOp *o = item;
+  if (o->op == AUDIO_PLAY) *o->ret = voice_play(o->clip, o->offset, o->loop, o->loop_start, o->loop_end, o->rate);
+  else if (o->op == AUDIO_SET) voice_set(o->id, o->volume, o->pan, o->rate, o->loop);
+  else voice_stop(o->id);
+  return 0;
+}
+
+static DispatchChannel audio_channel = { .name = "audio", .send = audio_send };
+
 // play(clip, offset, loop, loopStart, loopEnd, rate) -> id (-1 si no suena)
 static JSValue js_audio_play(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
   AudioClip *c = argc > 0 ? JS_GetOpaque(argv[0], js_clip_class_id) : NULL;
@@ -131,7 +175,11 @@ static JSValue js_audio_play(JSContext *ctx, JSValueConst this_val, int argc, JS
   if (argc > 3) JS_ToFloat64(ctx, &ls, argv[3]);
   if (argc > 4) JS_ToFloat64(ctx, &le, argv[4]);
   if (argc > 5) JS_ToFloat64(ctx, &rate, argv[5]);
-  return JS_NewInt32(ctx, voice_play(c, offset, loop, ls, le, (float)rate));
+  int id = -1;
+  AudioOp o = { .op = AUDIO_PLAY, .loop = loop, .rate = (float)rate, .clip = c,
+                .offset = offset, .loop_start = ls, .loop_end = le, .ret = &id };
+  dispatch_push(&audio_channel, &o, sizeof o);
+  return JS_NewInt32(ctx, id);
 }
 
 // set(id, volume, pan, rate, loop)
@@ -142,13 +190,19 @@ static JSValue js_audio_set(JSContext *ctx, JSValueConst this_val, int argc, JSV
   JS_ToFloat64(ctx, &vol, argv[1]);
   JS_ToFloat64(ctx, &pan, argv[2]);
   JS_ToFloat64(ctx, &rate, argv[3]);
-  voice_set(id, (float)vol, (float)pan, (float)rate, JS_ToBool(ctx, argv[4]));
+  AudioOp o = { .op = AUDIO_SET, .id = id, .loop = JS_ToBool(ctx, argv[4]),
+                .volume = (float)vol, .pan = (float)pan, .rate = (float)rate };
+  dispatch_push(&audio_channel, &o, sizeof o);
   return JS_UNDEFINED;
 }
 
 static JSValue js_audio_stop(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
   int id = 0;
-  if (argc > 0 && !JS_ToInt32(ctx, &id, argv[0])) voice_stop(id);
+  AudioOp o = { .op = AUDIO_STOP };
+  if (argc > 0 && !JS_ToInt32(ctx, &id, argv[0])) {
+    o.id = id;
+    dispatch_push(&audio_channel, &o, sizeof o);
+  }
   return JS_UNDEFINED;
 }
 
@@ -166,6 +220,7 @@ static JSValue js_audio_time(JSContext *ctx, JSValueConst this_val, int argc, JS
 
 static const JSCFunctionListEntry js_audio_funcs[] = {
   JS_CFUNC_DEF("decode",  1, js_audio_decode),
+  JS_CFUNC_DEF("fromPCM", 3, js_audio_from_pcm),
   JS_CFUNC_DEF("loadFile", 2, js_audio_load_file),
   JS_CFUNC_DEF("play",    6, js_audio_play),
   JS_CFUNC_DEF("set",     5, js_audio_set),

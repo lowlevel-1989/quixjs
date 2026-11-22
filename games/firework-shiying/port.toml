@@ -31,13 +31,17 @@ fps = 60
 title     = "Firework"
 version   = "0.1.0"           # la del port
 id        = "firework"
-game_dir  = "gamedata/www"    # la carpeta www/ del juego, copiada en gamedata/
-cache_dir = "cache/gamedata"
+# la rom: la carpeta www/ del juego comprimida en un .zip, junto a este
+# port.toml. game_dir: donde empieza el juego dentro de la rom (la carpeta
+# www/ de dentro). Lo que el juego escribe (partidas) va a gamedata/, la
+# carpeta de quixjs junto a este port.toml
+rom       = "www.zip"
+game_dir  = "www"
 # el juego cambia la pantalla a 1280x720 (Community_Basic); package.json dice
 # 816x624
 width     = 1280
 height    = 720
-mods      = ["fast-start", "big-text"]
+mods      = ["fast-start", "big-text", "run", "delete-save", "achievements"]
 developer = "Shiying Studio"
 publisher = "Shiying Studio"
 releasedate = "20210203T000000"   # el 3 de febrero de 2021, en Steam
@@ -46,7 +50,7 @@ desc      = "Firework (RPG Maker MV) running on quixjs, a JS runtime in C with S
 # Las ilustraciones y fondos a la resolucion de la pantalla (gfx/
 # image_scale.h): ~1,5 GB decodificados a 1280x720; con "auto", en una
 # pantalla de 720x720 van al 56 % (un tercio de la memoria, mas de lo que la
-# pantalla no ensena) y se guardan reducidas en cache_dir. En una pantalla
+# pantalla no ensena) y se guardan reducidas en cache/. En una pantalla
 # grande no se reducen.
 image_scale      = "auto"
 image_scale_dirs = ["img/pictures", "img/parallaxes", "img/titles1", "img/titles2", "img/fogs"]
@@ -93,7 +97,7 @@ entry    = "js/main.js"
 title        = "Firework (Shiying Studio)"   # en PortMaster ya hay un "Firework" (otro juego)
 script       = "Firework (Shiying Studio).sh"
 porter       = ["lowlevel.1989"]
-inst         = "Needs Firework for Windows (GOG or Steam). Copy its folder www/ into ports/firework-shiying/gamedata/ (it must end up as gamedata/www/). Game.exe and the .dll files are not needed."
+inst         = "Needs Firework for Windows (GOG or Steam). Compress its folder www/ into www.zip (a zip without compression is best; a compressed one also works, the first start takes longer) and copy it into ports/firework-shiying/, next to port.toml."
 store        = { name = "GOG", url = "https://www.gog.com/game/firework" }
 availability = "paid"
 
@@ -101,18 +105,29 @@ availability = "paid"
 # Los de RPG Maker MV (runtime/engines/rpgmaker-mv/hooks.toml) y los de este
 # juego; lo que hace cada uno, en runtime/engines/rpgmaker-mv:
 #   - TerraxLighting: su mascara de luces en la GPU (por software, en un PC
-#     iba a 9 fps)
+#     iba a 9 fps), a la resolucion con la que se ve (render_scale) y una vez
+#     por imagen dibujada (a 30 fps se pintaba dos)
 #   - ScreenEffect: las franjas negras de arriba y abajo se difuminan una vez
 #   - KJ_Menu: la foto que guarda con cada partida, a un cuarto de la
 #     resolucion (en cada cambio de mapa, menu y guardado automatico)
+#   - al pasar de un mapa a otro, sin las fotos desenfocadas para el fondo
+#     de los menus (no se usan): ~1 s menos en cada cambio de mapa
+#   - el tilemap no borra su textura antes de subir cada tileset (no se ve)
 [hooks]
 engine = "rpgmaker-mv"
-"Spriteset_Map.prototype.createLightmask" = "gpu-canvas"
+"Spriteset_Map.prototype.createLightmask" = "rpgmaker-mv/terrax-mask-scale"
+"Spriteset_Map.prototype.update" = "rpgmaker-mv/terrax-lights-only"
 "Spriteset_Map.prototype.createBlackMask" = "rpgmaker-mv/black-mask-once"
 "SceneManager.snapForSave" = "rpgmaker-mv/save-picture-small"
+"SceneManager.snapForBackground" = "rpgmaker-mv/transfer-no-snap"
+"Spriteset_Map.prototype.createTilemap" = "rpgmaker-mv/tilemap-no-clear"
 
 [controls]
 gamepad = true
+# Select + R1: captura de pantalla; Select + L1: la lupa (cartas, notas). Con
+# true, Controls pide tambien un boton suelto para cada una (el combo sigue)
+screenshot = true
+magnifier  = true
 
 # los botones que usa el juego, con los nombres de su pantalla de controles
 # (img/titles2/Splash_4): correr esta apagado en casi todos los mapas y no
@@ -124,4 +139,93 @@ dpleft  = "Move left"
 dpright = "Move right"
 a       = "Select"
 b       = "Cancel"
+x       = "Run"
 y       = "Menu"
+
+# ---------- logros ----------
+# Los 10 de Steam: el juego los pide con greenworks.activateAchievement("a_N")
+# en los eventos de sus mapas (plugin MK_SimpleGreenworks) y el greenworks de
+# quixjs (runtime/binding/nwjs/greenworks.js) los deja en
+# quix.steam.achievements. Los titulos de Steam estan en chino: aqui, en
+# ingles.
+[symbols]
+a1 = "path:quix.steam.achievements.a_1"
+a2 = "path:quix.steam.achievements.a_2"
+a3 = "path:quix.steam.achievements.a_3"
+a4 = "path:quix.steam.achievements.a_4"
+a5 = "path:quix.steam.achievements.a_5"
+a6 = "path:quix.steam.achievements.a_6"
+a7 = "path:quix.steam.achievements.a_7"
+a8 = "path:quix.steam.achievements.a_8"
+a9 = "path:quix.steam.achievements.a_9"
+a10 = "path:quix.steam.achievements.a_10"
+
+[[achievements]]
+id          = "a_1"
+title       = "Ghost in the Heart"
+description = "Complete the prologue."
+type        = "progression"
+conditions  = ["a1"]
+
+[[achievements]]
+id          = "a_2"
+title       = "Fireworks"
+description = "Complete chapter 1."
+type        = "progression"
+conditions  = ["a2"]
+
+[[achievements]]
+id          = "a_3"
+title       = "The Son Pays the Father's Debt"
+description = "Complete chapter 2."
+type        = "progression"
+conditions  = ["a3"]
+
+[[achievements]]
+id          = "a_4"
+title       = "Childhood Encounter"
+description = "Complete chapter 3."
+type        = "progression"
+conditions  = ["a4"]
+
+[[achievements]]
+id          = "a_5"
+title       = "Soul, Come Back"
+description = "Complete chapter 4."
+type        = "progression"
+conditions  = ["a5"]
+
+[[achievements]]
+id          = "a_6"
+title       = "Birds Return to the Forest"
+description = "Complete chapter 5."
+type        = "progression"
+conditions  = ["a6"]
+
+[[achievements]]
+id          = "a_7"
+title       = "Stars Fall on Autumn Water"
+description = "Complete chapter 6."
+type        = "progression"
+conditions  = ["a7"]
+
+[[achievements]]
+id          = "a_8"
+title       = "Embers Become a Prison"
+description = "Complete chapter 7."
+type        = "progression"
+conditions  = ["a8"]
+
+[[achievements]]
+id          = "a_9"
+title       = "Spring Breeze and Rain"
+description = "Complete the final chapter."
+type        = "win_condition"
+conditions  = ["a9"]
+
+[[achievements]]
+id          = "a_10"
+title       = "A Cold Dream Tonight"
+description = "Listen to the ending song to the end."
+type        = "secondary"
+conditions  = ["a10"]

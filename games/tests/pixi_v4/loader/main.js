@@ -4,9 +4,9 @@ var app = new PIXI.Application(200, 200, T.pixiOptions({ backgroundColor: 0x0000
 document.body.appendChild(app.view);
 
 PIXI.loader
-  .add('data', '../../assets/data.json')
-  .add('quad', '../../assets/quad.png')
-  .add('bunny', '../../assets/bunny.png')
+  .add('data', 'assets/data.json')
+  .add('quad', 'assets/quad.png')
+  .add('bunny', 'assets/bunny.png')
   .load(function (loader, resources) {
     T.test('json', function () {
       T.ok(!resources.data.error, 'no error');

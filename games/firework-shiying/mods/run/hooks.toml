@@ -1,0 +1,3 @@
+# run: X corre en todos los mapas. Ver README.md.
+[hooks]
+"Game_Map.prototype.isDashDisabled" = "run.js"

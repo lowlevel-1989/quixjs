@@ -1,12 +1,11 @@
 [game]
-cache_dir = "cache/tests/core/yep-enemy-name"
-game_dir  = "games/tests/core/yep-enemy-name"
+rom       = "."
 width     = 64
 height    = 64
 
 [scripts]
 libs     = []
-includes = ["../../lib/assert.js"]
+includes = ["../lib/assert.js"]
 entry    = "main.js"
 
 # rpgmaker-mv/yep-enemy-name-refresh: la ventana del nombre del enemigo de

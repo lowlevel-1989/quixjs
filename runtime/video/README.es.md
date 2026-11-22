@@ -21,8 +21,11 @@ de Felvidék: a tiempo real, saltando como una cuarta parte de las imágenes).
 
 | archivo   | qué hace |
 |-----------|----------|
-| `video.h` | abrir, play, pausa, volumen, avanzar, fin, tiempo, imágenes decodificadas |
-| `video.c` | lee los paquetes con nestegg, los decodifica con libvpx y libopus, pasa la imagen a RGBA; sin video cada función es un sustituto vacío |
+| `video.h` | abrir, reproducir, pausar, volumen, actualizar, fin, tiempo, imagenes decodificadas |
+| `video_internal.h` | la estructura `Video` y lo que comparten las partes |
+| `video.c` | lo comun: abrir segun el formato, reproducir, pausar, la cola de imagenes, el thread que decodifica y YUV a RGBA; sin soporte de video cada funcion no hace nada |
+| `video_webm.c` | WebM: nestegg, libvpx y libopus (`QUIX_VIDEO_WEBM`) |
+| `video_mp4.c` | MP4: minimp4 y FFmpeg (`QUIX_VIDEO_MP4`); el unico en la app de Android |
 
 La parte de JS es `binding/video.c` (`__quixVideo`) y el elemento `<video>`
 de `binding/polyfill/media.js` ([polyfill](../binding/polyfill/README.es.md)).

@@ -17,7 +17,7 @@ plugins.js). Escribe de que archivo sale y la entrada para MODEL:
   },
 
 Por que: un hook solo cambia una funcion si es la que espera, y lo mira con
-__quixEngine.sameCode (runtime/engines/same-code.js), que compara el texto sin
+quix.engine.sameCode (runtime/engines/same-code.js), que compara el texto sin
 espacios. El modelo tiene que ser el original exacto: copiado del juego, no
 escrito a mano.
 """

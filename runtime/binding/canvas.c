@@ -142,7 +142,8 @@ static JSValue js_canvas_getContext(JSContext *ctx, JSValueConst this_val, int a
   const char *type = argc > 0 ? JS_ToCString(ctx, argv[0]) : NULL;
   if (!type) return JS_NULL;
   int is_2d = strcmp(type, "2d") == 0;
-  int is_gl = strcmp(type, "webgl") == 0 || strcmp(type, "experimental-webgl") == 0;
+  int is_gl2 = strcmp(type, "webgl2") == 0;
+  int is_gl = is_gl2 || strcmp(type, "webgl") == 0 || strcmp(type, "experimental-webgl") == 0;
   JS_FreeCString(ctx, type);
 
   // un canvas tiene un solo tipo de contexto (como el navegador)
@@ -160,9 +161,9 @@ static JSValue js_canvas_getContext(JSContext *ctx, JSValueConst this_val, int a
   if (is_gl) {
     if (!JS_IsUndefined(cd->context2d)) return JS_NULL;
     if (JS_IsUndefined(cd->contextgl)) {
-      JSValue gl = js_create_webgl_context(ctx, this_val, argc > 1 ? argv[1] : JS_UNDEFINED);
+      JSValue gl = js_create_webgl_context(ctx, this_val, argc > 1 ? argv[1] : JS_UNDEFINED, is_gl2);
       if (JS_IsException(gl)) return gl;
-      if (JS_IsNull(gl)) return JS_NULL;   // sin WebGL: el juego usa canvas
+      if (JS_IsNull(gl)) return JS_NULL;   // sin WebGL (o sin WebGL 2): el juego usa otra cosa
       cd->contextgl = gl;
       JS_SetHidden(ctx, this_val, "contextgl", gl);
     }

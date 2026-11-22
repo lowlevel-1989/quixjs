@@ -238,6 +238,7 @@ void ui_item(Screen *s, const char *text) {
   if (s->count == UI_ITEMS) return;
   s->item_rgb[s->count] = 0;
   s->item_badge[s->count] = 0;
+  s->item_hollow[s->count] = 0;
   snprintf(s->items[s->count++], sizeof s->items[0], "%s", text);
 }
 
@@ -259,13 +260,20 @@ static void draw_item(const Screen *s, int i) {
   int scale = items_scale(s), dy = (want - scale) * 3 + (3 - want) * 3;
   if (i == s->selected) fill((vw - box) / 2, y - 8, box, BAR_H, colors.accent);
   // la elegida, siempre en el color del texto (se lee sobre la barra)
-  unsigned rgb = s->item_rgb[i] && i != s->selected ? s->item_rgb[i] : colors.text;
+  // (un logro sin conseguir sigue en gris: asi se distingue con la barra encima)
+  unsigned rgb = s->item_rgb[i] && (i != s->selected || s->item_hollow[i]) ? s->item_rgb[i] : colors.text;
   int tx = (vw - text_width(s->items[i], scale)) / 2;
   // a la izquierda, solo las que se deslizan (las fijas, como Back, centradas)
   if (s->align_left && i < sliding(s)) tx = (vw - box) / 2 + 16 + (s->item_badge[i] ? 4 * scale + 12 : 0);
   draw_text(tx, y + dy, s->items[i], scale, rgb);
   // el tipo: un cuadrado de su color delante del texto
-  if (s->item_badge[i]) fill(tx - 4 * scale - 10, y + dy, 4 * scale + 2, 4 * scale + 2, s->item_badge[i]);
+  // hueco (solo el borde): un logro sin conseguir; se ve igual con la barra
+  if (s->item_badge[i]) {
+    int bx = tx - 4 * scale - 10, size = 4 * scale + 2, b = scale > 1 ? 2 : 1;
+    fill(bx, y + dy, size, size, s->item_badge[i]);
+    if (s->item_hollow[i])
+      fill(bx + b, y + dy + b, size - 2 * b, size - 2 * b, i == s->selected ? colors.accent : colors.background);
+  }
 }
 
 static void draw(const Screen *s) {

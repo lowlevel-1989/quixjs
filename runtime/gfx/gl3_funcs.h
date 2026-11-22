@@ -1,0 +1,1203 @@
+/*
+ * quixjs - A lightweight JS runtime using SDL2 and JavaScriptCore
+ * Copyright (C) 2025  Vinicio Valbuena (lowlevel.1989)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
+// Generado por tools/gen_gl.py: no editar a mano.
+// Lo que OpenGL ES 3.0 agrega a ES 2.0 (de GLES3/gl3.h de Khronos): sus
+// tipos y constantes, y sus funciones como QX_GL3(TIPO_PFN, Nombre).
+
+#ifndef QX_GL3
+#ifndef QX_GL3_TYPES
+#define QX_GL3_TYPES
+#include <stdint.h>
+typedef struct __GLsync *GLsync;
+typedef int64_t GLint64;
+typedef uint64_t GLuint64;
+typedef uint16_t GLhalf;
+
+#ifndef GL_READ_BUFFER
+#define GL_READ_BUFFER 0x0C02
+#endif
+#ifndef GL_UNPACK_ROW_LENGTH
+#define GL_UNPACK_ROW_LENGTH 0x0CF2
+#endif
+#ifndef GL_UNPACK_SKIP_ROWS
+#define GL_UNPACK_SKIP_ROWS 0x0CF3
+#endif
+#ifndef GL_UNPACK_SKIP_PIXELS
+#define GL_UNPACK_SKIP_PIXELS 0x0CF4
+#endif
+#ifndef GL_PACK_ROW_LENGTH
+#define GL_PACK_ROW_LENGTH 0x0D02
+#endif
+#ifndef GL_PACK_SKIP_ROWS
+#define GL_PACK_SKIP_ROWS 0x0D03
+#endif
+#ifndef GL_PACK_SKIP_PIXELS
+#define GL_PACK_SKIP_PIXELS 0x0D04
+#endif
+#ifndef GL_COLOR
+#define GL_COLOR 0x1800
+#endif
+#ifndef GL_DEPTH
+#define GL_DEPTH 0x1801
+#endif
+#ifndef GL_STENCIL
+#define GL_STENCIL 0x1802
+#endif
+#ifndef GL_RED
+#define GL_RED 0x1903
+#endif
+#ifndef GL_RGB8
+#define GL_RGB8 0x8051
+#endif
+#ifndef GL_RGBA8
+#define GL_RGBA8 0x8058
+#endif
+#ifndef GL_RGB10_A2
+#define GL_RGB10_A2 0x8059
+#endif
+#ifndef GL_TEXTURE_BINDING_3D
+#define GL_TEXTURE_BINDING_3D 0x806A
+#endif
+#ifndef GL_UNPACK_SKIP_IMAGES
+#define GL_UNPACK_SKIP_IMAGES 0x806D
+#endif
+#ifndef GL_UNPACK_IMAGE_HEIGHT
+#define GL_UNPACK_IMAGE_HEIGHT 0x806E
+#endif
+#ifndef GL_TEXTURE_3D
+#define GL_TEXTURE_3D 0x806F
+#endif
+#ifndef GL_TEXTURE_WRAP_R
+#define GL_TEXTURE_WRAP_R 0x8072
+#endif
+#ifndef GL_MAX_3D_TEXTURE_SIZE
+#define GL_MAX_3D_TEXTURE_SIZE 0x8073
+#endif
+#ifndef GL_UNSIGNED_INT_2_10_10_10_REV
+#define GL_UNSIGNED_INT_2_10_10_10_REV 0x8368
+#endif
+#ifndef GL_MAX_ELEMENTS_VERTICES
+#define GL_MAX_ELEMENTS_VERTICES 0x80E8
+#endif
+#ifndef GL_MAX_ELEMENTS_INDICES
+#define GL_MAX_ELEMENTS_INDICES 0x80E9
+#endif
+#ifndef GL_TEXTURE_MIN_LOD
+#define GL_TEXTURE_MIN_LOD 0x813A
+#endif
+#ifndef GL_TEXTURE_MAX_LOD
+#define GL_TEXTURE_MAX_LOD 0x813B
+#endif
+#ifndef GL_TEXTURE_BASE_LEVEL
+#define GL_TEXTURE_BASE_LEVEL 0x813C
+#endif
+#ifndef GL_TEXTURE_MAX_LEVEL
+#define GL_TEXTURE_MAX_LEVEL 0x813D
+#endif
+#ifndef GL_MIN
+#define GL_MIN 0x8007
+#endif
+#ifndef GL_MAX
+#define GL_MAX 0x8008
+#endif
+#ifndef GL_DEPTH_COMPONENT24
+#define GL_DEPTH_COMPONENT24 0x81A6
+#endif
+#ifndef GL_MAX_TEXTURE_LOD_BIAS
+#define GL_MAX_TEXTURE_LOD_BIAS 0x84FD
+#endif
+#ifndef GL_TEXTURE_COMPARE_MODE
+#define GL_TEXTURE_COMPARE_MODE 0x884C
+#endif
+#ifndef GL_TEXTURE_COMPARE_FUNC
+#define GL_TEXTURE_COMPARE_FUNC 0x884D
+#endif
+#ifndef GL_CURRENT_QUERY
+#define GL_CURRENT_QUERY 0x8865
+#endif
+#ifndef GL_QUERY_RESULT
+#define GL_QUERY_RESULT 0x8866
+#endif
+#ifndef GL_QUERY_RESULT_AVAILABLE
+#define GL_QUERY_RESULT_AVAILABLE 0x8867
+#endif
+#ifndef GL_BUFFER_MAPPED
+#define GL_BUFFER_MAPPED 0x88BC
+#endif
+#ifndef GL_BUFFER_MAP_POINTER
+#define GL_BUFFER_MAP_POINTER 0x88BD
+#endif
+#ifndef GL_STREAM_READ
+#define GL_STREAM_READ 0x88E1
+#endif
+#ifndef GL_STREAM_COPY
+#define GL_STREAM_COPY 0x88E2
+#endif
+#ifndef GL_STATIC_READ
+#define GL_STATIC_READ 0x88E5
+#endif
+#ifndef GL_STATIC_COPY
+#define GL_STATIC_COPY 0x88E6
+#endif
+#ifndef GL_DYNAMIC_READ
+#define GL_DYNAMIC_READ 0x88E9
+#endif
+#ifndef GL_DYNAMIC_COPY
+#define GL_DYNAMIC_COPY 0x88EA
+#endif
+#ifndef GL_MAX_DRAW_BUFFERS
+#define GL_MAX_DRAW_BUFFERS 0x8824
+#endif
+#ifndef GL_DRAW_BUFFER0
+#define GL_DRAW_BUFFER0 0x8825
+#endif
+#ifndef GL_DRAW_BUFFER1
+#define GL_DRAW_BUFFER1 0x8826
+#endif
+#ifndef GL_DRAW_BUFFER2
+#define GL_DRAW_BUFFER2 0x8827
+#endif
+#ifndef GL_DRAW_BUFFER3
+#define GL_DRAW_BUFFER3 0x8828
+#endif
+#ifndef GL_DRAW_BUFFER4
+#define GL_DRAW_BUFFER4 0x8829
+#endif
+#ifndef GL_DRAW_BUFFER5
+#define GL_DRAW_BUFFER5 0x882A
+#endif
+#ifndef GL_DRAW_BUFFER6
+#define GL_DRAW_BUFFER6 0x882B
+#endif
+#ifndef GL_DRAW_BUFFER7
+#define GL_DRAW_BUFFER7 0x882C
+#endif
+#ifndef GL_DRAW_BUFFER8
+#define GL_DRAW_BUFFER8 0x882D
+#endif
+#ifndef GL_DRAW_BUFFER9
+#define GL_DRAW_BUFFER9 0x882E
+#endif
+#ifndef GL_DRAW_BUFFER10
+#define GL_DRAW_BUFFER10 0x882F
+#endif
+#ifndef GL_DRAW_BUFFER11
+#define GL_DRAW_BUFFER11 0x8830
+#endif
+#ifndef GL_DRAW_BUFFER12
+#define GL_DRAW_BUFFER12 0x8831
+#endif
+#ifndef GL_DRAW_BUFFER13
+#define GL_DRAW_BUFFER13 0x8832
+#endif
+#ifndef GL_DRAW_BUFFER14
+#define GL_DRAW_BUFFER14 0x8833
+#endif
+#ifndef GL_DRAW_BUFFER15
+#define GL_DRAW_BUFFER15 0x8834
+#endif
+#ifndef GL_MAX_FRAGMENT_UNIFORM_COMPONENTS
+#define GL_MAX_FRAGMENT_UNIFORM_COMPONENTS 0x8B49
+#endif
+#ifndef GL_MAX_VERTEX_UNIFORM_COMPONENTS
+#define GL_MAX_VERTEX_UNIFORM_COMPONENTS 0x8B4A
+#endif
+#ifndef GL_SAMPLER_3D
+#define GL_SAMPLER_3D 0x8B5F
+#endif
+#ifndef GL_SAMPLER_2D_SHADOW
+#define GL_SAMPLER_2D_SHADOW 0x8B62
+#endif
+#ifndef GL_FRAGMENT_SHADER_DERIVATIVE_HINT
+#define GL_FRAGMENT_SHADER_DERIVATIVE_HINT 0x8B8B
+#endif
+#ifndef GL_PIXEL_PACK_BUFFER
+#define GL_PIXEL_PACK_BUFFER 0x88EB
+#endif
+#ifndef GL_PIXEL_UNPACK_BUFFER
+#define GL_PIXEL_UNPACK_BUFFER 0x88EC
+#endif
+#ifndef GL_PIXEL_PACK_BUFFER_BINDING
+#define GL_PIXEL_PACK_BUFFER_BINDING 0x88ED
+#endif
+#ifndef GL_PIXEL_UNPACK_BUFFER_BINDING
+#define GL_PIXEL_UNPACK_BUFFER_BINDING 0x88EF
+#endif
+#ifndef GL_FLOAT_MAT2x3
+#define GL_FLOAT_MAT2x3 0x8B65
+#endif
+#ifndef GL_FLOAT_MAT2x4
+#define GL_FLOAT_MAT2x4 0x8B66
+#endif
+#ifndef GL_FLOAT_MAT3x2
+#define GL_FLOAT_MAT3x2 0x8B67
+#endif
+#ifndef GL_FLOAT_MAT3x4
+#define GL_FLOAT_MAT3x4 0x8B68
+#endif
+#ifndef GL_FLOAT_MAT4x2
+#define GL_FLOAT_MAT4x2 0x8B69
+#endif
+#ifndef GL_FLOAT_MAT4x3
+#define GL_FLOAT_MAT4x3 0x8B6A
+#endif
+#ifndef GL_SRGB
+#define GL_SRGB 0x8C40
+#endif
+#ifndef GL_SRGB8
+#define GL_SRGB8 0x8C41
+#endif
+#ifndef GL_SRGB8_ALPHA8
+#define GL_SRGB8_ALPHA8 0x8C43
+#endif
+#ifndef GL_COMPARE_REF_TO_TEXTURE
+#define GL_COMPARE_REF_TO_TEXTURE 0x884E
+#endif
+#ifndef GL_MAJOR_VERSION
+#define GL_MAJOR_VERSION 0x821B
+#endif
+#ifndef GL_MINOR_VERSION
+#define GL_MINOR_VERSION 0x821C
+#endif
+#ifndef GL_NUM_EXTENSIONS
+#define GL_NUM_EXTENSIONS 0x821D
+#endif
+#ifndef GL_RGBA32F
+#define GL_RGBA32F 0x8814
+#endif
+#ifndef GL_RGB32F
+#define GL_RGB32F 0x8815
+#endif
+#ifndef GL_RGBA16F
+#define GL_RGBA16F 0x881A
+#endif
+#ifndef GL_RGB16F
+#define GL_RGB16F 0x881B
+#endif
+#ifndef GL_VERTEX_ATTRIB_ARRAY_INTEGER
+#define GL_VERTEX_ATTRIB_ARRAY_INTEGER 0x88FD
+#endif
+#ifndef GL_MAX_ARRAY_TEXTURE_LAYERS
+#define GL_MAX_ARRAY_TEXTURE_LAYERS 0x88FF
+#endif
+#ifndef GL_MIN_PROGRAM_TEXEL_OFFSET
+#define GL_MIN_PROGRAM_TEXEL_OFFSET 0x8904
+#endif
+#ifndef GL_MAX_PROGRAM_TEXEL_OFFSET
+#define GL_MAX_PROGRAM_TEXEL_OFFSET 0x8905
+#endif
+#ifndef GL_MAX_VARYING_COMPONENTS
+#define GL_MAX_VARYING_COMPONENTS 0x8B4B
+#endif
+#ifndef GL_TEXTURE_2D_ARRAY
+#define GL_TEXTURE_2D_ARRAY 0x8C1A
+#endif
+#ifndef GL_TEXTURE_BINDING_2D_ARRAY
+#define GL_TEXTURE_BINDING_2D_ARRAY 0x8C1D
+#endif
+#ifndef GL_R11F_G11F_B10F
+#define GL_R11F_G11F_B10F 0x8C3A
+#endif
+#ifndef GL_UNSIGNED_INT_10F_11F_11F_REV
+#define GL_UNSIGNED_INT_10F_11F_11F_REV 0x8C3B
+#endif
+#ifndef GL_RGB9_E5
+#define GL_RGB9_E5 0x8C3D
+#endif
+#ifndef GL_UNSIGNED_INT_5_9_9_9_REV
+#define GL_UNSIGNED_INT_5_9_9_9_REV 0x8C3E
+#endif
+#ifndef GL_TRANSFORM_FEEDBACK_VARYING_MAX_LENGTH
+#define GL_TRANSFORM_FEEDBACK_VARYING_MAX_LENGTH 0x8C76
+#endif
+#ifndef GL_TRANSFORM_FEEDBACK_BUFFER_MODE
+#define GL_TRANSFORM_FEEDBACK_BUFFER_MODE 0x8C7F
+#endif
+#ifndef GL_MAX_TRANSFORM_FEEDBACK_SEPARATE_COMPONENTS
+#define GL_MAX_TRANSFORM_FEEDBACK_SEPARATE_COMPONENTS 0x8C80
+#endif
+#ifndef GL_TRANSFORM_FEEDBACK_VARYINGS
+#define GL_TRANSFORM_FEEDBACK_VARYINGS 0x8C83
+#endif
+#ifndef GL_TRANSFORM_FEEDBACK_BUFFER_START
+#define GL_TRANSFORM_FEEDBACK_BUFFER_START 0x8C84
+#endif
+#ifndef GL_TRANSFORM_FEEDBACK_BUFFER_SIZE
+#define GL_TRANSFORM_FEEDBACK_BUFFER_SIZE 0x8C85
+#endif
+#ifndef GL_TRANSFORM_FEEDBACK_PRIMITIVES_WRITTEN
+#define GL_TRANSFORM_FEEDBACK_PRIMITIVES_WRITTEN 0x8C88
+#endif
+#ifndef GL_RASTERIZER_DISCARD
+#define GL_RASTERIZER_DISCARD 0x8C89
+#endif
+#ifndef GL_MAX_TRANSFORM_FEEDBACK_INTERLEAVED_COMPONENTS
+#define GL_MAX_TRANSFORM_FEEDBACK_INTERLEAVED_COMPONENTS 0x8C8A
+#endif
+#ifndef GL_MAX_TRANSFORM_FEEDBACK_SEPARATE_ATTRIBS
+#define GL_MAX_TRANSFORM_FEEDBACK_SEPARATE_ATTRIBS 0x8C8B
+#endif
+#ifndef GL_INTERLEAVED_ATTRIBS
+#define GL_INTERLEAVED_ATTRIBS 0x8C8C
+#endif
+#ifndef GL_SEPARATE_ATTRIBS
+#define GL_SEPARATE_ATTRIBS 0x8C8D
+#endif
+#ifndef GL_TRANSFORM_FEEDBACK_BUFFER
+#define GL_TRANSFORM_FEEDBACK_BUFFER 0x8C8E
+#endif
+#ifndef GL_TRANSFORM_FEEDBACK_BUFFER_BINDING
+#define GL_TRANSFORM_FEEDBACK_BUFFER_BINDING 0x8C8F
+#endif
+#ifndef GL_RGBA32UI
+#define GL_RGBA32UI 0x8D70
+#endif
+#ifndef GL_RGB32UI
+#define GL_RGB32UI 0x8D71
+#endif
+#ifndef GL_RGBA16UI
+#define GL_RGBA16UI 0x8D76
+#endif
+#ifndef GL_RGB16UI
+#define GL_RGB16UI 0x8D77
+#endif
+#ifndef GL_RGBA8UI
+#define GL_RGBA8UI 0x8D7C
+#endif
+#ifndef GL_RGB8UI
+#define GL_RGB8UI 0x8D7D
+#endif
+#ifndef GL_RGBA32I
+#define GL_RGBA32I 0x8D82
+#endif
+#ifndef GL_RGB32I
+#define GL_RGB32I 0x8D83
+#endif
+#ifndef GL_RGBA16I
+#define GL_RGBA16I 0x8D88
+#endif
+#ifndef GL_RGB16I
+#define GL_RGB16I 0x8D89
+#endif
+#ifndef GL_RGBA8I
+#define GL_RGBA8I 0x8D8E
+#endif
+#ifndef GL_RGB8I
+#define GL_RGB8I 0x8D8F
+#endif
+#ifndef GL_RED_INTEGER
+#define GL_RED_INTEGER 0x8D94
+#endif
+#ifndef GL_RGB_INTEGER
+#define GL_RGB_INTEGER 0x8D98
+#endif
+#ifndef GL_RGBA_INTEGER
+#define GL_RGBA_INTEGER 0x8D99
+#endif
+#ifndef GL_SAMPLER_2D_ARRAY
+#define GL_SAMPLER_2D_ARRAY 0x8DC1
+#endif
+#ifndef GL_SAMPLER_2D_ARRAY_SHADOW
+#define GL_SAMPLER_2D_ARRAY_SHADOW 0x8DC4
+#endif
+#ifndef GL_SAMPLER_CUBE_SHADOW
+#define GL_SAMPLER_CUBE_SHADOW 0x8DC5
+#endif
+#ifndef GL_UNSIGNED_INT_VEC2
+#define GL_UNSIGNED_INT_VEC2 0x8DC6
+#endif
+#ifndef GL_UNSIGNED_INT_VEC3
+#define GL_UNSIGNED_INT_VEC3 0x8DC7
+#endif
+#ifndef GL_UNSIGNED_INT_VEC4
+#define GL_UNSIGNED_INT_VEC4 0x8DC8
+#endif
+#ifndef GL_INT_SAMPLER_2D
+#define GL_INT_SAMPLER_2D 0x8DCA
+#endif
+#ifndef GL_INT_SAMPLER_3D
+#define GL_INT_SAMPLER_3D 0x8DCB
+#endif
+#ifndef GL_INT_SAMPLER_CUBE
+#define GL_INT_SAMPLER_CUBE 0x8DCC
+#endif
+#ifndef GL_INT_SAMPLER_2D_ARRAY
+#define GL_INT_SAMPLER_2D_ARRAY 0x8DCF
+#endif
+#ifndef GL_UNSIGNED_INT_SAMPLER_2D
+#define GL_UNSIGNED_INT_SAMPLER_2D 0x8DD2
+#endif
+#ifndef GL_UNSIGNED_INT_SAMPLER_3D
+#define GL_UNSIGNED_INT_SAMPLER_3D 0x8DD3
+#endif
+#ifndef GL_UNSIGNED_INT_SAMPLER_CUBE
+#define GL_UNSIGNED_INT_SAMPLER_CUBE 0x8DD4
+#endif
+#ifndef GL_UNSIGNED_INT_SAMPLER_2D_ARRAY
+#define GL_UNSIGNED_INT_SAMPLER_2D_ARRAY 0x8DD7
+#endif
+#ifndef GL_BUFFER_ACCESS_FLAGS
+#define GL_BUFFER_ACCESS_FLAGS 0x911F
+#endif
+#ifndef GL_BUFFER_MAP_LENGTH
+#define GL_BUFFER_MAP_LENGTH 0x9120
+#endif
+#ifndef GL_BUFFER_MAP_OFFSET
+#define GL_BUFFER_MAP_OFFSET 0x9121
+#endif
+#ifndef GL_DEPTH_COMPONENT32F
+#define GL_DEPTH_COMPONENT32F 0x8CAC
+#endif
+#ifndef GL_DEPTH32F_STENCIL8
+#define GL_DEPTH32F_STENCIL8 0x8CAD
+#endif
+#ifndef GL_FLOAT_32_UNSIGNED_INT_24_8_REV
+#define GL_FLOAT_32_UNSIGNED_INT_24_8_REV 0x8DAD
+#endif
+#ifndef GL_FRAMEBUFFER_ATTACHMENT_COLOR_ENCODING
+#define GL_FRAMEBUFFER_ATTACHMENT_COLOR_ENCODING 0x8210
+#endif
+#ifndef GL_FRAMEBUFFER_ATTACHMENT_COMPONENT_TYPE
+#define GL_FRAMEBUFFER_ATTACHMENT_COMPONENT_TYPE 0x8211
+#endif
+#ifndef GL_FRAMEBUFFER_ATTACHMENT_RED_SIZE
+#define GL_FRAMEBUFFER_ATTACHMENT_RED_SIZE 0x8212
+#endif
+#ifndef GL_FRAMEBUFFER_ATTACHMENT_GREEN_SIZE
+#define GL_FRAMEBUFFER_ATTACHMENT_GREEN_SIZE 0x8213
+#endif
+#ifndef GL_FRAMEBUFFER_ATTACHMENT_BLUE_SIZE
+#define GL_FRAMEBUFFER_ATTACHMENT_BLUE_SIZE 0x8214
+#endif
+#ifndef GL_FRAMEBUFFER_ATTACHMENT_ALPHA_SIZE
+#define GL_FRAMEBUFFER_ATTACHMENT_ALPHA_SIZE 0x8215
+#endif
+#ifndef GL_FRAMEBUFFER_ATTACHMENT_DEPTH_SIZE
+#define GL_FRAMEBUFFER_ATTACHMENT_DEPTH_SIZE 0x8216
+#endif
+#ifndef GL_FRAMEBUFFER_ATTACHMENT_STENCIL_SIZE
+#define GL_FRAMEBUFFER_ATTACHMENT_STENCIL_SIZE 0x8217
+#endif
+#ifndef GL_FRAMEBUFFER_DEFAULT
+#define GL_FRAMEBUFFER_DEFAULT 0x8218
+#endif
+#ifndef GL_FRAMEBUFFER_UNDEFINED
+#define GL_FRAMEBUFFER_UNDEFINED 0x8219
+#endif
+#ifndef GL_DEPTH_STENCIL_ATTACHMENT
+#define GL_DEPTH_STENCIL_ATTACHMENT 0x821A
+#endif
+#ifndef GL_DEPTH_STENCIL
+#define GL_DEPTH_STENCIL 0x84F9
+#endif
+#ifndef GL_UNSIGNED_INT_24_8
+#define GL_UNSIGNED_INT_24_8 0x84FA
+#endif
+#ifndef GL_DEPTH24_STENCIL8
+#define GL_DEPTH24_STENCIL8 0x88F0
+#endif
+#ifndef GL_UNSIGNED_NORMALIZED
+#define GL_UNSIGNED_NORMALIZED 0x8C17
+#endif
+#ifndef GL_DRAW_FRAMEBUFFER_BINDING
+#define GL_DRAW_FRAMEBUFFER_BINDING 0x8CA6
+#endif
+#ifndef GL_READ_FRAMEBUFFER
+#define GL_READ_FRAMEBUFFER 0x8CA8
+#endif
+#ifndef GL_DRAW_FRAMEBUFFER
+#define GL_DRAW_FRAMEBUFFER 0x8CA9
+#endif
+#ifndef GL_READ_FRAMEBUFFER_BINDING
+#define GL_READ_FRAMEBUFFER_BINDING 0x8CAA
+#endif
+#ifndef GL_RENDERBUFFER_SAMPLES
+#define GL_RENDERBUFFER_SAMPLES 0x8CAB
+#endif
+#ifndef GL_FRAMEBUFFER_ATTACHMENT_TEXTURE_LAYER
+#define GL_FRAMEBUFFER_ATTACHMENT_TEXTURE_LAYER 0x8CD4
+#endif
+#ifndef GL_MAX_COLOR_ATTACHMENTS
+#define GL_MAX_COLOR_ATTACHMENTS 0x8CDF
+#endif
+#ifndef GL_COLOR_ATTACHMENT1
+#define GL_COLOR_ATTACHMENT1 0x8CE1
+#endif
+#ifndef GL_COLOR_ATTACHMENT2
+#define GL_COLOR_ATTACHMENT2 0x8CE2
+#endif
+#ifndef GL_COLOR_ATTACHMENT3
+#define GL_COLOR_ATTACHMENT3 0x8CE3
+#endif
+#ifndef GL_COLOR_ATTACHMENT4
+#define GL_COLOR_ATTACHMENT4 0x8CE4
+#endif
+#ifndef GL_COLOR_ATTACHMENT5
+#define GL_COLOR_ATTACHMENT5 0x8CE5
+#endif
+#ifndef GL_COLOR_ATTACHMENT6
+#define GL_COLOR_ATTACHMENT6 0x8CE6
+#endif
+#ifndef GL_COLOR_ATTACHMENT7
+#define GL_COLOR_ATTACHMENT7 0x8CE7
+#endif
+#ifndef GL_COLOR_ATTACHMENT8
+#define GL_COLOR_ATTACHMENT8 0x8CE8
+#endif
+#ifndef GL_COLOR_ATTACHMENT9
+#define GL_COLOR_ATTACHMENT9 0x8CE9
+#endif
+#ifndef GL_COLOR_ATTACHMENT10
+#define GL_COLOR_ATTACHMENT10 0x8CEA
+#endif
+#ifndef GL_COLOR_ATTACHMENT11
+#define GL_COLOR_ATTACHMENT11 0x8CEB
+#endif
+#ifndef GL_COLOR_ATTACHMENT12
+#define GL_COLOR_ATTACHMENT12 0x8CEC
+#endif
+#ifndef GL_COLOR_ATTACHMENT13
+#define GL_COLOR_ATTACHMENT13 0x8CED
+#endif
+#ifndef GL_COLOR_ATTACHMENT14
+#define GL_COLOR_ATTACHMENT14 0x8CEE
+#endif
+#ifndef GL_COLOR_ATTACHMENT15
+#define GL_COLOR_ATTACHMENT15 0x8CEF
+#endif
+#ifndef GL_COLOR_ATTACHMENT16
+#define GL_COLOR_ATTACHMENT16 0x8CF0
+#endif
+#ifndef GL_COLOR_ATTACHMENT17
+#define GL_COLOR_ATTACHMENT17 0x8CF1
+#endif
+#ifndef GL_COLOR_ATTACHMENT18
+#define GL_COLOR_ATTACHMENT18 0x8CF2
+#endif
+#ifndef GL_COLOR_ATTACHMENT19
+#define GL_COLOR_ATTACHMENT19 0x8CF3
+#endif
+#ifndef GL_COLOR_ATTACHMENT20
+#define GL_COLOR_ATTACHMENT20 0x8CF4
+#endif
+#ifndef GL_COLOR_ATTACHMENT21
+#define GL_COLOR_ATTACHMENT21 0x8CF5
+#endif
+#ifndef GL_COLOR_ATTACHMENT22
+#define GL_COLOR_ATTACHMENT22 0x8CF6
+#endif
+#ifndef GL_COLOR_ATTACHMENT23
+#define GL_COLOR_ATTACHMENT23 0x8CF7
+#endif
+#ifndef GL_COLOR_ATTACHMENT24
+#define GL_COLOR_ATTACHMENT24 0x8CF8
+#endif
+#ifndef GL_COLOR_ATTACHMENT25
+#define GL_COLOR_ATTACHMENT25 0x8CF9
+#endif
+#ifndef GL_COLOR_ATTACHMENT26
+#define GL_COLOR_ATTACHMENT26 0x8CFA
+#endif
+#ifndef GL_COLOR_ATTACHMENT27
+#define GL_COLOR_ATTACHMENT27 0x8CFB
+#endif
+#ifndef GL_COLOR_ATTACHMENT28
+#define GL_COLOR_ATTACHMENT28 0x8CFC
+#endif
+#ifndef GL_COLOR_ATTACHMENT29
+#define GL_COLOR_ATTACHMENT29 0x8CFD
+#endif
+#ifndef GL_COLOR_ATTACHMENT30
+#define GL_COLOR_ATTACHMENT30 0x8CFE
+#endif
+#ifndef GL_COLOR_ATTACHMENT31
+#define GL_COLOR_ATTACHMENT31 0x8CFF
+#endif
+#ifndef GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE
+#define GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE 0x8D56
+#endif
+#ifndef GL_MAX_SAMPLES
+#define GL_MAX_SAMPLES 0x8D57
+#endif
+#ifndef GL_HALF_FLOAT
+#define GL_HALF_FLOAT 0x140B
+#endif
+#ifndef GL_MAP_READ_BIT
+#define GL_MAP_READ_BIT 0x0001
+#endif
+#ifndef GL_MAP_WRITE_BIT
+#define GL_MAP_WRITE_BIT 0x0002
+#endif
+#ifndef GL_MAP_INVALIDATE_RANGE_BIT
+#define GL_MAP_INVALIDATE_RANGE_BIT 0x0004
+#endif
+#ifndef GL_MAP_INVALIDATE_BUFFER_BIT
+#define GL_MAP_INVALIDATE_BUFFER_BIT 0x0008
+#endif
+#ifndef GL_MAP_FLUSH_EXPLICIT_BIT
+#define GL_MAP_FLUSH_EXPLICIT_BIT 0x0010
+#endif
+#ifndef GL_MAP_UNSYNCHRONIZED_BIT
+#define GL_MAP_UNSYNCHRONIZED_BIT 0x0020
+#endif
+#ifndef GL_RG
+#define GL_RG 0x8227
+#endif
+#ifndef GL_RG_INTEGER
+#define GL_RG_INTEGER 0x8228
+#endif
+#ifndef GL_R8
+#define GL_R8 0x8229
+#endif
+#ifndef GL_RG8
+#define GL_RG8 0x822B
+#endif
+#ifndef GL_R16F
+#define GL_R16F 0x822D
+#endif
+#ifndef GL_R32F
+#define GL_R32F 0x822E
+#endif
+#ifndef GL_RG16F
+#define GL_RG16F 0x822F
+#endif
+#ifndef GL_RG32F
+#define GL_RG32F 0x8230
+#endif
+#ifndef GL_R8I
+#define GL_R8I 0x8231
+#endif
+#ifndef GL_R8UI
+#define GL_R8UI 0x8232
+#endif
+#ifndef GL_R16I
+#define GL_R16I 0x8233
+#endif
+#ifndef GL_R16UI
+#define GL_R16UI 0x8234
+#endif
+#ifndef GL_R32I
+#define GL_R32I 0x8235
+#endif
+#ifndef GL_R32UI
+#define GL_R32UI 0x8236
+#endif
+#ifndef GL_RG8I
+#define GL_RG8I 0x8237
+#endif
+#ifndef GL_RG8UI
+#define GL_RG8UI 0x8238
+#endif
+#ifndef GL_RG16I
+#define GL_RG16I 0x8239
+#endif
+#ifndef GL_RG16UI
+#define GL_RG16UI 0x823A
+#endif
+#ifndef GL_RG32I
+#define GL_RG32I 0x823B
+#endif
+#ifndef GL_RG32UI
+#define GL_RG32UI 0x823C
+#endif
+#ifndef GL_VERTEX_ARRAY_BINDING
+#define GL_VERTEX_ARRAY_BINDING 0x85B5
+#endif
+#ifndef GL_R8_SNORM
+#define GL_R8_SNORM 0x8F94
+#endif
+#ifndef GL_RG8_SNORM
+#define GL_RG8_SNORM 0x8F95
+#endif
+#ifndef GL_RGB8_SNORM
+#define GL_RGB8_SNORM 0x8F96
+#endif
+#ifndef GL_RGBA8_SNORM
+#define GL_RGBA8_SNORM 0x8F97
+#endif
+#ifndef GL_SIGNED_NORMALIZED
+#define GL_SIGNED_NORMALIZED 0x8F9C
+#endif
+#ifndef GL_PRIMITIVE_RESTART_FIXED_INDEX
+#define GL_PRIMITIVE_RESTART_FIXED_INDEX 0x8D69
+#endif
+#ifndef GL_COPY_READ_BUFFER
+#define GL_COPY_READ_BUFFER 0x8F36
+#endif
+#ifndef GL_COPY_WRITE_BUFFER
+#define GL_COPY_WRITE_BUFFER 0x8F37
+#endif
+#ifndef GL_COPY_READ_BUFFER_BINDING
+#define GL_COPY_READ_BUFFER_BINDING 0x8F36
+#endif
+#ifndef GL_COPY_WRITE_BUFFER_BINDING
+#define GL_COPY_WRITE_BUFFER_BINDING 0x8F37
+#endif
+#ifndef GL_UNIFORM_BUFFER
+#define GL_UNIFORM_BUFFER 0x8A11
+#endif
+#ifndef GL_UNIFORM_BUFFER_BINDING
+#define GL_UNIFORM_BUFFER_BINDING 0x8A28
+#endif
+#ifndef GL_UNIFORM_BUFFER_START
+#define GL_UNIFORM_BUFFER_START 0x8A29
+#endif
+#ifndef GL_UNIFORM_BUFFER_SIZE
+#define GL_UNIFORM_BUFFER_SIZE 0x8A2A
+#endif
+#ifndef GL_MAX_VERTEX_UNIFORM_BLOCKS
+#define GL_MAX_VERTEX_UNIFORM_BLOCKS 0x8A2B
+#endif
+#ifndef GL_MAX_FRAGMENT_UNIFORM_BLOCKS
+#define GL_MAX_FRAGMENT_UNIFORM_BLOCKS 0x8A2D
+#endif
+#ifndef GL_MAX_COMBINED_UNIFORM_BLOCKS
+#define GL_MAX_COMBINED_UNIFORM_BLOCKS 0x8A2E
+#endif
+#ifndef GL_MAX_UNIFORM_BUFFER_BINDINGS
+#define GL_MAX_UNIFORM_BUFFER_BINDINGS 0x8A2F
+#endif
+#ifndef GL_MAX_UNIFORM_BLOCK_SIZE
+#define GL_MAX_UNIFORM_BLOCK_SIZE 0x8A30
+#endif
+#ifndef GL_MAX_COMBINED_VERTEX_UNIFORM_COMPONENTS
+#define GL_MAX_COMBINED_VERTEX_UNIFORM_COMPONENTS 0x8A31
+#endif
+#ifndef GL_MAX_COMBINED_FRAGMENT_UNIFORM_COMPONENTS
+#define GL_MAX_COMBINED_FRAGMENT_UNIFORM_COMPONENTS 0x8A33
+#endif
+#ifndef GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT
+#define GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT 0x8A34
+#endif
+#ifndef GL_ACTIVE_UNIFORM_BLOCK_MAX_NAME_LENGTH
+#define GL_ACTIVE_UNIFORM_BLOCK_MAX_NAME_LENGTH 0x8A35
+#endif
+#ifndef GL_ACTIVE_UNIFORM_BLOCKS
+#define GL_ACTIVE_UNIFORM_BLOCKS 0x8A36
+#endif
+#ifndef GL_UNIFORM_TYPE
+#define GL_UNIFORM_TYPE 0x8A37
+#endif
+#ifndef GL_UNIFORM_SIZE
+#define GL_UNIFORM_SIZE 0x8A38
+#endif
+#ifndef GL_UNIFORM_NAME_LENGTH
+#define GL_UNIFORM_NAME_LENGTH 0x8A39
+#endif
+#ifndef GL_UNIFORM_BLOCK_INDEX
+#define GL_UNIFORM_BLOCK_INDEX 0x8A3A
+#endif
+#ifndef GL_UNIFORM_OFFSET
+#define GL_UNIFORM_OFFSET 0x8A3B
+#endif
+#ifndef GL_UNIFORM_ARRAY_STRIDE
+#define GL_UNIFORM_ARRAY_STRIDE 0x8A3C
+#endif
+#ifndef GL_UNIFORM_MATRIX_STRIDE
+#define GL_UNIFORM_MATRIX_STRIDE 0x8A3D
+#endif
+#ifndef GL_UNIFORM_IS_ROW_MAJOR
+#define GL_UNIFORM_IS_ROW_MAJOR 0x8A3E
+#endif
+#ifndef GL_UNIFORM_BLOCK_BINDING
+#define GL_UNIFORM_BLOCK_BINDING 0x8A3F
+#endif
+#ifndef GL_UNIFORM_BLOCK_DATA_SIZE
+#define GL_UNIFORM_BLOCK_DATA_SIZE 0x8A40
+#endif
+#ifndef GL_UNIFORM_BLOCK_NAME_LENGTH
+#define GL_UNIFORM_BLOCK_NAME_LENGTH 0x8A41
+#endif
+#ifndef GL_UNIFORM_BLOCK_ACTIVE_UNIFORMS
+#define GL_UNIFORM_BLOCK_ACTIVE_UNIFORMS 0x8A42
+#endif
+#ifndef GL_UNIFORM_BLOCK_ACTIVE_UNIFORM_INDICES
+#define GL_UNIFORM_BLOCK_ACTIVE_UNIFORM_INDICES 0x8A43
+#endif
+#ifndef GL_UNIFORM_BLOCK_REFERENCED_BY_VERTEX_SHADER
+#define GL_UNIFORM_BLOCK_REFERENCED_BY_VERTEX_SHADER 0x8A44
+#endif
+#ifndef GL_UNIFORM_BLOCK_REFERENCED_BY_FRAGMENT_SHADER
+#define GL_UNIFORM_BLOCK_REFERENCED_BY_FRAGMENT_SHADER 0x8A46
+#endif
+#ifndef GL_INVALID_INDEX
+#define GL_INVALID_INDEX 0xFFFFFFFFu
+#endif
+#ifndef GL_MAX_VERTEX_OUTPUT_COMPONENTS
+#define GL_MAX_VERTEX_OUTPUT_COMPONENTS 0x9122
+#endif
+#ifndef GL_MAX_FRAGMENT_INPUT_COMPONENTS
+#define GL_MAX_FRAGMENT_INPUT_COMPONENTS 0x9125
+#endif
+#ifndef GL_MAX_SERVER_WAIT_TIMEOUT
+#define GL_MAX_SERVER_WAIT_TIMEOUT 0x9111
+#endif
+#ifndef GL_OBJECT_TYPE
+#define GL_OBJECT_TYPE 0x9112
+#endif
+#ifndef GL_SYNC_CONDITION
+#define GL_SYNC_CONDITION 0x9113
+#endif
+#ifndef GL_SYNC_STATUS
+#define GL_SYNC_STATUS 0x9114
+#endif
+#ifndef GL_SYNC_FLAGS
+#define GL_SYNC_FLAGS 0x9115
+#endif
+#ifndef GL_SYNC_FENCE
+#define GL_SYNC_FENCE 0x9116
+#endif
+#ifndef GL_SYNC_GPU_COMMANDS_COMPLETE
+#define GL_SYNC_GPU_COMMANDS_COMPLETE 0x9117
+#endif
+#ifndef GL_UNSIGNALED
+#define GL_UNSIGNALED 0x9118
+#endif
+#ifndef GL_SIGNALED
+#define GL_SIGNALED 0x9119
+#endif
+#ifndef GL_ALREADY_SIGNALED
+#define GL_ALREADY_SIGNALED 0x911A
+#endif
+#ifndef GL_TIMEOUT_EXPIRED
+#define GL_TIMEOUT_EXPIRED 0x911B
+#endif
+#ifndef GL_CONDITION_SATISFIED
+#define GL_CONDITION_SATISFIED 0x911C
+#endif
+#ifndef GL_WAIT_FAILED
+#define GL_WAIT_FAILED 0x911D
+#endif
+#ifndef GL_SYNC_FLUSH_COMMANDS_BIT
+#define GL_SYNC_FLUSH_COMMANDS_BIT 0x00000001
+#endif
+#ifndef GL_VERTEX_ATTRIB_ARRAY_DIVISOR
+#define GL_VERTEX_ATTRIB_ARRAY_DIVISOR 0x88FE
+#endif
+#ifndef GL_ANY_SAMPLES_PASSED
+#define GL_ANY_SAMPLES_PASSED 0x8C2F
+#endif
+#ifndef GL_ANY_SAMPLES_PASSED_CONSERVATIVE
+#define GL_ANY_SAMPLES_PASSED_CONSERVATIVE 0x8D6A
+#endif
+#ifndef GL_SAMPLER_BINDING
+#define GL_SAMPLER_BINDING 0x8919
+#endif
+#ifndef GL_RGB10_A2UI
+#define GL_RGB10_A2UI 0x906F
+#endif
+#ifndef GL_TEXTURE_SWIZZLE_R
+#define GL_TEXTURE_SWIZZLE_R 0x8E42
+#endif
+#ifndef GL_TEXTURE_SWIZZLE_G
+#define GL_TEXTURE_SWIZZLE_G 0x8E43
+#endif
+#ifndef GL_TEXTURE_SWIZZLE_B
+#define GL_TEXTURE_SWIZZLE_B 0x8E44
+#endif
+#ifndef GL_TEXTURE_SWIZZLE_A
+#define GL_TEXTURE_SWIZZLE_A 0x8E45
+#endif
+#ifndef GL_GREEN
+#define GL_GREEN 0x1904
+#endif
+#ifndef GL_BLUE
+#define GL_BLUE 0x1905
+#endif
+#ifndef GL_INT_2_10_10_10_REV
+#define GL_INT_2_10_10_10_REV 0x8D9F
+#endif
+#ifndef GL_TRANSFORM_FEEDBACK
+#define GL_TRANSFORM_FEEDBACK 0x8E22
+#endif
+#ifndef GL_TRANSFORM_FEEDBACK_PAUSED
+#define GL_TRANSFORM_FEEDBACK_PAUSED 0x8E23
+#endif
+#ifndef GL_TRANSFORM_FEEDBACK_ACTIVE
+#define GL_TRANSFORM_FEEDBACK_ACTIVE 0x8E24
+#endif
+#ifndef GL_TRANSFORM_FEEDBACK_BINDING
+#define GL_TRANSFORM_FEEDBACK_BINDING 0x8E25
+#endif
+#ifndef GL_PROGRAM_BINARY_RETRIEVABLE_HINT
+#define GL_PROGRAM_BINARY_RETRIEVABLE_HINT 0x8257
+#endif
+#ifndef GL_PROGRAM_BINARY_LENGTH
+#define GL_PROGRAM_BINARY_LENGTH 0x8741
+#endif
+#ifndef GL_NUM_PROGRAM_BINARY_FORMATS
+#define GL_NUM_PROGRAM_BINARY_FORMATS 0x87FE
+#endif
+#ifndef GL_PROGRAM_BINARY_FORMATS
+#define GL_PROGRAM_BINARY_FORMATS 0x87FF
+#endif
+#ifndef GL_COMPRESSED_R11_EAC
+#define GL_COMPRESSED_R11_EAC 0x9270
+#endif
+#ifndef GL_COMPRESSED_SIGNED_R11_EAC
+#define GL_COMPRESSED_SIGNED_R11_EAC 0x9271
+#endif
+#ifndef GL_COMPRESSED_RG11_EAC
+#define GL_COMPRESSED_RG11_EAC 0x9272
+#endif
+#ifndef GL_COMPRESSED_SIGNED_RG11_EAC
+#define GL_COMPRESSED_SIGNED_RG11_EAC 0x9273
+#endif
+#ifndef GL_COMPRESSED_RGB8_ETC2
+#define GL_COMPRESSED_RGB8_ETC2 0x9274
+#endif
+#ifndef GL_COMPRESSED_SRGB8_ETC2
+#define GL_COMPRESSED_SRGB8_ETC2 0x9275
+#endif
+#ifndef GL_COMPRESSED_RGB8_PUNCHTHROUGH_ALPHA1_ETC2
+#define GL_COMPRESSED_RGB8_PUNCHTHROUGH_ALPHA1_ETC2 0x9276
+#endif
+#ifndef GL_COMPRESSED_SRGB8_PUNCHTHROUGH_ALPHA1_ETC2
+#define GL_COMPRESSED_SRGB8_PUNCHTHROUGH_ALPHA1_ETC2 0x9277
+#endif
+#ifndef GL_COMPRESSED_RGBA8_ETC2_EAC
+#define GL_COMPRESSED_RGBA8_ETC2_EAC 0x9278
+#endif
+#ifndef GL_COMPRESSED_SRGB8_ALPHA8_ETC2_EAC
+#define GL_COMPRESSED_SRGB8_ALPHA8_ETC2_EAC 0x9279
+#endif
+#ifndef GL_TEXTURE_IMMUTABLE_FORMAT
+#define GL_TEXTURE_IMMUTABLE_FORMAT 0x912F
+#endif
+#ifndef GL_MAX_ELEMENT_INDEX
+#define GL_MAX_ELEMENT_INDEX 0x8D6B
+#endif
+#ifndef GL_NUM_SAMPLE_COUNTS
+#define GL_NUM_SAMPLE_COUNTS 0x9380
+#endif
+#ifndef GL_TEXTURE_IMMUTABLE_LEVELS
+#define GL_TEXTURE_IMMUTABLE_LEVELS 0x82DF
+#endif
+
+typedef void (GL_APIENTRY * PFNGLREADBUFFERPROC) (GLenum src);
+typedef void (GL_APIENTRY * PFNGLDRAWRANGEELEMENTSPROC) (GLenum mode, GLuint start, GLuint end, GLsizei count, GLenum type, const void *indices);
+typedef void (GL_APIENTRY * PFNGLTEXIMAGE3DPROC) (GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLsizei depth, GLint border, GLenum format, GLenum type, const void *pixels);
+typedef void (GL_APIENTRY * PFNGLTEXSUBIMAGE3DPROC) (GLenum target, GLint level, GLint xoffset, GLint yoffset, GLint zoffset, GLsizei width, GLsizei height, GLsizei depth, GLenum format, GLenum type, const void *pixels);
+typedef void (GL_APIENTRY * PFNGLCOPYTEXSUBIMAGE3DPROC) (GLenum target, GLint level, GLint xoffset, GLint yoffset, GLint zoffset, GLint x, GLint y, GLsizei width, GLsizei height);
+typedef void (GL_APIENTRY * PFNGLCOMPRESSEDTEXIMAGE3DPROC) (GLenum target, GLint level, GLenum internalformat, GLsizei width, GLsizei height, GLsizei depth, GLint border, GLsizei imageSize, const void *data);
+typedef void (GL_APIENTRY * PFNGLCOMPRESSEDTEXSUBIMAGE3DPROC) (GLenum target, GLint level, GLint xoffset, GLint yoffset, GLint zoffset, GLsizei width, GLsizei height, GLsizei depth, GLenum format, GLsizei imageSize, const void *data);
+typedef void (GL_APIENTRY * PFNGLGENQUERIESPROC) (GLsizei n, GLuint *ids);
+typedef void (GL_APIENTRY * PFNGLDELETEQUERIESPROC) (GLsizei n, const GLuint *ids);
+typedef GLboolean (GL_APIENTRY * PFNGLISQUERYPROC) (GLuint id);
+typedef void (GL_APIENTRY * PFNGLBEGINQUERYPROC) (GLenum target, GLuint id);
+typedef void (GL_APIENTRY * PFNGLENDQUERYPROC) (GLenum target);
+typedef void (GL_APIENTRY * PFNGLGETQUERYIVPROC) (GLenum target, GLenum pname, GLint *params);
+typedef void (GL_APIENTRY * PFNGLGETQUERYOBJECTUIVPROC) (GLuint id, GLenum pname, GLuint *params);
+typedef GLboolean (GL_APIENTRY * PFNGLUNMAPBUFFERPROC) (GLenum target);
+typedef void (GL_APIENTRY * PFNGLGETBUFFERPOINTERVPROC) (GLenum target, GLenum pname, void **params);
+typedef void (GL_APIENTRY * PFNGLDRAWBUFFERSPROC) (GLsizei n, const GLenum *bufs);
+typedef void (GL_APIENTRY * PFNGLUNIFORMMATRIX2X3FVPROC) (GLint location, GLsizei count, GLboolean transpose, const GLfloat *value);
+typedef void (GL_APIENTRY * PFNGLUNIFORMMATRIX3X2FVPROC) (GLint location, GLsizei count, GLboolean transpose, const GLfloat *value);
+typedef void (GL_APIENTRY * PFNGLUNIFORMMATRIX2X4FVPROC) (GLint location, GLsizei count, GLboolean transpose, const GLfloat *value);
+typedef void (GL_APIENTRY * PFNGLUNIFORMMATRIX4X2FVPROC) (GLint location, GLsizei count, GLboolean transpose, const GLfloat *value);
+typedef void (GL_APIENTRY * PFNGLUNIFORMMATRIX3X4FVPROC) (GLint location, GLsizei count, GLboolean transpose, const GLfloat *value);
+typedef void (GL_APIENTRY * PFNGLUNIFORMMATRIX4X3FVPROC) (GLint location, GLsizei count, GLboolean transpose, const GLfloat *value);
+typedef void (GL_APIENTRY * PFNGLBLITFRAMEBUFFERPROC) (GLint srcX0, GLint srcY0, GLint srcX1, GLint srcY1, GLint dstX0, GLint dstY0, GLint dstX1, GLint dstY1, GLbitfield mask, GLenum filter);
+typedef void (GL_APIENTRY * PFNGLRENDERBUFFERSTORAGEMULTISAMPLEPROC) (GLenum target, GLsizei samples, GLenum internalformat, GLsizei width, GLsizei height);
+typedef void (GL_APIENTRY * PFNGLFRAMEBUFFERTEXTURELAYERPROC) (GLenum target, GLenum attachment, GLuint texture, GLint level, GLint layer);
+typedef void *(GL_APIENTRY * PFNGLMAPBUFFERRANGEPROC) (GLenum target, GLintptr offset, GLsizeiptr length, GLbitfield access);
+typedef void (GL_APIENTRY * PFNGLFLUSHMAPPEDBUFFERRANGEPROC) (GLenum target, GLintptr offset, GLsizeiptr length);
+typedef void (GL_APIENTRY * PFNGLBINDVERTEXARRAYPROC) (GLuint array);
+typedef void (GL_APIENTRY * PFNGLDELETEVERTEXARRAYSPROC) (GLsizei n, const GLuint *arrays);
+typedef void (GL_APIENTRY * PFNGLGENVERTEXARRAYSPROC) (GLsizei n, GLuint *arrays);
+typedef GLboolean (GL_APIENTRY * PFNGLISVERTEXARRAYPROC) (GLuint array);
+typedef void (GL_APIENTRY * PFNGLGETINTEGERI_VPROC) (GLenum target, GLuint index, GLint *data);
+typedef void (GL_APIENTRY * PFNGLBEGINTRANSFORMFEEDBACKPROC) (GLenum primitiveMode);
+typedef void (GL_APIENTRY * PFNGLENDTRANSFORMFEEDBACKPROC) (void);
+typedef void (GL_APIENTRY * PFNGLBINDBUFFERRANGEPROC) (GLenum target, GLuint index, GLuint buffer, GLintptr offset, GLsizeiptr size);
+typedef void (GL_APIENTRY * PFNGLBINDBUFFERBASEPROC) (GLenum target, GLuint index, GLuint buffer);
+typedef void (GL_APIENTRY * PFNGLTRANSFORMFEEDBACKVARYINGSPROC) (GLuint program, GLsizei count, const GLchar *const*varyings, GLenum bufferMode);
+typedef void (GL_APIENTRY * PFNGLGETTRANSFORMFEEDBACKVARYINGPROC) (GLuint program, GLuint index, GLsizei bufSize, GLsizei *length, GLsizei *size, GLenum *type, GLchar *name);
+typedef void (GL_APIENTRY * PFNGLVERTEXATTRIBIPOINTERPROC) (GLuint index, GLint size, GLenum type, GLsizei stride, const void *pointer);
+typedef void (GL_APIENTRY * PFNGLGETVERTEXATTRIBIIVPROC) (GLuint index, GLenum pname, GLint *params);
+typedef void (GL_APIENTRY * PFNGLGETVERTEXATTRIBIUIVPROC) (GLuint index, GLenum pname, GLuint *params);
+typedef void (GL_APIENTRY * PFNGLVERTEXATTRIBI4IPROC) (GLuint index, GLint x, GLint y, GLint z, GLint w);
+typedef void (GL_APIENTRY * PFNGLVERTEXATTRIBI4UIPROC) (GLuint index, GLuint x, GLuint y, GLuint z, GLuint w);
+typedef void (GL_APIENTRY * PFNGLVERTEXATTRIBI4IVPROC) (GLuint index, const GLint *v);
+typedef void (GL_APIENTRY * PFNGLVERTEXATTRIBI4UIVPROC) (GLuint index, const GLuint *v);
+typedef void (GL_APIENTRY * PFNGLGETUNIFORMUIVPROC) (GLuint program, GLint location, GLuint *params);
+typedef GLint (GL_APIENTRY * PFNGLGETFRAGDATALOCATIONPROC) (GLuint program, const GLchar *name);
+typedef void (GL_APIENTRY * PFNGLUNIFORM1UIPROC) (GLint location, GLuint v0);
+typedef void (GL_APIENTRY * PFNGLUNIFORM2UIPROC) (GLint location, GLuint v0, GLuint v1);
+typedef void (GL_APIENTRY * PFNGLUNIFORM3UIPROC) (GLint location, GLuint v0, GLuint v1, GLuint v2);
+typedef void (GL_APIENTRY * PFNGLUNIFORM4UIPROC) (GLint location, GLuint v0, GLuint v1, GLuint v2, GLuint v3);
+typedef void (GL_APIENTRY * PFNGLUNIFORM1UIVPROC) (GLint location, GLsizei count, const GLuint *value);
+typedef void (GL_APIENTRY * PFNGLUNIFORM2UIVPROC) (GLint location, GLsizei count, const GLuint *value);
+typedef void (GL_APIENTRY * PFNGLUNIFORM3UIVPROC) (GLint location, GLsizei count, const GLuint *value);
+typedef void (GL_APIENTRY * PFNGLUNIFORM4UIVPROC) (GLint location, GLsizei count, const GLuint *value);
+typedef void (GL_APIENTRY * PFNGLCLEARBUFFERIVPROC) (GLenum buffer, GLint drawbuffer, const GLint *value);
+typedef void (GL_APIENTRY * PFNGLCLEARBUFFERUIVPROC) (GLenum buffer, GLint drawbuffer, const GLuint *value);
+typedef void (GL_APIENTRY * PFNGLCLEARBUFFERFVPROC) (GLenum buffer, GLint drawbuffer, const GLfloat *value);
+typedef void (GL_APIENTRY * PFNGLCLEARBUFFERFIPROC) (GLenum buffer, GLint drawbuffer, GLfloat depth, GLint stencil);
+typedef const GLubyte *(GL_APIENTRY * PFNGLGETSTRINGIPROC) (GLenum name, GLuint index);
+typedef void (GL_APIENTRY * PFNGLCOPYBUFFERSUBDATAPROC) (GLenum readTarget, GLenum writeTarget, GLintptr readOffset, GLintptr writeOffset, GLsizeiptr size);
+typedef void (GL_APIENTRY * PFNGLGETUNIFORMINDICESPROC) (GLuint program, GLsizei uniformCount, const GLchar *const*uniformNames, GLuint *uniformIndices);
+typedef void (GL_APIENTRY * PFNGLGETACTIVEUNIFORMSIVPROC) (GLuint program, GLsizei uniformCount, const GLuint *uniformIndices, GLenum pname, GLint *params);
+typedef GLuint (GL_APIENTRY * PFNGLGETUNIFORMBLOCKINDEXPROC) (GLuint program, const GLchar *uniformBlockName);
+typedef void (GL_APIENTRY * PFNGLGETACTIVEUNIFORMBLOCKIVPROC) (GLuint program, GLuint uniformBlockIndex, GLenum pname, GLint *params);
+typedef void (GL_APIENTRY * PFNGLGETACTIVEUNIFORMBLOCKNAMEPROC) (GLuint program, GLuint uniformBlockIndex, GLsizei bufSize, GLsizei *length, GLchar *uniformBlockName);
+typedef void (GL_APIENTRY * PFNGLUNIFORMBLOCKBINDINGPROC) (GLuint program, GLuint uniformBlockIndex, GLuint uniformBlockBinding);
+typedef void (GL_APIENTRY * PFNGLDRAWARRAYSINSTANCEDPROC) (GLenum mode, GLint first, GLsizei count, GLsizei instancecount);
+typedef void (GL_APIENTRY * PFNGLDRAWELEMENTSINSTANCEDPROC) (GLenum mode, GLsizei count, GLenum type, const void *indices, GLsizei instancecount);
+typedef GLsync (GL_APIENTRY * PFNGLFENCESYNCPROC) (GLenum condition, GLbitfield flags);
+typedef GLboolean (GL_APIENTRY * PFNGLISSYNCPROC) (GLsync sync);
+typedef void (GL_APIENTRY * PFNGLDELETESYNCPROC) (GLsync sync);
+typedef GLenum (GL_APIENTRY * PFNGLCLIENTWAITSYNCPROC) (GLsync sync, GLbitfield flags, GLuint64 timeout);
+typedef void (GL_APIENTRY * PFNGLWAITSYNCPROC) (GLsync sync, GLbitfield flags, GLuint64 timeout);
+typedef void (GL_APIENTRY * PFNGLGETINTEGER64VPROC) (GLenum pname, GLint64 *data);
+typedef void (GL_APIENTRY * PFNGLGETSYNCIVPROC) (GLsync sync, GLenum pname, GLsizei count, GLsizei *length, GLint *values);
+typedef void (GL_APIENTRY * PFNGLGETINTEGER64I_VPROC) (GLenum target, GLuint index, GLint64 *data);
+typedef void (GL_APIENTRY * PFNGLGETBUFFERPARAMETERI64VPROC) (GLenum target, GLenum pname, GLint64 *params);
+typedef void (GL_APIENTRY * PFNGLGENSAMPLERSPROC) (GLsizei count, GLuint *samplers);
+typedef void (GL_APIENTRY * PFNGLDELETESAMPLERSPROC) (GLsizei count, const GLuint *samplers);
+typedef GLboolean (GL_APIENTRY * PFNGLISSAMPLERPROC) (GLuint sampler);
+typedef void (GL_APIENTRY * PFNGLBINDSAMPLERPROC) (GLuint unit, GLuint sampler);
+typedef void (GL_APIENTRY * PFNGLSAMPLERPARAMETERIPROC) (GLuint sampler, GLenum pname, GLint param);
+typedef void (GL_APIENTRY * PFNGLSAMPLERPARAMETERIVPROC) (GLuint sampler, GLenum pname, const GLint *param);
+typedef void (GL_APIENTRY * PFNGLSAMPLERPARAMETERFPROC) (GLuint sampler, GLenum pname, GLfloat param);
+typedef void (GL_APIENTRY * PFNGLSAMPLERPARAMETERFVPROC) (GLuint sampler, GLenum pname, const GLfloat *param);
+typedef void (GL_APIENTRY * PFNGLGETSAMPLERPARAMETERIVPROC) (GLuint sampler, GLenum pname, GLint *params);
+typedef void (GL_APIENTRY * PFNGLGETSAMPLERPARAMETERFVPROC) (GLuint sampler, GLenum pname, GLfloat *params);
+typedef void (GL_APIENTRY * PFNGLVERTEXATTRIBDIVISORPROC) (GLuint index, GLuint divisor);
+typedef void (GL_APIENTRY * PFNGLBINDTRANSFORMFEEDBACKPROC) (GLenum target, GLuint id);
+typedef void (GL_APIENTRY * PFNGLDELETETRANSFORMFEEDBACKSPROC) (GLsizei n, const GLuint *ids);
+typedef void (GL_APIENTRY * PFNGLGENTRANSFORMFEEDBACKSPROC) (GLsizei n, GLuint *ids);
+typedef GLboolean (GL_APIENTRY * PFNGLISTRANSFORMFEEDBACKPROC) (GLuint id);
+typedef void (GL_APIENTRY * PFNGLPAUSETRANSFORMFEEDBACKPROC) (void);
+typedef void (GL_APIENTRY * PFNGLRESUMETRANSFORMFEEDBACKPROC) (void);
+typedef void (GL_APIENTRY * PFNGLGETPROGRAMBINARYPROC) (GLuint program, GLsizei bufSize, GLsizei *length, GLenum *binaryFormat, void *binary);
+typedef void (GL_APIENTRY * PFNGLPROGRAMBINARYPROC) (GLuint program, GLenum binaryFormat, const void *binary, GLsizei length);
+typedef void (GL_APIENTRY * PFNGLPROGRAMPARAMETERIPROC) (GLuint program, GLenum pname, GLint value);
+typedef void (GL_APIENTRY * PFNGLINVALIDATEFRAMEBUFFERPROC) (GLenum target, GLsizei numAttachments, const GLenum *attachments);
+typedef void (GL_APIENTRY * PFNGLINVALIDATESUBFRAMEBUFFERPROC) (GLenum target, GLsizei numAttachments, const GLenum *attachments, GLint x, GLint y, GLsizei width, GLsizei height);
+typedef void (GL_APIENTRY * PFNGLTEXSTORAGE2DPROC) (GLenum target, GLsizei levels, GLenum internalformat, GLsizei width, GLsizei height);
+typedef void (GL_APIENTRY * PFNGLTEXSTORAGE3DPROC) (GLenum target, GLsizei levels, GLenum internalformat, GLsizei width, GLsizei height, GLsizei depth);
+typedef void (GL_APIENTRY * PFNGLGETINTERNALFORMATIVPROC) (GLenum target, GLenum internalformat, GLenum pname, GLsizei count, GLint *params);
+#endif
+#else
+QX_GL3(PFNGLREADBUFFERPROC, ReadBuffer)
+QX_GL3(PFNGLDRAWRANGEELEMENTSPROC, DrawRangeElements)
+QX_GL3(PFNGLTEXIMAGE3DPROC, TexImage3D)
+QX_GL3(PFNGLTEXSUBIMAGE3DPROC, TexSubImage3D)
+QX_GL3(PFNGLCOPYTEXSUBIMAGE3DPROC, CopyTexSubImage3D)
+QX_GL3(PFNGLCOMPRESSEDTEXIMAGE3DPROC, CompressedTexImage3D)
+QX_GL3(PFNGLCOMPRESSEDTEXSUBIMAGE3DPROC, CompressedTexSubImage3D)
+QX_GL3(PFNGLGENQUERIESPROC, GenQueries)
+QX_GL3(PFNGLDELETEQUERIESPROC, DeleteQueries)
+QX_GL3(PFNGLISQUERYPROC, IsQuery)
+QX_GL3(PFNGLBEGINQUERYPROC, BeginQuery)
+QX_GL3(PFNGLENDQUERYPROC, EndQuery)
+QX_GL3(PFNGLGETQUERYIVPROC, GetQueryiv)
+QX_GL3(PFNGLGETQUERYOBJECTUIVPROC, GetQueryObjectuiv)
+QX_GL3(PFNGLUNMAPBUFFERPROC, UnmapBuffer)
+QX_GL3(PFNGLGETBUFFERPOINTERVPROC, GetBufferPointerv)
+QX_GL3(PFNGLDRAWBUFFERSPROC, DrawBuffers)
+QX_GL3(PFNGLUNIFORMMATRIX2X3FVPROC, UniformMatrix2x3fv)
+QX_GL3(PFNGLUNIFORMMATRIX3X2FVPROC, UniformMatrix3x2fv)
+QX_GL3(PFNGLUNIFORMMATRIX2X4FVPROC, UniformMatrix2x4fv)
+QX_GL3(PFNGLUNIFORMMATRIX4X2FVPROC, UniformMatrix4x2fv)
+QX_GL3(PFNGLUNIFORMMATRIX3X4FVPROC, UniformMatrix3x4fv)
+QX_GL3(PFNGLUNIFORMMATRIX4X3FVPROC, UniformMatrix4x3fv)
+QX_GL3(PFNGLBLITFRAMEBUFFERPROC, BlitFramebuffer)
+QX_GL3(PFNGLRENDERBUFFERSTORAGEMULTISAMPLEPROC, RenderbufferStorageMultisample)
+QX_GL3(PFNGLFRAMEBUFFERTEXTURELAYERPROC, FramebufferTextureLayer)
+QX_GL3(PFNGLMAPBUFFERRANGEPROC, MapBufferRange)
+QX_GL3(PFNGLFLUSHMAPPEDBUFFERRANGEPROC, FlushMappedBufferRange)
+QX_GL3(PFNGLBINDVERTEXARRAYPROC, BindVertexArray)
+QX_GL3(PFNGLDELETEVERTEXARRAYSPROC, DeleteVertexArrays)
+QX_GL3(PFNGLGENVERTEXARRAYSPROC, GenVertexArrays)
+QX_GL3(PFNGLISVERTEXARRAYPROC, IsVertexArray)
+QX_GL3(PFNGLGETINTEGERI_VPROC, GetIntegeri_v)
+QX_GL3(PFNGLBEGINTRANSFORMFEEDBACKPROC, BeginTransformFeedback)
+QX_GL3(PFNGLENDTRANSFORMFEEDBACKPROC, EndTransformFeedback)
+QX_GL3(PFNGLBINDBUFFERRANGEPROC, BindBufferRange)
+QX_GL3(PFNGLBINDBUFFERBASEPROC, BindBufferBase)
+QX_GL3(PFNGLTRANSFORMFEEDBACKVARYINGSPROC, TransformFeedbackVaryings)
+QX_GL3(PFNGLGETTRANSFORMFEEDBACKVARYINGPROC, GetTransformFeedbackVarying)
+QX_GL3(PFNGLVERTEXATTRIBIPOINTERPROC, VertexAttribIPointer)
+QX_GL3(PFNGLGETVERTEXATTRIBIIVPROC, GetVertexAttribIiv)
+QX_GL3(PFNGLGETVERTEXATTRIBIUIVPROC, GetVertexAttribIuiv)
+QX_GL3(PFNGLVERTEXATTRIBI4IPROC, VertexAttribI4i)
+QX_GL3(PFNGLVERTEXATTRIBI4UIPROC, VertexAttribI4ui)
+QX_GL3(PFNGLVERTEXATTRIBI4IVPROC, VertexAttribI4iv)
+QX_GL3(PFNGLVERTEXATTRIBI4UIVPROC, VertexAttribI4uiv)
+QX_GL3(PFNGLGETUNIFORMUIVPROC, GetUniformuiv)
+QX_GL3(PFNGLGETFRAGDATALOCATIONPROC, GetFragDataLocation)
+QX_GL3(PFNGLUNIFORM1UIPROC, Uniform1ui)
+QX_GL3(PFNGLUNIFORM2UIPROC, Uniform2ui)
+QX_GL3(PFNGLUNIFORM3UIPROC, Uniform3ui)
+QX_GL3(PFNGLUNIFORM4UIPROC, Uniform4ui)
+QX_GL3(PFNGLUNIFORM1UIVPROC, Uniform1uiv)
+QX_GL3(PFNGLUNIFORM2UIVPROC, Uniform2uiv)
+QX_GL3(PFNGLUNIFORM3UIVPROC, Uniform3uiv)
+QX_GL3(PFNGLUNIFORM4UIVPROC, Uniform4uiv)
+QX_GL3(PFNGLCLEARBUFFERIVPROC, ClearBufferiv)
+QX_GL3(PFNGLCLEARBUFFERUIVPROC, ClearBufferuiv)
+QX_GL3(PFNGLCLEARBUFFERFVPROC, ClearBufferfv)
+QX_GL3(PFNGLCLEARBUFFERFIPROC, ClearBufferfi)
+QX_GL3(PFNGLGETSTRINGIPROC, GetStringi)
+QX_GL3(PFNGLCOPYBUFFERSUBDATAPROC, CopyBufferSubData)
+QX_GL3(PFNGLGETUNIFORMINDICESPROC, GetUniformIndices)
+QX_GL3(PFNGLGETACTIVEUNIFORMSIVPROC, GetActiveUniformsiv)
+QX_GL3(PFNGLGETUNIFORMBLOCKINDEXPROC, GetUniformBlockIndex)
+QX_GL3(PFNGLGETACTIVEUNIFORMBLOCKIVPROC, GetActiveUniformBlockiv)
+QX_GL3(PFNGLGETACTIVEUNIFORMBLOCKNAMEPROC, GetActiveUniformBlockName)
+QX_GL3(PFNGLUNIFORMBLOCKBINDINGPROC, UniformBlockBinding)
+QX_GL3(PFNGLDRAWARRAYSINSTANCEDPROC, DrawArraysInstanced)
+QX_GL3(PFNGLDRAWELEMENTSINSTANCEDPROC, DrawElementsInstanced)
+QX_GL3(PFNGLFENCESYNCPROC, FenceSync)
+QX_GL3(PFNGLISSYNCPROC, IsSync)
+QX_GL3(PFNGLDELETESYNCPROC, DeleteSync)
+QX_GL3(PFNGLCLIENTWAITSYNCPROC, ClientWaitSync)
+QX_GL3(PFNGLWAITSYNCPROC, WaitSync)
+QX_GL3(PFNGLGETINTEGER64VPROC, GetInteger64v)
+QX_GL3(PFNGLGETSYNCIVPROC, GetSynciv)
+QX_GL3(PFNGLGETINTEGER64I_VPROC, GetInteger64i_v)
+QX_GL3(PFNGLGETBUFFERPARAMETERI64VPROC, GetBufferParameteri64v)
+QX_GL3(PFNGLGENSAMPLERSPROC, GenSamplers)
+QX_GL3(PFNGLDELETESAMPLERSPROC, DeleteSamplers)
+QX_GL3(PFNGLISSAMPLERPROC, IsSampler)
+QX_GL3(PFNGLBINDSAMPLERPROC, BindSampler)
+QX_GL3(PFNGLSAMPLERPARAMETERIPROC, SamplerParameteri)
+QX_GL3(PFNGLSAMPLERPARAMETERIVPROC, SamplerParameteriv)
+QX_GL3(PFNGLSAMPLERPARAMETERFPROC, SamplerParameterf)
+QX_GL3(PFNGLSAMPLERPARAMETERFVPROC, SamplerParameterfv)
+QX_GL3(PFNGLGETSAMPLERPARAMETERIVPROC, GetSamplerParameteriv)
+QX_GL3(PFNGLGETSAMPLERPARAMETERFVPROC, GetSamplerParameterfv)
+QX_GL3(PFNGLVERTEXATTRIBDIVISORPROC, VertexAttribDivisor)
+QX_GL3(PFNGLBINDTRANSFORMFEEDBACKPROC, BindTransformFeedback)
+QX_GL3(PFNGLDELETETRANSFORMFEEDBACKSPROC, DeleteTransformFeedbacks)
+QX_GL3(PFNGLGENTRANSFORMFEEDBACKSPROC, GenTransformFeedbacks)
+QX_GL3(PFNGLISTRANSFORMFEEDBACKPROC, IsTransformFeedback)
+QX_GL3(PFNGLPAUSETRANSFORMFEEDBACKPROC, PauseTransformFeedback)
+QX_GL3(PFNGLRESUMETRANSFORMFEEDBACKPROC, ResumeTransformFeedback)
+QX_GL3(PFNGLGETPROGRAMBINARYPROC, GetProgramBinary)
+QX_GL3(PFNGLPROGRAMBINARYPROC, ProgramBinary)
+QX_GL3(PFNGLPROGRAMPARAMETERIPROC, ProgramParameteri)
+QX_GL3(PFNGLINVALIDATEFRAMEBUFFERPROC, InvalidateFramebuffer)
+QX_GL3(PFNGLINVALIDATESUBFRAMEBUFFERPROC, InvalidateSubFramebuffer)
+QX_GL3(PFNGLTEXSTORAGE2DPROC, TexStorage2D)
+QX_GL3(PFNGLTEXSTORAGE3DPROC, TexStorage3D)
+QX_GL3(PFNGLGETINTERNALFORMATIVPROC, GetInternalformativ)
+#endif

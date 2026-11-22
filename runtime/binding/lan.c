@@ -18,6 +18,7 @@
 
 // quix.lan. Ver lan.h.
 
+#include "core/dispatch.h"
 #include <string.h>
 #include "core/app_context.h"
 #include "core/config_loader.h"
@@ -61,6 +62,24 @@ static JSValue js_lan_peers(JSContext *ctx, JSValueConst this_val, int argc, JSV
   return list;
 }
 
+// el canal lan del dispatch (core/dispatch.h): los envios salen por el, al
+// instante (devuelve si se envio)
+typedef struct {
+  const char *to;
+  const void *data;
+  size_t      size;
+  int        *ret;
+} LanSend;
+
+static int lan_dispatch(void *user, const void *item) {
+  (void)user;
+  const LanSend *m = item;
+  *m->ret = lan_send(m->to, m->data, m->size);
+  return 0;
+}
+
+static DispatchChannel lan_channel = { .name = "lan", .send = lan_dispatch };
+
 static JSValue js_lan_send(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
   (void)this_val;
   if (argc < 1) return JS_FALSE;
@@ -68,7 +87,9 @@ static JSValue js_lan_send(JSContext *ctx, JSValueConst this_val, int argc, JSVa
   const char *text = JS_ToCStringLen(ctx, &size, argv[0]);
   if (!text) return JS_EXCEPTION;
   const char *to = argc > 1 && JS_IsString(argv[1]) ? JS_ToCString(ctx, argv[1]) : NULL;
-  int sent = lan_send(to, text, size);
+  int sent = 0;
+  LanSend m = { to, text, size, &sent };
+  dispatch_push(&lan_channel, &m, sizeof m);
   if (to) JS_FreeCString(ctx, to);
   JS_FreeCString(ctx, text);
   return JS_NewBool(ctx, sent);

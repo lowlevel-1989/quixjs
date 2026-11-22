@@ -26,6 +26,8 @@ fps     = 30
 # RAM (tirones de mas de 1 s y al final bloqueada). Con los hooks que quitan
 # la basura (events-cached, interpreter-fast...) 128 ya no da tirones.
 js_memory = 128
+scaling   = "pixel_perfect"   # 1x, 2x... si cabe; en una pantalla mas pequena que
+                              # 816x624, reducido (Options > Scaling)
 
 # En el PC (el binario que no es el de PortMaster): 60 imagenes por segundo,
 # alli sobra potencia. [engine.handheld] haria lo mismo para las portatiles.
@@ -36,14 +38,19 @@ fps = 60
 title     = "Fear & Hunger"     # el del menu y el de PortMaster
 version   = "1.0.1"             # la del port: subirla con cada cambio del port
 id        = "fear_and_hunger"   # el id del juego: Transfer Save solo pasa partidas del mismo
-game_dir  = "gamedata/www"      # la carpeta www/ del juego, copiada en gamedata/
-cache_dir = "cache/gamedata"
+# la rom: la carpeta www/ del juego comprimida en un .zip, junto a este
+# port.toml. game_dir: donde empieza el juego dentro de la rom (la carpeta
+# www/ de dentro). Lo que el juego escribe (partidas) va a gamedata/, la
+# carpeta de quixjs junto a este port.toml
+rom       = "www.zip"
+game_dir  = "www"
 width     = 816   # package.json
 height    = 624
-mods      = ["rumble"]          # mods activos (mods/<nombre>/ junto al port.toml, con las
+mods      = ["rumble", "party-bars"]   # mods activos (mods/<nombre>/ junto al port.toml, con las
                                 # mismas rutas que dentro de game_dir); si dos traen el
                                 # mismo archivo, gana el ultimo de la lista. rumble (la
-                                # vibracion) viene activo
+                                # vibracion) y party-bars (Hunger, Body y Mind en el
+                                # mapa) vienen activos
 developer = "Miro Haverinen"
 publisher = "Miro Haverinen"    # publisher y releasedate: van en gameinfo.xml (EmulationStation)
 releasedate = "20181211T000000" # el 11 de diciembre de 2018, en itch.io
@@ -59,7 +66,7 @@ desc      = "Fear & Hunger (RPG Maker MV) running on quixjs, a JS runtime in C w
 #            global.rpgsave   la lista de partidas que ves al pulsar Continuar
 #            config.rpgsave   las opciones del juego (volumen, etc.)
 [saves]
-dir   = "save"   # desde [game] game_dir: gamedata/www/save
+dir   = "save"   # en gamedata/: gamedata/save
 files = ["file*.rpgsave", "global.rpgsave", "config.rpgsave"]
 
 # fuentes de los @font-face de su CSS
@@ -90,7 +97,7 @@ entry    = "js/main.js"
 [portmaster]
 script       = "Fear and Hunger.sh"
 porter       = ["lowlevel.1989"]
-inst         = "Needs Fear & Hunger 1.4.1 for Windows (DRM-free, from itch.io). Unzip it on your PC and copy its folder www/ into ports/fearandhunger/gamedata/ (it must end up as gamedata/www/). Game.exe and the .dll files are not needed."
+inst         = "Needs Fear & Hunger 1.4.1 for Windows (itch.io or Steam). Compress its folder www/ into www.zip (a zip without compression is best; a compressed one also works, the first start takes longer) and copy it into ports/fearandhunger/, next to port.toml."
 store        = { name = "itch.io", url = "https://mirohaver.itch.io/fear-hunger" }
 availability = "paid"
 
@@ -124,6 +131,10 @@ engine = "rpgmaker-mv"
 # Controls deja asignar todos los botones y las palancas (controller.map).
 [controls]
 gamepad = true
+# Select + R1: captura de pantalla; Select + L1: la lupa (cartas, notas). Con
+# true, Controls pide tambien un boton suelto para cada una (el combo sigue)
+screenshot = true
+magnifier  = true
 vibration = true   # el mod rumble vibra en los momentos fuertes; Options > Vibration la apaga
 
 # lo que hace cada boton en el juego, con los nombres de su YEP_KeyboardConfig:

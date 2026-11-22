@@ -103,3 +103,17 @@ STEP int finish(Run *r, Loop *l) {
   free(backend);
   return exit_code;
 }
+
+// Select + R2 en un juego abierto desde el launcher: de vuelta al launcher.
+// quixjs se ejecuta otra vez con las mismas opciones (el juego ya se cerro y
+// guardo como al salir). Solo vuelve si falla
+static void relaunch(char **argv) {
+#ifndef __ANDROID__
+  printf("Back to the launcher\n");
+  fflush(NULL);
+  execv("/proc/self/exe", argv);
+  perror("[launcher] cannot start again");
+#else
+  (void)argv;
+#endif
+}

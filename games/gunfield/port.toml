@@ -1,0 +1,372 @@
+# port.toml: el port de Gunfield (Shiv, 2023) a quixjs.
+#
+# Es el archivo que describe el juego: quixjs -c port.toml. La primera parte
+# salio de quixjs --gen-config sobre Gunfield 1.1.2.2 (Steam), revisada a
+# mano. Es un juego de Construct 2 para nw.js: todo va dentro de su
+# package.nw (un zip), que se descomprime en gamedata/.
+#
+# Lo que quixjs hace por el, sin nada en este archivo: jQuery 3 (el DOM que
+# pide), los textos de string.xml (DOMParser y XPath), la musica (<audio>),
+# los <div> y <input> del index.html y Steam (greenworks: los logros).
+
+[engine]
+name      = "html5"
+nwjs      = true   # package.json de nw.js: require('fs'), process...
+canvas_id = "c2canvas"   # el <canvas> del index.html
+# fps = 30 en las handhelds: a 60 no llega y saltaba de ~40 a ~25 segun las
+# balas (se notaba como tirones). A 30 va parejo; el juego no va mas lento
+# (Construct 2 mueve todo segun el tiempo que pasa)
+fps       = 30
+# Construct 2 carga todas sus imagenes al empezar: 1,7 GB decodificadas, en
+# hojas de hasta 2048x2048. Como en el navegador, se decodifican cuando el
+# juego las usa, y una vez en la GPU se suelta su copia en la RAM
+lazy_images = true
+# scaling pixel_perfect: el juego (640x360) a la pantalla solo por 1x, 2x...
+# En una de 720 de ancho se ve a 1x con un borde: estirado a 1,125x la letra
+# se veia deforme (Options > Scaling lo cambia)
+scaling   = "pixel_perfect"
+# texture_budget = 80: Gunfield no suelta las hojas de sprites de lo que ya
+# paso (todo ocurre en la misma pantalla) y en una partida larga pasaban de
+# 140 MB; en una handheld la GPU usa la RAM del sistema y al acabarse se
+# colgaba. Por encima de 80 MB se sueltan las que no se dibujan hace rato y
+# vuelven solas si el juego las necesita
+texture_budget = 80
+# js_memory = 128: JavaScriptCore cree tener 128 MB de RAM, asi pasa el GC
+# antes y no reserva de mas (en la RG CubeXX reservaba 197 MB para 106 de uso)
+js_memory = 128
+
+# En el PC (el binario que no es el de PortMaster): 60, alli sobra potencia
+[engine.pc]
+fps = 60
+
+[game]
+title     = "Gunfield"
+version   = "0.1.0"           # la del port
+id        = "gunfield"
+# la rom: el package.nw del juego, tal cual (ya es un zip), junto a este
+# port.toml. game_dir: donde empieza el juego dentro de la rom (el juego esta
+# en la raiz de package.nw). Lo que el juego escribe (partidas) va a
+# gamedata/, la carpeta de quixjs junto a este port.toml
+rom       = "package.nw"
+game_dir  = ""
+width     = 640               # package.json: 16:9
+height    = 360
+mods      = ["rumble", "performance-mode"]   # mods/: rumble (vibra cuando
+                  # tiembla la pantalla), performance-mode (sin los efectos de
+                  # color caros)
+developer = "Shiv"
+releasedate = "20230101T000000"
+genres    = ["shooter"]
+desc      = "Gunfield, a roguelite shoot 'em up, running on quixjs, a JS runtime in C with SDL2 and OpenGL ES 2."
+
+# Los <script> del index.html, en el orden en que se cargan:
+#   includes  los scripts del juego (jQuery y el motor de Construct 2)
+#   entry     el ultimo, el que arranca el juego
+[scripts]
+includes = [
+  "jquery-3.4.1.min.js",
+  "c2runtime.js",
+  "../levelup.js"   # games/gunfield/levelup.js: el menu de mejoras no se abre dos veces
+]
+entry    = "../entry.js"   # games/gunfield/entry.js: el <script> del index.html
+
+# los elementos con id del <body> del index.html: quixjs los crea en el
+# body cuando el juego los pide (getElementById)
+[html]
+elements = [
+  { tag = "div", id = "fb-root" },
+  { tag = "div", id = "c2canvasdiv" },
+  { tag = "canvas", id = "c2canvas" },
+  { tag = "input", id = "c2nwOpenFileDialog", type = "file" },
+  { tag = "input", id = "c2nwChooseFolderDialog", type = "file" },
+  { tag = "input", id = "c2nwSaveDialog", type = "file" },
+]
+
+# Transfer Save: las partidas y donde se guardan. Gunfield escribe su partida
+# como en Windows, en la carpeta del usuario (en quixjs, gamedata/):
+# AppData/Local/Gunfield/SaveGame/Save<n>.save. Sus ajustes y su progreso
+# tambien van en localStorage (el plugin LocalStorage de Construct 2), que
+# quixjs guarda en localstorage.json, junto a la partida
+[saves]
+dir           = "AppData/Local/Gunfield/SaveGame"
+files         = ["*.save", "localstorage.json"]
+local_storage = "localstorage.json"
+
+[controls]
+gamepad   = true   # Construct 2 lee el mando (Gamepad API)
+# Select + R1: captura de pantalla; Select + L1: la lupa. Con true, Controls
+# pide tambien un boton suelto para cada una (el combo sigue)
+screenshot = true
+magnifier  = true
+vibration = true   # el mod rumble
+
+# ---------- hooks ----------
+# Los de Construct 2 (runtime/engines/construct2): lo que hace cada uno, en
+# su archivo. Medidos en una partida automatica, A-B-B-A:
+#   effects-direct  el texto y los paneles con un efecto de color (Tint,
+#                   Brightness) se dibujan directos, sin una textura aparte
+#                   (RGB30: de 19,8 a 27,2 fps; RX6S: de 7,4 a 11,4)
+#   clear-array     no vaciar las listas de los eventos que ya estan vacias
+#                   (RGB30: de 28,1 a 31,1 fps; RX6S: de 11,4 a 12,5)
+#   include-sol     las hojas incluidas limpian la seleccion solo de sus tipos,
+#                   no de los ~530 del juego (RGB30: de 29,8 a 35,6 fps; RX6S:
+#                   de 11,9 a 17,4)
+[hooks]
+"cr.layer.prototype.drawInstanceWithShadersGL" = "construct2/effects-direct"
+"cr.truncateArray" = "construct2/clear-array"
+"cr.clearArray"    = "construct2/clear-array"
+"cr.eventinclude.prototype.run" = "construct2/include-sol"
+"cr.layer.prototype.drawGL" = "construct2/pixellate-1"
+
+# ---------- los logros ----------
+# Gunfield los da con Steam (greenworks): quixjs contesta por Steam y deja
+# cada id que el juego activa en quix.steam.achievements (y, una vez, en
+# gamedata/steam-achievements.txt). Los ids salen de la hoja de eventos
+# e_Achievements de data.js; los titulos y descripciones, de su pagina de
+# Steam (27 logros; 26 visibles). Los de ruta (VICTORY_, NO_UPGRDE_,
+# FLAWLESS_VICTORY_) llevan el numero de la ruta: una variable del spawner
+# (t467, la 1) que empieza en 0 y la funcion CreateBranch pone en 1, 2 o 3.
+# Ruta 0 a 3 = Part 1 a 4 en Steam. El jefe de cada ruta sale de la historia
+# del juego (string.xml, storydialog10/20/30): 0 la reina (Queen of the
+# Hive), 1 el oraculo (Oracle), 2 el culto (Cultist walker). El de la ruta 3
+# es el logro 27, oculto en Steam: aqui con un titulo propio.
+#   WIN_CHARACTER_<n>   ganar con el personaje n (0 Nova ... 7 Vega, como
+#                       los <character id> de string.xml)
+#   OPEN_SKILLS_<n>     10, 20, 30 y 40 habilidades
+#   LEVEL_<n>           60 y 75
+#   CHARACTER_UNLOCKED_8
+[symbols]
+win_nova     = "path:quix.steam.achievements.WIN_CHARACTER_0"
+win_nebula   = "path:quix.steam.achievements.WIN_CHARACTER_1"
+win_mercury  = "path:quix.steam.achievements.WIN_CHARACTER_2"
+win_eclipse  = "path:quix.steam.achievements.WIN_CHARACTER_3"
+win_coralexa = "path:quix.steam.achievements.WIN_CHARACTER_4"
+win_astra    = "path:quix.steam.achievements.WIN_CHARACTER_5"
+win_cassiopeia= "path:quix.steam.achievements.WIN_CHARACTER_6"
+win_vega     = "path:quix.steam.achievements.WIN_CHARACTER_7"
+skills_10    = "path:quix.steam.achievements.OPEN_SKILLS_10"
+skills_20    = "path:quix.steam.achievements.OPEN_SKILLS_20"
+skills_30    = "path:quix.steam.achievements.OPEN_SKILLS_30"
+skills_40    = "path:quix.steam.achievements.OPEN_SKILLS_40"
+level_60     = "path:quix.steam.achievements.LEVEL_60"
+level_75     = "path:quix.steam.achievements.LEVEL_75"
+characters_8 = "path:quix.steam.achievements.CHARACTER_UNLOCKED_8"
+route_1      = "path:quix.steam.achievements.VICTORY_0"
+route_2      = "path:quix.steam.achievements.VICTORY_1"
+route_3      = "path:quix.steam.achievements.VICTORY_2"
+route_4      = "path:quix.steam.achievements.VICTORY_3"
+oldschool_1  = "path:quix.steam.achievements.NO_UPGRDE_0"
+oldschool_2  = "path:quix.steam.achievements.NO_UPGRDE_1"
+oldschool_3  = "path:quix.steam.achievements.NO_UPGRDE_2"
+oldschool_4  = "path:quix.steam.achievements.NO_UPGRDE_3"
+flawless_1   = "path:quix.steam.achievements.FLAWLESS_VICTORY_0"
+flawless_2   = "path:quix.steam.achievements.FLAWLESS_VICTORY_1"
+flawless_3   = "path:quix.steam.achievements.FLAWLESS_VICTORY_2"
+flawless_4   = "path:quix.steam.achievements.FLAWLESS_VICTORY_3"
+
+# Progression
+
+[[achievements]]
+id          = "skills_10"
+title       = "More Guns Vol. 1"
+description = "Unlock 10 Skills"
+type        = "progression"
+conditions  = ["skills_10"]
+
+[[achievements]]
+id          = "skills_20"
+title       = "More Guns Vol. 2"
+description = "Unlock 20 Skills"
+type        = "progression"
+conditions  = ["skills_20"]
+
+[[achievements]]
+id          = "skills_30"
+title       = "More Guns Vol. 3"
+description = "Unlock 30 Skills"
+type        = "progression"
+conditions  = ["skills_30"]
+
+[[achievements]]
+id          = "skills_40"
+title       = "More Guns Vol. 4"
+description = "Unlock 40 Skills"
+type        = "progression"
+conditions  = ["skills_40"]
+
+[[achievements]]
+id          = "level_60"
+title       = "Maximum Level"
+description = "Reach Level 60"
+type        = "progression"
+conditions  = ["level_60"]
+
+[[achievements]]
+id          = "level_75"
+title       = "Super Maximum Level"
+description = "Reach Level 75"
+type        = "secondary"
+conditions  = ["level_75"]
+
+[[achievements]]
+id          = "characters_8"
+title       = "We Are a Team!"
+description = "Unlock 8 Characters"
+type        = "progression"
+conditions  = ["characters_8"]
+
+# Victories
+
+[[achievements]]
+id          = "win_nova"
+title       = "Victory Nova"
+description = "Complete the game in any mode as Nova"
+type        = "win_condition"
+conditions  = ["win_nova"]
+
+[[achievements]]
+id          = "win_nebula"
+title       = "Victory Nebula"
+description = "Complete the game in any mode as Nebula"
+type        = "win_condition"
+conditions  = ["win_nebula"]
+
+[[achievements]]
+id          = "win_mercury"
+title       = "Victory Mercury"
+description = "Complete the game in any mode as Mercury"
+type        = "win_condition"
+conditions  = ["win_mercury"]
+
+[[achievements]]
+id          = "win_eclipse"
+title       = "Victory Eclipse"
+description = "Complete the game in any mode as Eclipse"
+type        = "win_condition"
+conditions  = ["win_eclipse"]
+
+[[achievements]]
+id          = "win_coralexa"
+title       = "Victory Coralexa"
+description = "Complete the game in any mode as Coralexa"
+type        = "win_condition"
+conditions  = ["win_coralexa"]
+
+[[achievements]]
+id          = "win_astra"
+title       = "Victory Astra"
+description = "Complete the game in any mode as Astra"
+type        = "win_condition"
+conditions  = ["win_astra"]
+
+[[achievements]]
+id          = "win_cassiopeia"
+title       = "Victory Cassiopeia"
+description = "Complete the game in any mode as Cassiopeia"
+type        = "win_condition"
+conditions  = ["win_cassiopeia"]
+
+[[achievements]]
+id          = "win_vega"
+title       = "Victory Vega"
+description = "Complete the game in any mode as Vega"
+type        = "win_condition"
+conditions  = ["win_vega"]
+
+# Routes
+
+[[achievements]]
+id          = "route_1"
+title       = "Part 1"
+description = "Complete the First Route"
+type        = "progression"
+conditions  = ["route_1"]
+
+[[achievements]]
+id          = "route_2"
+title       = "Part 2"
+description = "Complete the Second Route"
+type        = "progression"
+conditions  = ["route_2"]
+
+[[achievements]]
+id          = "route_3"
+title       = "Part 3"
+description = "Complete the Third Route"
+type        = "progression"
+conditions  = ["route_3"]
+
+[[achievements]]
+id          = "route_4"
+title       = "Part 4"
+description = "Complete the Fourth Route"
+type        = "progression"
+conditions  = ["route_4"]
+
+# Old school (without permanent upgrades)
+
+[[achievements]]
+id          = "oldschool_1"
+title       = "Old school Vol. 1"
+description = "Complete the game on the first route without using permanent upgrades"
+type        = "secondary"
+conditions  = ["oldschool_1"]
+
+[[achievements]]
+id          = "oldschool_2"
+title       = "Old school Vol. 2"
+description = "Complete the game on the second route without using permanent upgrades"
+type        = "secondary"
+conditions  = ["oldschool_2"]
+
+[[achievements]]
+id          = "oldschool_3"
+title       = "Old school Vol. 3"
+description = "Complete the game using the third route without using permanent upgrades"
+type        = "secondary"
+conditions  = ["oldschool_3"]
+
+[[achievements]]
+id          = "oldschool_4"
+title       = "Old school Vol. 4"
+description = "Complete the game on the fourth route without using permanent upgrades"
+type        = "secondary"
+conditions  = ["oldschool_4"]
+
+# Flawless victories
+
+[[achievements]]
+id          = "flawless_1"
+title       = "Flawless Victory: Queen of the Hive"
+description = "Defeat the Queen of the Hive without taking damage"
+type        = "secondary"
+conditions  = ["flawless_1"]
+
+[[achievements]]
+id          = "flawless_2"
+title       = "Flawless Victory: Oracle"
+description = "Defeat the Oracle without taking damage"
+type        = "secondary"
+conditions  = ["flawless_2"]
+
+[[achievements]]
+id          = "flawless_3"
+title       = "Flawless Victory: Cultist walker"
+description = "Defeat the Cultist walker without taking damage"
+type        = "secondary"
+conditions  = ["flawless_3"]
+
+[[achievements]]
+id          = "flawless_4"
+title       = "Flawless Victory: Fourth Route"
+description = "Defeat the boss of the fourth route without taking damage"
+type        = "secondary"
+conditions  = ["flawless_4"]
+
+# ---------- PortMaster ----------
+[portmaster]
+script       = "Gunfield.sh"
+porter       = ["lowlevel.1989"]
+inst         = "Needs Gunfield for Windows (Steam). Copy its file package.nw, as it is, into ports/gunfield/, next to port.toml."
+store        = { name = "Steam", url = "https://store.steampowered.com/app/2305900/" }
+availability = "paid"

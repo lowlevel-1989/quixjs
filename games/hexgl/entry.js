@@ -1,4 +1,30 @@
-// menu.js: el menu del port de HexGL, dibujado en un canvas.
+// Partes adaptadas de launch.js de HexGL (crear el juego con sus opciones y
+// el flujo de su menu):
+// https://github.com/BKcore/HexGL/blob/6addc95a2fce3bf05f4d751823cc054c61a16d68/launch.js
+//
+// The MIT License (MIT)
+//
+// Copyright (c) 2015 Thibaut Despoulain
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+//
+// entry.js: el menu del port de HexGL, dibujado en un canvas.
 //
 // El de HexGL (index.html y launch.js) es HTML: quixjs no dibuja HTML, solo
 // canvas. Este hace lo mismo que launch.js (elegir calidad y HUD, empezar la

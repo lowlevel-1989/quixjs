@@ -29,6 +29,7 @@
 
 #include "sdl/common.h"
 #include "sdl/window.c"
+#include "sdl/magnifier.c"
 #include "sdl/input.c"
 #include "sdl/overlay.c"
 #include "sdl/draw.c"

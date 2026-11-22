@@ -62,9 +62,12 @@ on 127.0.0.1). The protocol: [runtime/transfer](../runtime/transfer/README.md).
 | folder           | what it tests |
 |------------------|---------------|
 | `core/timers`    | setTimeout (order, arguments, clear), setInterval, requestAnimationFrame, fixed clock |
-| `core/events`    | addEventListener, once, handleEvent, on<type>, Event, KeyboardEvent, keyboard with `quix.pressKey` |
+| `core/events`    | addEventListener, once, handleEvent, on<type>, Event, KeyboardEvent, keyboard with `quix.input.pressKey` |
 | `core/dom`       | window, document, createElement, appendChild, getElementById (also with `el.id = ...`), instanceof, localStorage, gamepads |
-| `core/gamepad-frame` | with the sdl backend (`args`) and a virtual SDL gamepad (`quix.pressPad`): the gamepads are read once per frame and every read of the frame sees the same; a press shorter than a frame is seen in that frame and not in the next |
+| `core/local-storage` | `[saves] local_storage`: localStorage on disk (written a moment after a change), `localStorage.x` and `localStorage['x'] = v` |
+| `core/construct2-hooks` | Construct 2: `clear-array` leaves the arrays as `arr.length = n`; `effects-direct` draws directly only a pre-drawing object with one colour-only effect and opacity 1; `include-sol` cleans only the types of the included sheet, all of them with conditions above |
+| `core/loose-names` | a file with a non-ASCII name that a FAT card could not store is found under a similar name |
+| `core/gamepad-frame` | with the sdl backend (`args`) and a virtual SDL gamepad (`quix.input.pressPad`): the gamepads are read once per frame and every read of the frame sees the same; a press shorter than a frame is seen in that frame and not in the next |
 | `core/lan` | `quix.lan` with one device: open, its id and name, nobody else, send to nobody, close |
 | `core/vibration` | `navigator.vibrate` (ms and patterns), `gamepad.vibrationActuator` (`playEffect` resolves `complete`, or `preempted` when cut; `reset`) and the presets of `lib/rumble` |
 | `core/pad-keys` | `[controls.keys]` with the buttons of `controller.keys`: the button presses its key (keydown and keyup with `code` and `keyCode`); a button without an action gives none |
@@ -75,7 +78,8 @@ on 127.0.0.1). The protocol: [runtime/transfer](../runtime/transfer/README.md).
 | `core/legacy`    | old JS that many plugins use: `RegExp.$1..$9`, `lastMatch`... |
 | `core/engine-hooks` | the engine hooks of `runtime/engines/rpgmaker-mv`: each one gives the same result as the RPG Maker MV function it replaces |
 | `core/hooks-late-plugin` | a plugin loaded late replaces a function with a hook: quixjs puts the hook back on top, and the hook does not call itself |
-| `core/achievements` | `[symbols]` and `[[achievements]]`: conditions, `prev()`, symbols not created yet, `quix.achievementUnlocked` |
+| `core/achievements` | `[symbols]` and `[[achievements]]`: conditions, `prev()`, symbols not created yet, `quix.achievements.unlocked` |
+| `core/steam-achievements` | greenworks in nw.js mode: `activateAchievement` unlocks the `[[achievements]]` that read `quix.steam.achievements`, and the id is noted in `steam-achievements.txt` |
 | `core/cheats`    | a cheat that is on: it sets its symbol (again if the game changes it), the playthrough is marked and gets no achievements |
 | `core/cheats-free` | a game without achievements: the cheat applies with no known engine, once its object exists, and again when the game changes it |
 | `core/cheats-off` | no cheats on: a marked save gets no achievements and its symbols go back to their value; a clean one gets them |
@@ -96,7 +100,7 @@ on 127.0.0.1). The protocol: [runtime/transfer](../runtime/transfer/README.md).
 | `canvas/image`   | Image (load, error, data URI), drawImage, ImageData, createPattern, gradients, composite |
 | `canvas/text`    | measureText, fillText, textAlign, textBaseline, strokeText, fonts |
 | `canvas/gpu`     | the hooks `gpu-canvas`, `once-per-frame` and `skip`: a light mask drawn on the GPU and by software, the copy to a WebGL texture, the way back to the CPU, resize, a repaint equal to the previous one |
-| `webgl/basic`    | WebGL 1 without libraries: context, shaders, buffers, textures, framebuffers, readPixels, queries |
+| `webgl/basic`    | WebGL 1 without libraries: context, shaders, buffers, textures, framebuffers (also colour + depth, as three.js), readPixels, queries |
 | `audio/webaudio` | WebAudio: decodeAudioData (ogg vorbis), sources, gain, pan, volume ramps, loops, onended |
 | `media/video`    | `<video>`: canPlayType, a WebM (`clip.webm`, made with ffmpeg from `testsrc` and a `sine` tone) and an MP4 with AAC audio and B frames (`clip.mp4`) played to the end, a 1080p MP4 (`big.mp4`) at half size, `removeAttribute('src')` closes it, a missing file skipped; without video support it checks that it is skipped |
 | `pixi_v4/boot`   | Application, CanvasRenderer, ticker, backgroundColor |
@@ -150,7 +154,6 @@ The `config.toml` of a test:
 
 ```toml
 [game]
-cache_dir = "cache/tests/canvas/rect"
 game_dir  = "games/tests/canvas/rect"
 width     = 320
 height    = 240

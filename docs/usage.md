@@ -271,6 +271,11 @@ the speed of the game. `make test` runs every test with `--test`
   version of `pixi.js`
 - `[game] title` from that title or the `<title>`, and for RPG Maker in nw.js
   the save files in `[saves]`
+- `canvas_id`: the id of the `<canvas>` of the page, if it is not `canvas`
+- `[html] elements`: the elements with an id in the `<body>` (the `<div>` of
+  the canvas, the `<input>` of nw.js...)
+- a commented template for the achievements of Steam if the game has
+  `greenworks.js` (see Steam achievements)
 
 Check it and edit it: it is a starting point.
 
@@ -295,6 +300,9 @@ vsync     = true       # wait for the refresh of the screen when presenting
 present_ahead = true   # one frame ready ahead (another thread shows it)
 js_memory = 128        # MB of RAM JavaScriptCore believes it has (default: the device's)
 low_memory_mb = 96     # below this free RAM of the system, a full JS collection (0: off)
+scaling   = "sharp"    # how it is enlarged: sharp, smooth or pixel_perfect (1x, 2x...; Options > Scaling)
+texture_budget = 80    # MB of image textures; above it the unused ones are dropped
+quality   = "medium"   # a 3D game: low, medium or high, how many pixels it draws (Options > Quality)
 
 [engine.pc]            # what changes on the PC ([engine.handheld]: on handhelds)
 fps = 60
@@ -302,17 +310,18 @@ fps = 60
 [game]
 title     = "My Game"        # the title of the menu (default: [engine] name)
 version   = "1.0.0"          # the version of the game or the port (informative)
+language  = "es"             # navigator.language (default "en")
 id        = "my-game"        # Transfer Save only between the same game (default: the title)
-game_dir  = "games/mygame"   # base folder: scripts, images, json...
-cache_dir = "cache/mygame"   # the WebGL shaders already linked (<cache_dir>/shaders) and image_scale
+rom       = "mygame.zip"     # the game: a .zip (or .nw, .asar) or a folder, from this toml
+game_dir  = "www"            # where the game starts inside the rom ("" the top)
 width     = 640              # window size and default canvas size
 height    = 480
 mods      = []               # active mods (see Mods)
 # optional: the big images of these folders at less resolution, saved reduced
-# in <cache_dir>/images-<percent>; the game still sees their size. "auto": the
+# in cache/images-<percent>; the game still sees their size. "auto": the
 # scale at which width x height fits the screen (no reduction on a bigger one)
 image_scale      = "auto"                  # or a number between 0 and 1 (default: off)
-image_scale_dirs = ["img/pictures"]        # from game_dir (without folders: none)
+image_scale_dirs = ["img/pictures"]        # from game_dir ("": all; without folders: none)
 image_scale_min  = 512                     # only images with a side of at least this (px)
 # optional (RPG Maker MV): draw at less resolution; the logic stays at width x height
 render_scale     = "auto"                  # or a number between 0 and 1 (default: off)
@@ -331,9 +340,16 @@ text       = "#e8e8e8"
 accent     = "#2c4a7a"       # the bar of the chosen option
 
 [saves]
-dir          = "save"                      # the folder of the saves, from game_dir (absolute: as is; without dir: game_dir)
+dir          = "save"                      # the folder of the saves, in gamedata/ (absolute: as is; without dir: gamedata/)
 files        = ["*.rpgsave"]               # what Transfer Save sends, inside dir
 achievements = "quixjs-achievements.txt"   # next to the saves (dir), and Transfer Save sends it with them; "" = not saved
+local_storage = "localstorage.json"        # localStorage on disk, in dir (without it: only in memory)
+
+[html]                       # the elements with an id of the <body> of the index.html:
+elements = [                 # created in the body when the game asks for them (getElementById)
+  { tag = "div", id = "c2canvasdiv" },
+  { tag = "input", id = "c2nwSaveDialog", type = "file" },
+]
 
 [symbols]
 boss_dead = "switch:12"
@@ -349,8 +365,10 @@ icon = 5                     # its icon in the IconSet (0: none)
 [controls]
 gamepad = true               # the Controls option of the launcher (map every button)
 vibration = true             # the game (or a mod of it) vibrates: Options > Vibration
+screenshot = true            # optional: Controls also asks a single button for the screenshot
+magnifier = true             # optional: and one for the magnifier
 
-[controls.buttons]           # optional: Controls asks these by name (and always both sticks)
+[controls.buttons]           # optional: Controls asks these by name (and always the menu ones and the sticks)
 a = "Confirm"                # SDL names: a b x y start back dpup dpdown dpleft dpright
 b = "Cancel"                 # leftshoulder rightshoulder lefttrigger righttrigger
                              # leftstick rightstick (or select, l1, r1, l2, r2, l3, r3)
@@ -362,9 +380,32 @@ Torch = "T"                  # listens to on the keyboard; Controls asks a butto
 "Spriteset_Map.prototype.createLightmask" = "gpu-canvas"
 ```
 
-The paths are relative to `game_dir`. The order of the scripts is the same as the
-`<script>` tags of the `index.html` of the game: libs, includes and entry. A path can
-go up with `../` (the tests use it to share `pixi.js`).
+The rom is the game: a `.zip` (also a `.nw`, an `.exe` with the zip
+inside or the `app.asar` of an Electron game), or a folder (the tests, or a game unzipped on the PC). quixjs reads
+it in place, without unzipping it. A compressed zip is uncompressed once, the
+first time, with a progress screen (it needs that free space); one without
+compression starts at once. `game_dir` is the folder inside the rom where the
+game starts. What the game writes (saves, `localStorage`) goes to
+`gamedata/`, the folder of quixjs next to the toml; a file there wins over
+the rom, and a mod wins over both. Without `rom` (an old toml, or the one
+of `--gen-config`), `game_dir` is the folder of the game on disk and the game
+writes there.
+
+The paths are relative to the start of the game (`game_dir` in the rom). The
+order of the scripts is the same as the `<script>` tags of the `index.html` of
+the game: libs, includes and entry. A path can go up with `../`: from
+`gamedata/` on disk (`../entry.js` is the one next to the toml), or out of
+`game_dir` in the rom (the tests use it to share `pixi.js`).
+
+`[html]` is for the elements of the `<body>` of the `index.html` that the
+game looks for by id: quixjs does not read the HTML. `--gen-config` writes
+them.
+
+Steam achievements: a game for nw.js with `greenworks.js` gets the one of
+quixjs, without Steam. Each achievement the game unlocks goes to
+`quix.steam.achievements[id] = 1`, and once to
+`steam-achievements.txt`, in the saves folder. A symbol reads it:
+`win = "path:quix.steam.achievements.WIN_CHARACTER_0"`.
 
 `[fonts]` is for the `@font-face` of the CSS of the game, which quixjs does not
 read (except `fonts/gamefont.css`, see Fonts). `[symbols]` and `[[achievements]]` are the achievements of a port; their
@@ -375,8 +416,18 @@ Save is in [runtime/transfer](../runtime/transfer/README.md) and the menu in
 `[controls]`: `gamepad = true` turns on Controls in the launcher.
 `vibration = true` says that the game (or a mod of it) vibrates: without it
 nothing vibrates and Options has no Vibration.
+The magnifier, in every game, is for text too small on a small screen (a
+letter, a note): Select + L1 opens a box that shows enlarged what is
+under it (what is under its center). It opens in the middle; the d-pad or the
+sticks move it freely (it can go off the screen), R1 or R2 zoom in, L1 or L2 zoom out
+(x2 to x6), Y makes it bigger and X smaller, A brings it back to the middle,
+and B or Select + L1 closes it. While it is open, an icon at the top left says
+so, and the game does not get the gamepad. The screenshot (Select + R1) also
+works in every game. `screenshot = true` and `magnifier = true` only make
+Controls ask a single button for each as well (it can be skipped); the combos
+always work.
 `[controls.buttons]` gives each button the name of what it does in the game,
-and Controls asks those (with Start, Select and both sticks always) by that
+and Controls asks those (with Start, Select, the D-pad, A, B and both sticks always) by that
 name. `[controls.keys]` is for what the game only listens to on the keyboard
 (the torch of Fear & Hunger is the T): each action has a name and a key, and
 Controls asks a button for it (it can be skipped); that button then presses
@@ -415,6 +466,15 @@ at 1008 MHz.
 It sizes its heap from it: with less, it collects sooner and the heap grows
 less. On a 1 GB handheld, Fear & Hunger goes from 600 to 440 MB with
 `js_memory = 128`, at the same fps.
+
+## Sandbox
+
+A game can only read inside the folder of its toml (`gamedata/`, `mods/`,
+the rom, its scripts) and can only write inside the folder of its saves
+(`gamedata/`). What it asks for outside (`/etc/...`, `file:///...`,
+`../../another-port`) fails, and the log says so: `[sandbox] file outside the
+port folder`. The paths of the toml (`game_dir`, `rom`, `[saves] dir`) cannot
+go out either. The cache of quixjs is always `cache/`, next to the toml.
 
 ## Hooks
 
@@ -466,11 +526,12 @@ fps = 60
 [game]
 title    = "Fear & Hunger"
 id       = "fear_and_hunger"
-game_dir = "gamedata/www"
+rom      = "www.zip"           # the folder www/ of the game, zipped
+game_dir = "www"
 mods     = ["translation", "graphics"]
 
 [saves]
-dir   = "save"                  # gamedata/www/save
+dir   = "save"                  # gamedata/save
 files = ["file*.rpgsave", "global.rpgsave", "config.rpgsave"]
 
 [hooks]
@@ -480,7 +541,7 @@ files = ["file*.rpgsave", "global.rpgsave", "config.rpgsave"]
 ### Mods
 
 A mod is a folder `mods/<name>/` next to the `port.toml`, with files at the
-same paths they have inside the game (`[game] game_dir`). When the game loads a file
+same paths they have inside the game (from `[game] game_dir`). When the game loads a file
 (an image, a map, a sound, a script) and an active mod has it, quixjs gives the
 one of the mod. With several mods that have the same file, the last one of
 `[game] mods` wins. The game folder is not touched: removing a mod from the
@@ -531,8 +592,13 @@ frames after it is shown. `--resizable` makes it resizable from the start and
   motor. All the gamepads that can vibrate; if none can, on Android the
   phone. Only with `[controls] vibration = true`; Options > Vibration: Off
   (`--launcher`, and the Android app) turns it off. Effects with a shape (a heartbeat, a hit...) for hooks and mods:
-  `__quixEngine.lib('rumble')` ([runtime/engines](../runtime/engines/README.md)).
+  `quix.engine.lib('rumble')` ([runtime/engines](../runtime/engines/README.md)).
+- **Screenshot**: Select + R1, always. With `[controls] screenshot = true`,
+  Controls also asks for a single button for it (it can be skipped). It goes to `screenshots/` next to the toml of the
+  game (on Android, also to the gallery, Pictures/quixjs), with a notice.
 - **Exit**: Select + Start at the same time on a gamepad, or close the window.
+- **Back to the menu** (`--launcher`): Select + R2 in the game. Select + Start
+  quits: in PortMaster, gptokeyb uses it to close the game.
 - **Menu** (`--launcher`): arrows, d-pad or stick to move, A / Enter to choose,
   B / Escape to go back. All the keys: [runtime/launcher](../runtime/launcher/README.md).
 
@@ -543,7 +609,8 @@ Movie" of RPG Maker MV) and MP4 files with H.264 video and AAC audio
 (Felvidék); an MP4 wider than 1280 is shown at half size. It needs quixjs built with libvpx and libopus: the
 `Makefile` finds them with `pkg-config`, and `make VIDEO=0` builds without
 video. Without video support, or with a file it cannot play, the `<video>`
-fires `loadeddata` and `ended` at once, so the game goes on. More:
+fires `loadeddata` and `ended` at once, so the game goes on. The Android app
+plays MP4 (not WebM: it does not carry libvpx nor libopus). More:
 [runtime/video](../runtime/video/README.md).
 
 ```
@@ -585,24 +652,30 @@ QUIXJS_FONT=/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf ./quixjs -c ...
 
 Only exists in quixjs (`typeof quix !== 'undefined'`).
 
-| member                  | what it does                                                 |
-|-------------------------|--------------------------------------------------------------|
-| `quix.exit(code)`       | ends the main loop with that exit code                       |
-| `quix.pressKey(code, t)`| puts a key in the input queue: `t` is `"down"`, `"up"` or `"press"` (default) |
-| `quix.pressPad(b, t)`   | button `b` (standard mapping) of a test gamepad (SDL virtual, sdl backend only): `t` is `"down"`, `"up"` or `"press"` (default: down and up before the next frame); returns its index in `getGamepads()` or -1 |
-| `quix.frame`            | frames shown                                                 |
-| `quix.backend`          | `"sdl"` or `"dummy"`                                         |
-| `quix.fixedStep`        | `true` with the fixed clock (`--fixed-step`, `--test` without `-b sdl`) |
-| `quix.registerFont(f, url)` | registers a font file (used by FontFace and @font-face) |
-| `quix.hasFont(f)`       | `true` if the family is registered                           |
-| `quix.version`          | runtime version                                              |
-| `quix.achievementUnlocked(id)` | `true` if the achievement of the toml is unlocked |
-| `quix.achievements()`   | the achievements (id, title, description, type, color, unlocked) |
-| `quix.achievementsIcon()` | `[achievements_menu] icon` (0 without one)                 |
-| `quix.frameTime`        | scheduled time of this frame (ms, scale of performance.now), steady: 33.333 ms apart at 30 fps |
-| `quix.collectGarbage(due)` | a full JS collection now (`'due'`: the one that is due); returns ms |
-| `quix.gcPressure()`     | 0 just collected, 1 about to collect                         |
-| `quix.isGpuCanvas(canvas)` | `true` if that canvas draws on the GPU (hook `gpu-canvas`) |
-| `quix.loading(on[, ms])` | the loading notice ("Loading..." at the bottom right): `true` when loading starts, `false` when it ends (it goes away once frames are normal again, at most after 30 s). With `ms`, it only shows if the game stalls longer than that without showing a frame. While the game is stuck loading, the last frame is shown again with the notice (by the `present_ahead` thread or, without it, by the game itself during its long jobs). Used by the `rpgmaker-mv/loading-notice` hook |
+| member | what it does |
+|--|--|
+| `quix.exit(code)` | ends the main loop with that exit code |
+| `quix.frame` | frames shown |
+| `quix.frameTime` | planned time of this frame (ms, performance.now scale), regular: 33.333 ms between frames at 30 fps |
+| `quix.backend` | `"sdl"` or `"dummy"` |
+| `quix.fixedStep` | `true` with the fixed clock (`--fixed-step`, `--test` without `-b sdl`) |
+| `quix.version` | version of the runtime |
+| `quix.loading(on[, ms])` | the loading notice ("Loading..." at the bottom right): `true` when loading starts, `false` when it ends (it goes away once the images are normal again, at most after 30 s). With `ms`, only if the game stops for longer than that without showing a frame. The hook `rpgmaker-mv/loading-notice` uses it |
+| `quix.input.pressKey(code, t)` | puts a key in the input queue: `t` is `"down"`, `"up"` or `"press"` (default) |
+| `quix.input.pressPad(b, t)` | the button `b` (standard mapping) of a test gamepad (SDL virtual, sdl backend only): `t` is `"down"`, `"up"` or `"press"`; returns its position in `getGamepads()` or -1 |
+| `quix.gpu.driver` | the OpenGL ES driver: `"panfrost"`, `"mali"`, `"mali-g31"` or `"default"` (`null` without WebGL); see [gfx](../runtime/gfx/drivers/README.md) |
+| `quix.gpu.renderScale` | the scale the game is drawn at (`[game] render_scale`; 1 without it) |
+| `quix.gpu.isCanvas(canvas)` | `true` if that canvas draws on the GPU (hook `gpu-canvas`) |
+| `quix.gpu.scope(+1 / -1)` | the canvases created between +1 and -1 draw on the GPU |
+| `quix.memory.usage()` | the memory: `rss`, `heapTotal`, `heapUsed`, `external`, `maxRss` |
+| `quix.memory.collect(due)` | a full JS GC now (`'due'`: the one that is due); returns ms |
+| `quix.memory.pressure()` | 0 right after the GC, 1 about to run the GC |
+| `quix.fonts.register(f, url or bytes)` | registers a font: a file or its bytes (FontFace and @font-face use it) |
+| `quix.fonts.has(f)` | `true` if the family is registered |
+| `quix.storage.read()` / `quix.storage.write(json)` | the `localStorage` on disk (`[saves] local_storage`) |
+| `quix.achievements.list()` | the achievements (id, title, description, type, color, unlocked) |
+| `quix.achievements.unlocked(id)` | `true` if the achievement of the toml is unlocked |
+| `quix.achievements.icon` | `[achievements_menu] icon` (0 if none) |
+| `quix.steam` | `achievements` and `stats`: what the game asks Steam for (greenworks, the `entry.js` of a port); the `[symbols]` read it: `"path:quix.steam.achievements.ID"` |
+| `quix.engine` | the native functions of each engine (`quix.engine["rpgmaker-mv"]`), for the hooks |
 | `quix.lan` | the local network for games: `open()`, `peers()`, `send(text[, id])`, `receive()`, `close()`, `id`, `name`; see [lan](../runtime/lan/README.md) |
-| `quix.gpuDriver()` | the OpenGL ES driver: `"panfrost"`, `"mali"`, `"mali-g31"` or `"default"` (`null` without WebGL); see [gfx](../runtime/gfx/drivers/README.md) |

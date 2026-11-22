@@ -56,6 +56,7 @@ typedef struct {
   unsigned item_rgb[UI_ITEMS];   // el color de cada opcion (0: el del texto)
   int item_scale;                // la escala de las opciones (0: 2)
   unsigned item_badge[UI_ITEMS]; // un cuadrado de color delante (0: sin el): el tipo
+  int item_hollow[UI_ITEMS];     // el cuadrado solo con el borde (un logro sin conseguir)
   int align_left;                // las opciones a la izquierda de la barra (no centradas)
   // una linea de leyenda debajo de las lineas: un cuadrado de color y su texto
   char legend[4][48];

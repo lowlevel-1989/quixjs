@@ -181,22 +181,31 @@ JNIEXPORT void JNICALL MENU(resetAchievements)(JNIEnv *env, jclass type) {
 
 // ---------- Options
 
-// {show_fps, profile, vibration, el juego vibra ([controls] vibration)}
+// el FPS que se usa: el de Options o, sin el, el de [engine] fps
+static int fps_now(void) {
+  int fps = settings.fps ? settings.fps : cfg.engine.fps;
+  return fps == 30 ? 30 : 60;
+}
+
+// {show_fps, profile, vibration, el juego vibra ([controls] vibration), a 30 fps}
 JNIEXPORT jbooleanArray JNICALL MENU(options)(JNIEnv *env, jclass type) {
   (void)type;
   jboolean values[] = {settings.show_fps ? JNI_TRUE : JNI_FALSE, settings.profile ? JNI_TRUE : JNI_FALSE,
-                       settings.no_vibration ? JNI_FALSE : JNI_TRUE, cfg.controls.vibration ? JNI_TRUE : JNI_FALSE};
-  jbooleanArray out = (*env)->NewBooleanArray(env, 4);
-  (*env)->SetBooleanArrayRegion(env, out, 0, 4, values);
+                       settings.no_vibration ? JNI_FALSE : JNI_TRUE, cfg.controls.vibration ? JNI_TRUE : JNI_FALSE,
+                       fps_now() == 30 ? JNI_TRUE : JNI_FALSE};
+  jbooleanArray out = (*env)->NewBooleanArray(env, 5);
+  (*env)->SetBooleanArrayRegion(env, out, 0, 5, values);
   return out;
 }
 
-// 0 Show FPS, 1 Profiler, 2 Vibration: cambia y se guarda enseguida
+// 0 Show FPS, 1 Profiler, 2 Vibration, 3 FPS (30 o 60): cambia y se guarda
+// enseguida
 JNIEXPORT void JNICALL MENU(toggleOption)(JNIEnv *env, jclass type, jint which) {
   (void)env, (void)type;
   if (!loaded) return;
   if (which == 0) settings.show_fps = !settings.show_fps;
   else if (which == 1) settings.profile = !settings.profile;
+  else if (which == 3) settings.fps = fps_now() == 30 ? 60 : 30;
   else settings.no_vibration = !settings.no_vibration;
   settings_save(&settings, config_path);
 }

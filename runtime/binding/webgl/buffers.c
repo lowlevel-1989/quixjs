@@ -90,6 +90,10 @@ static JSValue js_gl_bufferSubData(ARGS) {
   // ~500 a ~110 us por llamada, pero la batalla iba peor: sin esas esperas el
   // juego manda a la GPU mas de lo que acaba y el ritmo de las imagenes se
   // vuelve irregular, de ~100 a 300-600 imagenes tarde.)
+  //
+  // (Tambien descartado: en WebGL 2, los pequenos que three.js reescribe
+  // enteros en cada imagen aunque digan STATIC. Tumble Party en la RG CubeXX
+  // bajaba de 25 a 18 fps: la espera era la GPU, que no acababa antes.)
   GLObj *b = bound_buffer(w, u(0));
   if (b && n(1) == 0 && b->size >= (GLsizeiptr)len && (b->usage == GL_STREAM_DRAW || b->usage == GL_DYNAMIC_DRAW)) {
     qgl.BufferData(u(0), b->size, NULL, b->usage);

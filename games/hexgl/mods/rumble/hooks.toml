@@ -1,0 +1,4 @@
+# rumble: el mando vibra al chocar, al perder la nave y con el turbo. Ver
+# README.md.
+[hooks]
+"bkcore.Audio.play" = "rumble.js"   # cada efecto sale de un sonido de HexGL

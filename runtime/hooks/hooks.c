@@ -26,7 +26,7 @@
 #include "hooks.h"
 #include "engines.h"   // runtime/engines/<motor>/*.js, generado por tools/embed_engines.py
 
-#define MAX_HOOKS 64
+#define MAX_HOOKS 128
 
 typedef enum { HOOK_GPU_CANVAS, HOOK_SKIP, HOOK_ONCE_PER_FRAME, HOOK_ENGINE } HookKind;
 
@@ -294,14 +294,18 @@ static JSValue js_gpu_scope(JSContext *ctx, JSValueConst this_val, int argc, JSV
   return JS_UNDEFINED;
 }
 
+// quix.gpu.scope(+1 / -1): los canvas que se crean dentro van a la GPU
 void hooks_add_api(JSContext *ctx) {
   JSValue global = JS_GetGlobalObject(ctx);
-  JS_DefinePropertyValueStr(ctx, global, "__quixGpuScope", JS_NewCFunction(ctx, js_gpu_scope, "__quixGpuScope", 1),
-                            JS_PROP_CONFIGURABLE);
+  JSValue quix = JS_GetPropertyStr(ctx, global, "quix");
+  JSValue gpu = JS_GetPropertyStr(ctx, quix, "gpu");
+  if (JS_IsObject(gpu)) JS_SetPropertyStr(ctx, gpu, "scope", JS_NewCFunction(ctx, js_gpu_scope, "scope", 1));
+  JS_FreeValue(ctx, gpu);
+  JS_FreeValue(ctx, quix);
   JS_FreeValue(ctx, global);
 }
 
-// __quixEngine.lib(nombre): data[0] guarda los modulos ya evaluados
+// quix.engine.lib(nombre): data[0] guarda los modulos ya evaluados
 static JSValue js_engine_lib(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv, int magic,
                              JSValue *data) {
   (void)this_val;
@@ -371,8 +375,8 @@ static void run_mod_scripts(JSContext *ctx) {
 static const char *wrapper(HookKind kind) {
   switch (kind) {
     case HOOK_GPU_CANVAS:
-      return "function () { __quixGpuScope(1); try { return f.apply(this, arguments); }"
-             " finally { __quixGpuScope(-1); } }";
+      return "function () { quix.gpu.scope(1); try { return f.apply(this, arguments); }"
+             " finally { quix.gpu.scope(-1); } }";
     case HOOK_SKIP:
       return "function () {}";
     default:

@@ -1,6 +1,6 @@
 // Image, drawImage, ImageData, createPattern y gradientes
 
-var QUAD = '../../assets/quad.png';   // 4x4: rojo, verde / azul, blanco (bloques de 2x2)
+var QUAD = 'assets/quad.png';   // 4x4: rojo, verde / azul, blanco (bloques de 2x2)
 var RED = [255, 0, 0, 255];
 var GREEN = [0, 255, 0, 255];
 var BLUE = [0, 0, 255, 255];
@@ -50,7 +50,7 @@ missing.onload = function () {
   T.ok(false, 'missing file must not load');
   finish();
 };
-missing.src = '../../assets/nothing.png';
+missing.src = 'assets/nothing.png';
 
 var dataImg = new Image();
 dataImg.onload = function () {

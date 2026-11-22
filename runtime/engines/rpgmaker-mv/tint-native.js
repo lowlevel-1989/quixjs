@@ -86,8 +86,8 @@ function (original) {
   // sameCode (runtime/engines/same-code.js): la funcion del juego es igual que
   // el modelo, sin contar espacios? Si un plugin la cambio, el hook deja la
   // suya y no hace nada
-  var sameCode = __quixEngine.sameCode;
-  var E = __quixEngine['rpgmaker-mv']; // las nativas (runtime/engines/rpgmaker-mv/natives.c)
+  var sameCode = quix.engine.sameCode;
+  var E = quix.engine['rpgmaker-mv']; // las nativas (runtime/engines/rpgmaker-mv/natives.c)
   if (!E || !E.tintSprite) return original;
   if (!sameCode(original, MODEL['Sprite._executeTint'])) return original;
   return function (x, y, w, h) {

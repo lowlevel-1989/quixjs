@@ -5,4 +5,4 @@ scripts = ["windows.js"]   # que ventanas y cuanto
 
 [hooks]
 "Window_Base.prototype.resetFontSettings" = "font.js"   # el tamano de la letra
-"Game_System.prototype.wordWrap"          = "wrap.js"   # los dialogos, ajustados
+"Window_Message.prototype.convertEscapeCharacters" = "wrap.js"   # los dialogos, ajustados

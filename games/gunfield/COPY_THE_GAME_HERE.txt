@@ -1,0 +1,13 @@
+Copy the game here, next to port.toml.
+
+You need Gunfield for Windows (Steam). In the folder of the game there is
+a file named package.nw: copy it here as it is, without unzipping it:
+
+gunfield/
+  port.toml
+  package.nw
+
+It comes compressed: the first time, the game takes a moment to prepare it.
+If your file has another name, write it in port.toml, in
+rom = "package.nw".
+See README.md for the full steps.

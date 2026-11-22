@@ -143,7 +143,7 @@ linea en el binario. Cambiar `TRACE` recompila todo.
 | `bufferSubData N bytes` | 1 ms | escribir vertices; si tarda, el driver espero a la GPU |
 | `readPixels WxH` | 1 ms | leer de la GPU (la foto detras del menu) |
 | `image decode WxH (worker)` | 5 ms | decodificar un PNG en su thread (`binding/image.c`) |
-| `collectGarbage full/due` | 1 ms | un GC pedido desde JS (`quix.collectGarbage`: los hooks del GC) |
+| `collectGarbage full/due` | 1 ms | un GC pedido desde JS (`quix.memory.collect`: los hooks del GC) |
 | `blur WxH` | 1 ms | el desenfoque nativo de RPG Maker MV (`engines/rpgmaker-mv/blur.c`) |
 
 Un punto nuevo: `TRACE_START(t)` y `TRACE_END(t, min_ms, "que", ...)` de
@@ -152,7 +152,7 @@ Un punto nuevo: `TRACE_START(t)` y `TRACE_END(t, min_ms, "que", ...)` de
 ### Memoria
 
 - `process.memoryUsage()` (en juegos `nwjs`) da `rss`, `heapUsed`, `heapTotal` y
-  `external`; `quix.memoryUsage()` ademas da `maxRss`, el pico.
+  `external`; `quix.memory.usage()` ademas da `maxRss`, el pico.
 - En la consola de debug, `mem` ensena el heap de JS y sus objetos, y `gc`
   pasa el GC y dice cuanto tardo y que libero.
 - Desde fuera, `/proc/<pid>/status`: `VmRSS` ahora, `VmHWM` el pico.

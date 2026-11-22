@@ -87,9 +87,11 @@ STEP void housekeeping(Run *r, Loop *l) {
   }
 }
 
+
 // Los eventos del backend, la consola de debug y --script
 STEP int events(Run *r, Loop *l, double t_events) {
   backend_process_events(l->backend);
+  if (l->backend->want_screenshot) save_screenshot(r, l);
 
   // consola de debug: entre frames, sin JS corriendo
   if (r->args.debug_sock) {

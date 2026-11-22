@@ -1,0 +1,7 @@
+# fast-text: B muestra entero el texto que se esta escribiendo y, mantenida,
+# hace subir la historia mas rapido
+scripts = ["pad.js"]
+[hooks]
+"gdjs.evtsExt__AutoTyping__Text_AutoTyping.Text_AutoTyping.prototype.doStepPostEvents" = "skip.js"
+"gdjs.evtsExt__AutoTyping__Text_AutoTyping.Text_AutoTyping.prototype.doStepPreEvents"  = "skip.js"
+"gdjs.RuntimeObject.prototype.addPolarForce" = "scroll.js"

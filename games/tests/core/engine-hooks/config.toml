@@ -1,12 +1,11 @@
 [game]
-cache_dir = "cache/tests/core/engine-hooks"
-game_dir  = "games/tests/core/engine-hooks"
+rom       = "."
 width     = 64
 height    = 64
 
 [scripts]
 libs     = []
-includes = ["../../lib/assert.js"]
+includes = ["../lib/assert.js"]
 entry    = "main.js"
 
 # un hook de engines/ (engines/rpgmaker-mv/request-images-once.js)

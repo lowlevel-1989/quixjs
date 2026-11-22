@@ -34,6 +34,7 @@
 #include "main/screen.c"
 #include "main/run.h"
 #include "main/start.c"
+#include "main/screenshot.c"
 #include "main/loop.c"
 #include "main/frame.c"
 #include "main/finish.c"
@@ -84,5 +85,9 @@ int main(int argc, char **argv) {
     if (wait_next(r, l) == STEP_STOP) break;
   }
 
-  return finish(r, l);                          // --hold, --screenshot, informes, liberar todo
+  // Select + R2 con --launcher: de vuelta al launcher
+  int back = r->args.launcher && l->backend->back_to_menu && !r->app.exit_requested;
+  code = finish(r, l);                          // --hold, --screenshot, informes, liberar todo
+  if (back) relaunch(argv);
+  return code;
 }

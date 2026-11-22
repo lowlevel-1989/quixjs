@@ -65,7 +65,8 @@ android-native: $(DEPS)/.ready $(JSC_ANDROID)/lib/libJavaScriptCore.a $(GEN_SHAD
 	  -DCMAKE_TOOLCHAIN_FILE=$(NDK)/build/cmake/android.toolchain.cmake \
 	  -DANDROID_ABI=$(ABI) -DANDROID_PLATFORM=android-$(MIN_SDK) -DANDROID_STL=c++_static \
 	  -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
-	  -DQUIX_SRCS="$(SRCS)" -DJSC_DIR=$(CURDIR)/$(JSC_ANDROID) >/dev/null
+	  -DQUIX_SRCS="$(SRCS)" -DJSC_DIR=$(CURDIR)/$(JSC_ANDROID) \
+	  -DFFMPEG_SRCS="$(FFMPEG_SRCS) $(FFMPEG_SRCS_aarch64)" >/dev/null
 	cmake --build $(OUT)/native-$(ABI)
 	rm -rf $(OUT)/apk/lib && mkdir -p $(OUT)/apk/lib/$(ABI)
 	cp $(OUT)/native-$(ABI)/libquixjs.so $(OUT)/native-$(ABI)/SDL2/libSDL2.so \
@@ -85,6 +86,11 @@ android-assets: $(DEPS)/.ready $(JSC_ANDROID)/lib/libJavaScriptCore.a
 	cp $(DEPS)/SDL2_ttf/LICENSE.txt $(OUT)/assets/licenses/SDL2_ttf.txt
 	cp $(DEPS)/SDL2_image/LICENSE.txt $(OUT)/assets/licenses/SDL2_image.txt
 	for f in $(JSC_ANDROID)/licenses/*.txt; do cp "$$f" $(OUT)/assets/licenses/; done
+	# lo de runtime/thirdparty que va dentro (como en el port de PortMaster)
+	cp runtime/thirdparty/tomlc17/LICENSE $(OUT)/assets/licenses/tomlc17.txt
+	cp runtime/thirdparty/stb/LICENSE $(OUT)/assets/licenses/stb_vorbis.txt
+	cp runtime/thirdparty/minimp4/LICENSE $(OUT)/assets/licenses/minimp4.txt
+	cp runtime/thirdparty/ffmpeg/LICENSE $(OUT)/assets/licenses/ffmpeg.txt
 
 # 4 y 5. Los recursos primero: aapt2 escribe R.java, que usa el Java.
 # --debug-mode: el .apk es para probar, depurable (adb shell run-as

@@ -273,6 +273,11 @@ velocidad del juego. `make test` corre cada test con `--test`
   version de `pixi.js`
 - `[game] title` sale de ese titulo o del `<title>`, y para RPG Maker en nw.js
   las partidas en `[saves]`
+- `canvas_id`: el id del `<canvas>` de la página, si no es `canvas`
+- `[html] elements`: los elementos con id del `<body>` (el `<div>` del
+  canvas, los `<input>` de nw.js...)
+- una plantilla comentada para los logros de Steam si el juego trae
+  `greenworks.js` (ver Logros de Steam)
 
 Revisalo y editalo: es un punto de partida.
 
@@ -297,6 +302,9 @@ vsync     = true       # esperar al refresco de la pantalla al presentar
 present_ahead = true   # una imagen de adelanto (la muestra otro thread)
 js_memory = 128        # MB de RAM que JavaScriptCore cree tener (por defecto: la del aparato)
 low_memory_mb = 96     # con menos RAM libre en el sistema, un GC completo de JS (0: no)
+scaling   = "sharp"    # como se amplia: sharp (nitido), smooth o pixel_perfect (1x, 2x...; Options > Scaling)
+texture_budget = 80    # MB de texturas de imagenes; por encima se sueltan las que no se usan
+quality   = "medium"   # un juego 3D: low, medium o high, cuantos pixeles dibuja (Options > Quality)
 
 [engine.pc]            # lo que cambia en el PC ([engine.handheld]: en las portatiles)
 fps = 60
@@ -304,18 +312,19 @@ fps = 60
 [game]
 title     = "Mi juego"        # el titulo del menu (por defecto: [engine] name)
 version   = "1.0.0"           # la version del juego o del port (informativa)
+language  = "es"              # navigator.language (por defecto "en")
 id        = "mi-juego"        # Transfer Save solo entre el mismo juego (por defecto: el titulo)
-game_dir  = "games/mijuego"   # carpeta base: scripts, imagenes, json...
-cache_dir = "cache/mijuego"   # los shaders de WebGL ya enlazados (<cache_dir>/shaders) e image_scale
+rom       = "mijuego.zip"     # el juego: un .zip (o .nw, .asar) o una carpeta, desde este toml
+game_dir  = "www"             # donde empieza el juego dentro de la rom ("" el principio)
 width     = 640               # tamano de la ventana y del canvas por defecto
 height    = 480
 mods      = []                # mods activos (ver Mods)
 # opcional: las imagenes grandes de estas carpetas a menos resolucion,
-# guardadas reducidas en <cache_dir>/images-<porcentaje>; el juego sigue viendo
+# guardadas reducidas en cache/images-<porcentaje>; el juego sigue viendo
 # su tamano. "auto": la escala con la que width x height cabe en la pantalla
 # (en una mas grande, no se reducen)
 image_scale      = "auto"                  # o un numero entre 0 y 1 (por defecto: no)
-image_scale_dirs = ["img/pictures"]        # desde game_dir (sin carpetas: ninguna)
+image_scale_dirs = ["img/pictures"]        # desde game_dir ("": todo; sin carpetas: ninguna)
 image_scale_min  = 512                     # solo las de un lado de al menos esto (px)
 # opcional (RPG Maker MV): dibujar a menos resolucion; la logica sigue en width x height
 render_scale     = "auto"                  # o un numero entre 0 y 1 (por defecto: no)
@@ -334,9 +343,16 @@ text       = "#e8e8e8"
 accent     = "#2c4a7a"        # la barra de la opcion elegida
 
 [saves]
-dir          = "save"                      # la carpeta de las partidas, desde game_dir (absoluta: tal cual; sin dir: game_dir)
+dir          = "save"                      # la carpeta de las partidas, en gamedata/ (absoluta: tal cual; sin dir: gamedata/)
 files        = ["*.rpgsave"]               # lo que envia Transfer Save, dentro de dir
 achievements = "quixjs-achievements.txt"   # junto a las partidas (dir), y Transfer Save lo manda con ellas; "" = no se guardan
+local_storage = "localstorage.json"        # localStorage en disco, en dir (sin ella: solo en memoria)
+
+[html]                       # los elementos con id del <body> del index.html: se crean
+elements = [                 # en el body cuando el juego los pide (getElementById)
+  { tag = "div", id = "c2canvasdiv" },
+  { tag = "input", id = "c2nwSaveDialog", type = "file" },
+]
 
 [symbols]
 boss_dead = "switch:12"
@@ -352,8 +368,10 @@ icon = 5                      # su icono del IconSet (0: ninguno)
 [controls]
 gamepad = true                # la opcion Controls del launcher (asignar los botones)
 vibration = true              # el juego (o un mod suyo) vibra: Options > Vibration
+screenshot = true             # opcional: Controls pide tambien un boton suelto para la captura
+magnifier = true              # opcional: y otro para la lupa
 
-[controls.buttons]            # opcional: Controls los pide por su nombre (y siempre las dos palancas)
+[controls.buttons]            # opcional: Controls los pide por su nombre (y siempre lo del menu y las palancas)
 a = "Confirm"                 # nombres de SDL: a b x y start back dpup dpdown dpleft dpright
 b = "Cancel"                  # leftshoulder rightshoulder lefttrigger righttrigger
                               # leftstick rightstick (o select, l1, r1, l2, r2, l3, r3)
@@ -365,9 +383,31 @@ Torch = "T"                   # escucha en el teclado; Controls pide un boton pa
 "Spriteset_Map.prototype.createLightmask" = "gpu-canvas"
 ```
 
-Las rutas son relativas a `game_dir`. El orden de los scripts es el mismo que el de
-las etiquetas `<script>` del `index.html` del juego: libs, includes y entry. Una ruta
-puede subir con `../` (los tests lo usan para compartir `pixi.js`).
+La rom es el juego: un `.zip` (tambien un `.nw`, un `.exe` con el zip
+dentro o el `app.asar` de un juego de Electron), o una carpeta (los tests, o un juego descomprimido en el PC). quixjs
+lo lee en su sitio, sin descomprimirlo. Un zip comprimido se descomprime una
+vez, la primera, con una pantalla de progreso (necesita ese espacio libre);
+uno sin compresion arranca enseguida. `game_dir` es la carpeta de dentro de la
+rom donde empieza el juego. Lo que el juego escribe (partidas,
+`localStorage`) va a `gamedata/`, la carpeta de quixjs junto al toml; un
+archivo de ahi gana a la rom, y un mod gana a los dos. Sin `rom` (un toml
+antiguo, o el de `--gen-config`), `game_dir` es la carpeta del juego en disco
+y el juego escribe ahi.
+
+Las rutas son relativas al principio del juego (`game_dir` en la rom). El
+orden de los scripts es el mismo que el de las etiquetas `<script>` del
+`index.html` del juego: libs, includes y entry. Una ruta puede subir con `../`:
+desde `gamedata/` en disco (`../entry.js` es el que esta junto al toml), o
+fuera de `game_dir` en la rom (los tests lo usan para compartir `pixi.js`).
+
+`[html]` es para los elementos del `<body>` del `index.html` que el juego busca
+por id: quixjs no lee el HTML. `--gen-config` los escribe.
+
+Logros de Steam: un juego de nw.js con `greenworks.js` recibe el de quixjs, sin
+Steam. Cada logro que el juego consigue queda en
+`quix.steam.achievements[id] = 1`, y una vez en
+`steam-achievements.txt`, en la carpeta de las partidas. Un símbolo lo lee:
+`win = "path:quix.steam.achievements.WIN_CHARACTER_0"`.
 
 `[fonts]` es para los `@font-face` del CSS del juego, que quixjs no lee (salvo
 `fonts/gamefont.css`, ver Fuentes). `[symbols]`
@@ -379,8 +419,18 @@ y `[[achievements]]` son los logros de un port; su formato esta en
 `[controls]`: `gamepad = true` activa Controls en el launcher.
 `vibration = true` dice que el juego (o un mod suyo) vibra: sin ella no vibra
 nada y Options no tiene Vibration.
+La lupa, en todos los juegos, es para el texto que en una pantalla pequeña no
+se lee (una carta, una nota): Select + L1 abre un cuadro que muestra
+ampliado lo que tiene debajo (lo que hay bajo su centro). Se abre en el
+centro; la cruceta o las palancas lo mueven libremente (puede salirse de la
+pantalla), R1 o R2 acercan, L1 o L2 alejan (x2 a x6), Y lo agranda y X lo achica, A lo
+vuelve al centro, y B o Select + L1 lo cierran. Mientras esta abierto, un
+icono arriba a la izquierda lo indica y el juego no recibe el mando. La
+captura (Select + R1) tambien funciona en todos los juegos. `screenshot =
+true` y `magnifier = true` solo hacen que Controls pida ademas un boton
+suelto para cada una (se puede saltar); los combos funcionan siempre.
 `[controls.buttons]` da a cada boton el nombre de lo que hace en el juego, y
-Controls los pide (con Start, Select y las dos palancas siempre) por ese
+Controls los pide (con Start, Select, la cruceta, A, B y las dos palancas siempre) por ese
 nombre. `[controls.keys]` es para lo que el juego solo escucha en el teclado
 (la antorcha de Fear & Hunger es la T): cada accion tiene un nombre y una
 tecla, y Controls pide un boton para ella (se puede saltar); ese boton pulsa
@@ -418,6 +468,15 @@ las imagenes tardias en 30 s pasan de 13 a 3 a 1416 MHz y de 36 a 3 a
 aparato. Con ella calcula su heap: con menos, pasa el GC antes y el heap
 crece menos. En una portatil de 1 GB, Fear & Hunger pasa de 600 a 440 MB con
 `js_memory = 128`, con los mismos fps.
+
+## Sandbox
+
+Un juego solo puede leer dentro de la carpeta de su toml (`gamedata/`,
+`mods/`, la rom, sus scripts) y solo puede escribir dentro de la de sus
+partidas (`gamedata/`). Lo que pida fuera (`/etc/...`, `file:///...`,
+`../../otro-port`) falla, y el log lo dice: `[sandbox] file outside the port
+folder`. Las rutas del toml (`game_dir`, `rom`, `[saves] dir`) tampoco pueden
+salir. La caché de quixjs va siempre en `cache/`, junto al toml.
 
 ## Hooks
 
@@ -469,11 +528,12 @@ fps = 60
 [game]
 title    = "Fear & Hunger"
 id       = "fear_and_hunger"
-game_dir = "gamedata/www"
+rom      = "www.zip"           # la carpeta www/ del juego, comprimida
+game_dir = "www"
 mods     = ["traduccion", "graficos"]
 
 [saves]
-dir   = "save"                  # gamedata/www/save
+dir   = "save"                  # gamedata/save
 files = ["file*.rpgsave", "global.rpgsave", "config.rpgsave"]
 
 [hooks]
@@ -533,8 +593,13 @@ redimensionable desde el principio y `--fullscreen` usa toda la pantalla.
   Solo con `[controls] vibration = true`; Options > Vibration: Off
   (`--launcher` y la app de Android) la apaga.
   Efectos con forma (un latido, un golpe...) para hooks y mods:
-  `__quixEngine.lib('rumble')` ([runtime/engines](../runtime/engines/README.es.md)).
+  `quix.engine.lib('rumble')` ([runtime/engines](../runtime/engines/README.es.md)).
+- **Captura de pantalla**: Select + R1, siempre. Con `[controls] screenshot =
+  true`, Controls pide tambien un botón suelto para ella (se puede saltar). Va a `screenshots/`, junto al toml del
+  juego (en Android, tambien a la galeria, Pictures/quixjs), con un aviso.
 - **Salir**: Select + Start a la vez en un mando, o cerrar la ventana.
+- **Volver al menú** (`--launcher`): Select + R2 en el juego. Select + Start
+  sale: en PortMaster, gptokeyb lo usa para cerrar el juego.
 - **Menu** (`--launcher`): flechas, cruceta o stick para moverse, A / Enter para
   elegir, B / Escape para volver. Todas las teclas:
   [runtime/launcher](../runtime/launcher/README.es.md).
@@ -546,7 +611,8 @@ Movie" de RPG Maker MV) y MP4 con video H.264 y audio AAC (Felvidék); un MP4
 mas ancho que 1280 se ve a la mitad. Hace falta quixjs compilado con libvpx y libopus: el
 `Makefile` las busca con `pkg-config`, y `make VIDEO=0` compila sin video. Sin
 video, o con un archivo que no puede reproducir, el `<video>` lanza
-`loadeddata` y `ended` enseguida, asi el juego sigue. Mas:
+`loadeddata` y `ended` enseguida, asi el juego sigue. La app de Android
+reproduce MP4 (no WebM: no lleva libvpx ni libopus). Mas:
 [runtime/video](../runtime/video/README.es.md).
 
 ```
@@ -589,24 +655,30 @@ QUIXJS_FONT=/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf ./quixjs -c ...
 
 Solo existe en quixjs (`typeof quix !== 'undefined'`).
 
-| miembro                 | que hace                                                     |
-|-------------------------|--------------------------------------------------------------|
-| `quix.exit(code)`       | termina el loop principal con ese codigo de salida          |
-| `quix.pressKey(code, t)`| mete una tecla en la cola de entrada: `t` es `"down"`, `"up"` o `"press"` (por defecto) |
-| `quix.pressPad(b, t)`   | el boton `b` (mapeo standard) de un mando de prueba (virtual de SDL, solo backend sdl): `t` es `"down"`, `"up"` o `"press"` (por defecto: pulsa y suelta antes de la siguiente imagen); devuelve su posicion en `getGamepads()` o -1 |
-| `quix.frame`            | frames mostrados                                             |
-| `quix.backend`          | `"sdl"` o `"dummy"`                                          |
-| `quix.fixedStep`        | `true` con el reloj fijo (`--fixed-step`, `--test` sin `-b sdl`) |
-| `quix.registerFont(f, url)` | registra un archivo de fuente (lo usan FontFace y @font-face) |
-| `quix.hasFont(f)`       | `true` si la familia esta registrada                         |
-| `quix.version`          | version del runtime                                          |
-| `quix.achievementUnlocked(id)` | `true` si el logro del toml esta conseguido |
-| `quix.achievements()`   | los logros (id, title, description, type, color, unlocked)   |
-| `quix.achievementsIcon()` | `[achievements_menu] icon` (0 si no hay)                   |
-| `quix.frameTime`        | hora prevista de esta imagen (ms, escala de performance.now), regular: 33.333 ms entre imagenes a 30 fps |
-| `quix.collectGarbage(due)` | un GC completo de JS ya (`'due'`: el que toca); devuelve ms |
-| `quix.gcPressure()`     | 0 recien pasado el GC, 1 a punto de pasar el GC                |
-| `quix.isGpuCanvas(canvas)` | `true` si ese canvas dibuja en la GPU (hook `gpu-canvas`) |
-| `quix.loading(on[, ms])` | el aviso de carga ("Loading..." abajo a la derecha): `true` al empezar a cargar, `false` al terminar (se quita cuando las imágenes van normales, como mucho a los 30 s). Con `ms`, solo sale si el juego se para más de esos ms sin mostrar una imagen. Con el juego parado cargando, se repinta la última imagen con el aviso (el thread de `present_ahead` o, sin él, el propio juego en sus trabajos largos). Lo usa el hook `rpgmaker-mv/loading-notice` |
+| miembro | que hace |
+|--|--|
+| `quix.exit(code)` | termina el loop principal con ese codigo de salida |
+| `quix.frame` | imagenes mostradas |
+| `quix.frameTime` | hora prevista de esta imagen (ms, escala de performance.now), regular: 33.333 ms entre imagenes a 30 fps |
+| `quix.backend` | `"sdl"` o `"dummy"` |
+| `quix.fixedStep` | `true` con el reloj fijo (`--fixed-step`, `--test` sin `-b sdl`) |
+| `quix.version` | version del runtime |
+| `quix.loading(on[, ms])` | el aviso de carga ("Loading..." abajo a la derecha): `true` al empezar a cargar, `false` al terminar (se quita cuando las imágenes van normales, como mucho a los 30 s). Con `ms`, solo sale si el juego se para más de esos ms sin mostrar una imagen. Lo usa el hook `rpgmaker-mv/loading-notice` |
+| `quix.input.pressKey(code, t)` | mete una tecla en la cola de entrada: `t` es `"down"`, `"up"` o `"press"` (por defecto) |
+| `quix.input.pressPad(b, t)` | el boton `b` (mapeo standard) de un mando de prueba (virtual de SDL, solo backend sdl): `t` es `"down"`, `"up"` o `"press"`; devuelve su posicion en `getGamepads()` o -1 |
+| `quix.gpu.driver` | el driver de OpenGL ES: `"panfrost"`, `"mali"`, `"mali-g31"` o `"default"` (`null` sin WebGL); ver [gfx](../runtime/gfx/drivers/README.es.md) |
+| `quix.gpu.renderScale` | la escala con la que se dibuja el juego (`[game] render_scale`; 1 sin ella) |
+| `quix.gpu.isCanvas(canvas)` | `true` si ese canvas dibuja en la GPU (hook `gpu-canvas`) |
+| `quix.gpu.scope(+1 / -1)` | los canvas que se crean entre +1 y -1 dibujan en la GPU |
+| `quix.memory.usage()` | la memoria: `rss`, `heapTotal`, `heapUsed`, `external`, `maxRss` |
+| `quix.memory.collect(due)` | un GC completo de JS ya (`'due'`: el que toca); devuelve ms |
+| `quix.memory.pressure()` | 0 recien pasado el GC, 1 a punto de pasar el GC |
+| `quix.fonts.register(f, url o bytes)` | registra una fuente: un archivo o sus bytes (lo usan FontFace y @font-face) |
+| `quix.fonts.has(f)` | `true` si la familia esta registrada |
+| `quix.storage.read()` / `quix.storage.write(json)` | el `localStorage` en disco (`[saves] local_storage`) |
+| `quix.achievements.list()` | los logros (id, title, description, type, color, unlocked) |
+| `quix.achievements.unlocked(id)` | `true` si el logro del toml esta conseguido |
+| `quix.achievements.icon` | `[achievements_menu] icon` (0 si no hay) |
+| `quix.steam` | `achievements` y `stats`: lo que el juego pide a Steam (greenworks, el `entry.js` de un port); los `[symbols]` lo leen: `"path:quix.steam.achievements.ID"` |
+| `quix.engine` | las funciones nativas de cada motor (`quix.engine["rpgmaker-mv"]`), para los hooks |
 | `quix.lan` | la red local para juegos: `open()`, `peers()`, `send(texto[, id])`, `receive()`, `close()`, `id`, `name`; ver [lan](../runtime/lan/README.es.md) |
-| `quix.gpuDriver()` | el driver de OpenGL ES: `"panfrost"`, `"mali"`, `"mali-g31"` o `"default"` (`null` sin WebGL); ver [gfx](../runtime/gfx/drivers/README.es.md) |

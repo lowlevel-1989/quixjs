@@ -21,7 +21,7 @@ their number: if two mods have the same file, the higher number wins. The
 choice is used when Play starts the game; until it is changed, the active
 mods are those of `[game] mods`.
 
-Options has Show FPS, Profiler, Vibration (if the game vibrates: `[controls] vibration`), Fullscreen (only on the PC) and Reset
+Options has Show FPS, Profiler, Vibration (if the game vibrates: `[controls] vibration`), Quality (if the port has `[engine] quality`: the pixels a 3D game draws, through `devicePixelRatio`; low draws a quarter), Scaling (Sharp, Smooth or Pixel perfect: how the game is enlarged), Fullscreen (only on the PC) and Reset
 achievements. There is no frame rate option: the port sets `[engine] fps`.
 What changes in Options, Mods and Cheats is saved at once in
 `quixjs-settings.toml`, next to the config. Controls maps every button and
@@ -29,12 +29,16 @@ stick of the gamepad and saves it in `controller.map`, the format of
 PortMaster (`backend/sdl/mapper.c`). With `[controls.buttons]` it asks Start,
 those buttons by the name the port gives them ("Confirm (A)") and always both
 sticks; the buttons it does not ask keep what they had. Select is asked always
-(Select + Start closes the game). The actions of `[controls.keys]` go last,
-by their name, and are saved in `controller.keys`.
+(Select + Start closes the game), and so are the D-pad, A and B, which this
+menu uses. The actions of `[controls.keys]` go last,
+by their name, and are saved in `controller.keys`; with `[controls] screenshot =
+true` and `magnifier = true`, also Screenshot and Magnifier (a single button besides
+their combos).
 
 | file         | what it does |
 |--------------|--------------|
 | `launcher.c` | the menu: its options, the achievements, options and cheats screens, and what is chosen; after Transfer Save it reads the achievements again |
+| `rom.c` | mount the rom (`[game] rom`) when the game starts; if the zip is compressed, the screen "preparing the game" with the percent while it is uncompressed once |
 | `settings.c` | `quixjs-settings.toml`: `show_fps`, `profile`, `fullscreen`, `vibration`, `cheats` and `mods`, and what choosing a cheat or a mod changes (also used by the Android menu, `platform/android/launcher.c`) |
 | `ui.c`       | draws a screen (logo, title, lines, a list that slides when it does not fit, a notice and the help) and waits for a choice: keyboard, the d-pad and stick of a controller, and `--script` |
 
@@ -54,6 +58,7 @@ drawing it again every frame costs on a handheld.
 | Enter, Space, Z / A, X, Y, Start | choose |
 | Escape, Backspace, X key / B | go back |
 | Select + Start | quit |
+| Select + R2 (in the game) | back to this menu |
 
 `--script` also works here: its frames count from the first frame of the
 menu, and the ones of the game come after them.

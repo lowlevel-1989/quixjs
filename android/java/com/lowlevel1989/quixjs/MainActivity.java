@@ -9,7 +9,7 @@
 
    La app no trae juegos ni ports: cada juego se importa desde un .zip con
    la carpeta completa de su port, como queda en una portatil con
-   PortMaster (port.toml, gamedata/ con el juego, mods/, partidas...). Asi
+   PortMaster (port.toml, la rom del juego, mods/, partidas...). Asi
    la misma app juega cualquier port de quixjs. Abrir un .zip con la app,
    desde un gestor de archivos, importa igual.
 
@@ -29,8 +29,11 @@
 package com.lowlevel1989.quixjs;
 
 import android.app.Activity;
+import android.Manifest;
 import android.app.AlertDialog;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.os.Build;
 import android.net.Uri;
 import android.os.Bundle;
 import android.view.Gravity;
@@ -70,6 +73,11 @@ public class MainActivity extends Activity {
     @Override
     protected void onCreate(Bundle saved) {
         super.onCreate(saved);
+        // las capturas (Select + R1) van a la galeria: en Android 9 y antes
+        // eso pide este permiso (desde Android 10, MediaStore no lo necesita)
+        if (Build.VERSION.SDK_INT <= 28
+                && checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED)
+            requestPermissions(new String[] {Manifest.permission.WRITE_EXTERNAL_STORAGE}, 0);
         buildScreen();
         Uri uri = incoming(getIntent());
         if (uri != null) importAsync(uri);
@@ -200,15 +208,19 @@ public class MainActivity extends Activity {
         notice.setVisibility(message.isEmpty() ? View.GONE : View.VISIBLE);
     }
 
-    /* Las carpetas de {files}/games con port.toml y el juego dentro */
+    /* Las carpetas de {files}/games con port.toml y el juego dentro: su rom
+       ([game] rom, un .zip o una carpeta junto al port.toml: quixjs la monta
+       al jugar) o, sin rom, la carpeta de game_dir */
     private List<File> installed() {
         List<File> found = new ArrayList<>();
         File[] dirs = new File(getFilesDir(), "games").listFiles(File::isDirectory);
         if (dirs == null) return found;
         Arrays.sort(dirs);
         for (File dir : dirs) {
-            String gameDir = value(read(new File(dir, "port.toml")), "game_dir");
-            if (gameDir != null && new File(dir, gameDir).isDirectory()) found.add(dir);
+            String toml = read(new File(dir, "port.toml"));
+            String rom = gameValue(toml, "rom"), gameDir = value(toml, "game_dir");
+            if (rom != null ? new File(dir, rom).exists() : gameDir != null && new File(dir, gameDir).isDirectory())
+                found.add(dir);
         }
         return found;
     }

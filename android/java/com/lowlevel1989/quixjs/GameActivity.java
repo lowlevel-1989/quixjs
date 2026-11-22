@@ -15,17 +15,32 @@
    mando. La de SDL no dice para que es, Android la toma por respuesta al
    tacto y, si esa esta apagada en los ajustes, no vibra.
 
+   savePicture, para platform_add_picture: la captura de pantalla (Select +
+   R1) tambien en la galeria, en Pictures/quixjs (MediaStore; en Android 9,
+   con el permiso de escribir en el almacenamiento, que pide MainActivity).
+
    Adaptado de tamatama (android/java/.../ArenaActivity.java, MIT):
    https://github.com/lowlevel-1989/tamatama/blob/780b7e723f3dbe8a58bc54ed571f1518dac9191a/android/java/com/lowlevel1989/tamatama/ArenaActivity.java */
 package com.lowlevel1989.quixjs;
 
+import android.content.ContentResolver;
+import android.content.ContentValues;
 import android.content.Context;
+import android.net.Uri;
+import android.os.Environment;
+import android.provider.MediaStore;
 import android.media.AudioAttributes;
 import android.os.Build;
 import android.os.VibrationEffect;
 import android.os.Vibrator;
 import android.view.KeyEvent;
 import android.widget.Toast;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
 
 import org.libsdl.app.SDL;
 
@@ -68,6 +83,42 @@ public class GameActivity extends SDLActivity {
         else
             vibrator.vibrate(ms, game);
         return true;
+    }
+
+    /* Copia la captura path (un PNG) a la galeria: true si se pudo */
+    public static boolean savePicture(String path) {
+        Context context = SDL.getContext();
+        if (context == null) return false;
+        File src = new File(path), dst = null;
+        try (InputStream in = new FileInputStream(src)) {
+            OutputStream out;
+            if (Build.VERSION.SDK_INT >= 29) {
+                ContentValues v = new ContentValues();
+                v.put(MediaStore.Images.Media.DISPLAY_NAME, src.getName());
+                v.put(MediaStore.Images.Media.MIME_TYPE, "image/png");
+                v.put(MediaStore.Images.Media.RELATIVE_PATH, Environment.DIRECTORY_PICTURES + "/quixjs");
+                ContentResolver cr = context.getContentResolver();
+                Uri uri = cr.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, v);
+                if (uri == null) return false;
+                out = cr.openOutputStream(uri);
+            } else {
+                File dir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), "quixjs");
+                if (!dir.isDirectory() && !dir.mkdirs()) return false;
+                dst = new File(dir, src.getName());
+                out = new FileOutputStream(dst);
+            }
+            if (out == null) return false;
+            try (OutputStream o = out) {
+                byte[] buf = new byte[65536];
+                for (int n; (n = in.read(buf)) > 0; ) o.write(buf, 0, n);
+            }
+            /* Android 9: que la galeria la vea ya */
+            if (dst != null)
+                android.media.MediaScannerConnection.scanFile(context, new String[] {dst.getPath()}, null, null);
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     private long lastBack;

@@ -1,12 +1,11 @@
 [game]
-cache_dir = "cache/tests/core/achievements-menu"
-game_dir  = "games/tests/core/achievements-menu"
+rom       = "."
 width     = 64
 height    = 64
 
 [scripts]
 libs     = []
-includes = ["../../lib/assert.js"]
+includes = ["../lib/assert.js"]
 entry    = "main.js"
 
 # rpgmaker-mv/achievements-menu: la opcion de los logros en el menu de RPG

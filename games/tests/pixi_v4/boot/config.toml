@@ -1,10 +1,9 @@
 [game]
-cache_dir = "cache/tests/pixi_v4/boot"
-game_dir  = "games/tests/pixi_v4/boot"
+rom       = "."
 width     = 200
 height    = 200
 
 [scripts]
-libs     = ["../../lib/pixi_v4/pixi.js"]
-includes = ["../../lib/assert.js"]
+libs     = ["../lib/pixi_v4/pixi.js"]
+includes = ["../lib/assert.js"]
 entry    = "main.js"

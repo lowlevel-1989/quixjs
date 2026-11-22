@@ -40,3 +40,25 @@ abrir en el editor por separado.
 | `queries.c` | `getParameter`, `getError`, `get*Parameter`... |
 | `extensions.c` | `getExtension` y `getSupportedExtensions` |
 | `api.c` | la lista de metodos de `WebGLRenderingContext`, `js_api_add_webgl` y `js_create_webgl_context` |
+
+## Framebuffers y texturas, en las handhelds
+
+- **Un framebuffer por textura de destino** (`objects.c`, `fb_alias`):
+  Construct 2 dibuja sus efectos en texturas con un solo framebuffer al que
+  le cambia la textura (`framebufferTexture2D`). En Mali eso vuelve a validar
+  el framebuffer, ~0,3 ms cada vez; cambiar de framebuffer, no. Mientras el
+  framebuffer del juego solo tiene una textura de color enganchada, quixjs usa
+  uno propio con esa textura, creado una vez (hasta que se borra la textura).
+  Si el juego engancha un renderbuffer (three.js: la profundidad despues del
+  color), se vuelve al suyo, con la textura de color enganchada tambien. El
+  juego no nota nada. Gunfield en la RGB30 (libmali): de ~11 a ~19 fps;
+  RX6S (Panfrost): de 5,9 a 7,8.
+- **Texturas que se rellenan al decodificarse la imagen** (`textures.c`,
+  `upload_later`): con `[engine] lazy_images` una imagen se decodifica al
+  usarla; `texImage2D` con una imagen sin pixeles crea la textura vacia, de su
+  tamano, la decodifica en el thread de trabajo y la rellena entonces (con el
+  mismo premultiply / flip_y, y los mipmaps otra vez si se pidieron). Una hoja
+  de sprites de 2048x2048 tardaba hasta 0,5 s en una handheld, en la imagen en
+  que aparecia un enemigo nuevo; ahora tarda un momento en verse. Solo con
+  `lazy_images`: una imagen soltada por falta de RAM (RPG Maker) se vuelve a
+  decodificar al momento, como antes.

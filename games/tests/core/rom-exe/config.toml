@@ -1,0 +1,15 @@
+# La rom ([game] rom): el juego en un .zip (game_dir: su carpeta www/),
+# montado en gamedata/ junto a este config.toml. setup.sh hace
+# el zip pegado detras de otro archivo (un .exe) antes del test. Lo que hay en disco en game_dir gana
+# al zip, y un mod activo gana a los dos.
+[game]
+rom       = "cache/game.exe"
+game_dir  = "www"   # dentro del zip
+width     = 320
+height    = 240
+mods      = ["uno"]
+
+[scripts]
+libs     = []
+includes = ["lib.js", "../lib/assert.js"]
+entry    = "main.js"

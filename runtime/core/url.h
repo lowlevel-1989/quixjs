@@ -61,3 +61,21 @@ uint8_t *url_read_head_transformed(const char *path, size_t n, size_t *len);
 // archivo de la carpeta del juego (data_dir) esta tambien en root/<nombre>/;
 // gana el ultimo de la lista
 void url_set_mods(const char *data_dir, const char *root, char names[][64], int count);
+
+// ---- en disco o en la rom ([game] rom: el .zip del juego, runtime/zip)
+#include <stdio.h>
+// Un FILE* de solo lectura del archivo (en disco, o si no, de la rom)
+FILE *url_fopen(const char *path);
+// Solo en disco, y si su nombre tiene caracteres no ASCII que no estan, el
+// que se le parece en su carpeta (ver url.c: una SD FAT)
+FILE *url_fopen_loose(const char *path);
+// 0 si existe (en disco o en la rom); size, mtime (segundos unix) e is_dir
+// pueden ser NULL
+int  url_stat(const char *path, long long *size, long long *mtime, int *is_dir);
+int  url_exists(const char *path);
+// Lo que hay en la carpeta, en disco y en la rom (cada nombre una vez);
+// cuantos, o -1 si no existe
+int  url_list_dir(const char *dir, void (*each)(void *user, const char *name, int is_dir), void *user);
+// El archivo mapeado en memoria (solo lectura): en disco, o sin comprimir en
+// la rom. Se suelta con munmap(ptr - delta, len + delta). NULL si no se puede
+void *url_map(const char *path, size_t *len, size_t *delta);

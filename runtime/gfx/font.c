@@ -30,6 +30,7 @@
 #include <strings.h>
 #include <unistd.h>
 #include "platform/platform.h"
+#include "core/url.h"
 #include "font.h"
 
 #define MAX_FAMILIES 64
@@ -126,7 +127,7 @@ static int family_eq(const char *a, const char *b) {
 }
 
 static int register_unlocked(const char *family, const char *path) {
-  if (access(path, R_OK) != 0) {
+  if (!url_exists(path)) {
     fprintf(stderr, "[font] file not found for \"%s\": %s\n", family, path);
     return -1;
   }
@@ -212,13 +213,61 @@ static int parse_css(const char *css, double *size, int *style, char *path, size
   return path[0] ? 0 : -1;
 }
 
+// Abre la fuente: del disco por su ruta o, si esta en la rom ([game] rom),
+// desde memoria. De cada archivo de la rom se guarda una copia mientras dura
+// el juego (SDL_ttf la lee mientras la fuente esta abierta; son pocas)
+#define MAX_ROM_FONTS 16
+static struct { char path[512]; uint8_t *data; size_t len; } rom_fonts[MAX_ROM_FONTS];
+
+static TTF_Font *open_ttf(const char *path, int size) {
+  char abs[1024];
+  if (access(path, R_OK) == 0 || path[0] == 0) return TTF_OpenFont(platform_file_path(path, abs, sizeof abs), size);
+  int k = 0;
+  while (k < MAX_ROM_FONTS && rom_fonts[k].data && strcmp(rom_fonts[k].path, path) != 0) k++;
+  if (k == MAX_ROM_FONTS) return NULL;
+  if (!rom_fonts[k].data) {
+    rom_fonts[k].data = url_read_file(path, &rom_fonts[k].len);
+    if (!rom_fonts[k].data) return NULL;
+    snprintf(rom_fonts[k].path, sizeof rom_fonts[k].path, "%s", path);
+  }
+  return TTF_OpenFontRW(SDL_RWFromConstMem(rom_fonts[k].data, (int)rom_fonts[k].len), 1, size);
+}
+
+// Una fuente que llega en memoria (FontFace con un ArrayBuffer: GDevelop la
+// descarga con fetch): una copia en rom_fonts con la ruta "mem:<familia>",
+// que open_ttf abre desde ahi
+static int register_data_unlocked(const char *family, const void *data, size_t len) {
+  char path[512];
+  snprintf(path, sizeof path, "mem:%s", family);
+  int k = 0;
+  while (k < MAX_ROM_FONTS && rom_fonts[k].data && strcmp(rom_fonts[k].path, path) != 0) k++;
+  if (k == MAX_ROM_FONTS || len == 0) return -1;
+  uint8_t *copy = malloc(len);
+  if (!copy) return -1;
+  memcpy(copy, data, len);
+  free(rom_fonts[k].data);
+  rom_fonts[k].data = copy;
+  rom_fonts[k].len = len;
+  snprintf(rom_fonts[k].path, sizeof rom_fonts[k].path, "%s", path);
+  for (int i = 0; i < family_count; i++) {
+    if (family_eq(families[i].family, family)) {
+      snprintf(families[i].path, sizeof(families[i].path), "%s", path);
+      return 0;
+    }
+  }
+  if (family_count >= MAX_FAMILIES) return -1;
+  snprintf(families[family_count].family, sizeof(families[0].family), "%s", family);
+  snprintf(families[family_count].path, sizeof(families[0].path), "%s", path);
+  family_count++;
+  return 0;
+}
+
 static FontHandle *get_font(const char *path, int size, int style, int outline) {
   for (int i = 0; i < cache_count; i++) {
     FontHandle *h = &cache[i];
     if (h->size == size && h->style == style && h->outline == outline && strcmp(h->path, path) == 0) return h;
   }
-  char abs[1024];
-  TTF_Font *font = TTF_OpenFont(platform_file_path(path, abs, sizeof abs), size);
+  TTF_Font *font = open_ttf(path, size);
   if (!font) {
     fprintf(stderr, "[font] %s: %s\n", path, TTF_GetError());
     return NULL;
@@ -256,8 +305,7 @@ static FontHandle *from_css_unlocked(const char *css, int fixed_handle) {
     if (h->size == px && h->style == style && strcmp(h->path, path) == 0) return h;
   }
   if (fixed_count == MAX_FIXED) return NULL;
-  char abs[1024];
-  TTF_Font *font = TTF_OpenFont(platform_file_path(path, abs, sizeof abs), px);
+  TTF_Font *font = open_ttf(path, px);
   if (!font) return NULL;
   TTF_SetFontStyle(font, style);
   FontHandle *h = &fixed[fixed_count++];
@@ -364,6 +412,13 @@ static int render_unlocked(FontHandle *f, const char *utf8, unsigned char r, uns
 int font_register(const char *family, const char *path) {
   font_lock();
   int r = register_unlocked(family, path);
+  font_unlock();
+  return r;
+}
+
+int font_register_data(const char *family, const void *data, size_t len) {
+  font_lock();
+  int r = register_data_unlocked(family, data, len);
   font_unlock();
   return r;
 }

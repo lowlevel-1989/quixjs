@@ -58,8 +58,8 @@ function (original) {
   // sameCode (runtime/engines/same-code.js): la funcion del juego es igual que
   // el modelo, sin contar espacios? Si un plugin la cambio, el hook deja la
   // suya y no hace nada
-  var sameCode = __quixEngine.sameCode;
-  var E = globalThis.__quixEngine && __quixEngine['rpgmaker-mv'];
+  var sameCode = quix.engine.sameCode;
+  var E = globalThis.quix.engine && quix.engine['rpgmaker-mv'];
   if (!E || !E.splitJsonArray) return original;
   if (!sameCode(original, MODEL['DataManager.loadDataFile'])) return original;
   // los archivos que se cargan asi y la clave que se queda como texto

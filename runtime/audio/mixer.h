@@ -18,10 +18,11 @@
 
 #pragma once
 
-// Mezclador de audio para portatiles: ogg vorbis decodificado en streaming
-// (stb_vorbis) mientras suena, y mezclado en el thread de audio de SDL.
+// Mezclador de audio para portatiles: ogg vorbis, mp3 o wav (decoder.h)
+// decodificado en streaming mientras suena, y mezclado en el thread de audio
+// de SDL.
 //
-// - Un AudioClip es el ogg comprimido (lo que da decodeAudioData). No se
+// - Un AudioClip es el archivo comprimido (lo que da decodeAudioData). No se
 //   decodifica entero: una musica de 3 min ocupa sus ~3 MB, no ~30 MB de PCM.
 // - Cada voz que suena tiene su decodificador y su posicion.
 // - Sin dispositivo de audio (backend dummy, tests) las voces avanzan con el
@@ -32,17 +33,25 @@
 
 typedef struct AudioClip AudioClip;
 
-// Copia los datos. NULL si no es un ogg vorbis valido.
-AudioClip *clip_from_ogg(const uint8_t *data, size_t len);
+// Copia los datos. NULL si no es un ogg, mp3 o wav valido.
+AudioClip *clip_from_data(const uint8_t *data, size_t len);
 // Igual, pero se queda con data (malloc) sin copiarlo; vale desde el thread de
 // trabajo (core/worker.h). Si falla, libera data
-AudioClip *clip_from_ogg_owned(uint8_t *data, size_t len);
+AudioClip *clip_from_data_owned(uint8_t *data, size_t len);
+// Desde el archivo (sin transformacion): uno largo se queda mapeado (mmap), y
+// sus paginas las puede soltar el kernel; uno corto, decodificado. NULL si no
+// es un sonido valido. Vale desde el thread de trabajo
+AudioClip *clip_from_file(const char *path);
+// Un sonido hecho de muestras (las de un AudioBuffer que el juego rellena:
+// musica generada por el juego): left y right (right NULL si es mono), frames
+// muestras por canal, de -1 a 1. Las copia
+AudioClip *clip_from_pcm(const float *left, const float *right, long frames, int rate);
 void       clip_retain(AudioClip *c);
 void       clip_release(AudioClip *c);
 int        clip_channels(const AudioClip *c);
 int        clip_rate(const AudioClip *c);
 long       clip_length(const AudioClip *c);   // en frames (muestras por canal)
-// Los comentarios LOOPSTART y LOOPLENGTH del ogg, en frames (0 si no estan)
+// Los comentarios LOOPSTART y LOOPLENGTH de un ogg, en frames (0 si no estan)
 long       clip_loop_start(const AudioClip *c);
 long       clip_loop_length(const AudioClip *c);
 

@@ -6,7 +6,7 @@
 // buffers del tamano del archivo en el JS por cada imagen, que disparaban
 // GC a mitad de una imagen. Con el hook, la imagen
 // recibe la ruta cifrada y quixjs la lee, la descifra (la clave de
-// $dataSystem: __quixEngine["rpgmaker"].setDecryptKey, de
+// $dataSystem: quix.engine["rpgmaker"].setDecryptKey, de
 // runtime/engines/rpgmaker/decrypt.c) y la decodifica en
 // segundo plano: los bytes no pasan por el JS. Sin la nativa o sin la clave,
 // la original.
@@ -20,7 +20,7 @@
 // juego ya cargo sus scripts. Ver runtime/engines/README.md.
 function (original) {
   var native =
-    typeof __quixEngine === 'object' && __quixEngine ? __quixEngine['rpgmaker'] : null;
+    typeof quix.engine === 'object' && quix.engine ? quix.engine['rpgmaker'] : null;
   var ready = false;
   function setup() {
     if (ready) return true;

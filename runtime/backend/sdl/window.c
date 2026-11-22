@@ -78,6 +78,8 @@ static int sdl_gl_setup(SDLPlatformData* data) {
   if (!ok) return -1;
   data->u_tex = qgl.GetUniformLocation(data->program, "u_tex");
   data->u_alpha = qgl.GetUniformLocation(data->program, "u_alpha");
+  data->u_size = qgl.GetUniformLocation(data->program, "u_size");
+  data->u_prescale = qgl.GetUniformLocation(data->program, "u_prescale");
   return 0;
 }
 
@@ -95,6 +97,8 @@ static void sdl_blit(SDLPlatformData* data, GLuint tex, int x, int y, int w, int
   qgl.BindTexture(GL_TEXTURE_2D, tex);
   qgl.Uniform1i(data->u_tex, 0);
   qgl.Uniform1f(data->u_alpha, data->blit_alpha);
+  qgl.Uniform2f(data->u_size, data->blit_size[0], data->blit_size[1]);
+  qgl.Uniform2f(data->u_prescale, data->blit_prescale[0], data->blit_prescale[1]);
   qgl.BindBuffer(GL_ARRAY_BUFFER, 0);
   qgl.EnableVertexAttribArray(0);
   qgl.EnableVertexAttribArray(1);
@@ -117,6 +121,7 @@ static void sdl_init(Backend* backend, int width, int height) {
   // las asignaciones del mando hechas en el launcher (Controls): antes de
   // iniciar los mandos, que es cuando SDL las lee (ver mapper.c)
   mapper_load(backend->controller_map);
+  keypad_load(backend->controller_map);   // keyboard.map: el teclado como mando
 
   if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMECONTROLLER) < 0) {
     fprintf(stderr, "SDL could not initialize: %s\n", SDL_GetError());

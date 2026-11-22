@@ -6,7 +6,7 @@
   g.self = g;
   g.parent = g;
   g.top = g;
-  g.devicePixelRatio = 1;
+  if (!g.devicePixelRatio) g.devicePixelRatio = 1;   // [engine] quality ya lo puede traer
   g.screen = {
     width: g.innerWidth,
     height: g.innerHeight,
@@ -29,8 +29,19 @@
     return null;
   };
   g.focus = g.blur = g.scrollTo = g.open = g.close = function () {};
+  // el style del elemento, con getPropertyValue("margin-top") (jQuery .css()
+  // la usa); lo que no tiene el style da ""
   g.getComputedStyle = function (el) {
-    return (el && el.style) || {};
+    var s = (el && el.style) || {};
+    var out = Object.create(s);
+    out.getPropertyValue = function (name) {
+      var k = String(name).replace(/-([a-z])/g, function (m, c) {
+        return c.toUpperCase();
+      });
+      var v = s[k];
+      return v == null ? '' : String(v);
+    };
+    return out;
   };
   g.matchMedia = function () {
     return {

@@ -27,11 +27,14 @@ por separado.
 | `input.c` | teclado y mandos: las teclas de SDL como `KeyboardEvent.code`, la asignacion de un mando (Controls del launcher), pantalla completa, titulo, refresco y la cola de eventos (`sdl_process_events`) |
 | `overlay.c` | lo que se dibuja encima del juego a la resolucion de la ventana: el contador de `--fps`, el aviso de un logro y el de carga |
 | `draw.c` | mostrar una imagen: las capas de los canvas escaladas a la ventana y el cambio de buffer |
+| `magnifier.c` | la lupa (Select + L1): abrirla y cerrarla, sus botones, moverla, esconder el mando al juego, el cuadro y su icono |
 | `thread.c` | el thread que presenta (`[engine] present_ahead`): recibe cada imagen con su momento y la muestra a su hora, sin que el juego espere |
 | `present.c` | entregar una imagen: con el thread o sin el (`gpu_present` y el `Presenter` del driver), repintar durante una carga, y las tres entradas del backend (`present_layers`, `present`, `present_gl`) |
-| `gamepads.c` | `getGamepads`: el estado de los mandos en el mapeo "standard", leido de SDL una vez por imagen (el mismo hasta los eventos de la siguiente; una pulsacion mas corta que una imagen se ve en todas las lecturas de esa imagen), y el mando de prueba (`quix.pressPad`) |
+| `gamepads.c` | `getGamepads`: el estado de los mandos en el mapeo "standard", leido de SDL una vez por imagen (el mismo hasta los eventos de la siguiente; una pulsacion mas corta que una imagen se ve en todas las lecturas de esa imagen), y el mando de prueba (`quix.input.pressPad`) |
 | `api.c` | cerrar, la tabla `BackendInterface` y `sdl_backend_create` |
 
-Se compila aparte (no es una parte): `mapper.c`, la asignacion de un mando a
-los botones del juego (Controls del launcher). `backend.h` es lo que ve el
+Se compilan aparte (no son partes): `mapper.c`, la asignacion de un mando o
+del teclado a los botones del juego (Controls del launcher), y `keypad.c`, el
+teclado como mando (`keyboard.map`: las teclas asignadas entran por el mismo
+mando estandar que los botones). `backend.h` es lo que ve el
 resto de quixjs: `sdl_backend_create`.

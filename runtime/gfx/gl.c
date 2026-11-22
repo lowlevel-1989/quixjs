@@ -28,6 +28,8 @@
 #include "driver.h"
 
 QxGL qgl;
+QxGL3 qgl3;
+static int es3;   // 1: ES 3.x con todas sus funciones
 
 static SDL_Window   *gl_window = NULL;
 static SDL_GLContext gl_context = NULL;
@@ -49,8 +51,22 @@ int gl_load(void) {
   if (!qgl.name) { fprintf(stderr, "[gl] missing gl" #name "\n"); return -1; }
 #include "gl_funcs.h"
 #undef QX_GL
+  // las de ES 3.0, si el contexto lo es (WebGL 2); si falta alguna, sin WebGL 2
+  const char *version = (const char *)qgl.GetString(GL_VERSION);
+  es3 = version && strncmp(version, "OpenGL ES 3", 11) == 0;
+#define QX_GL3(type, name) \
+  qgl3.name = (type)SDL_GL_GetProcAddress("gl" #name); \
+  if (!qgl3.name) es3 = 0;
+  if (es3) {
+#include "gl3_funcs.h"
+  }
+#undef QX_GL3
   loaded = 1;
   return 0;
+}
+
+int gl_es3(void) {
+  return es3;
 }
 
 void gl_set_present_window(SDL_Window *window, SDL_GLContext context) {

@@ -39,6 +39,18 @@ typedef struct {
 
 extern QxGL qgl;
 
+// OpenGL ES 3.0 (WebGL 2): sus tipos, constantes y funciones (gl3_funcs.h).
+// Solo si el driver es ES 3.x: gl_es3() lo dice; si no, qgl3 queda a NULL
+#include "gl3_funcs.h"
+typedef struct {
+#define QX_GL3(type, name) type name;
+#include "gl3_funcs.h"
+#undef QX_GL3
+} QxGL3;
+extern QxGL3 qgl3;
+// 1 si el contexto es OpenGL ES 3.x y estan todas las de ES 3.0 (WebGL 2)
+int gl_es3(void);
+
 // Carga las funciones con el contexto GL actual (lo usa el backend SDL para
 // presentar). Devuelve 0 si estan todas.
 int  gl_load(void);

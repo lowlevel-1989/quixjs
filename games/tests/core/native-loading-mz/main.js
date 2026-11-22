@@ -2,7 +2,7 @@
 // MZ (.png_) las lee, las descifra y las decodifica quixjs, sin XHR ni Blob.
 // Lo justo de RPG Maker MZ 1.8.1 (rmmz_core.js; KADOKAWA, MIT): Utils y la
 // carga de Bitmap, tal cual (el hook comprueba que son estas con sameCode).
-// ../../assets/quad.png_ es quad.png cifrado con la clave de abajo (el mismo
+// assets/quad.png_ es quad.png cifrado con la clave de abajo (el mismo
 // formato que quad.rpgmvp de RPG Maker MV).
 
 var Utils = {};
@@ -99,7 +99,7 @@ var originalDecrypting = Bitmap.prototype._startDecrypting;
 
 // el PNG sin cifrar
 var plain = new Image();
-plain.src = '../../assets/quad.png';
+plain.src = 'assets/quad.png';
 
 function load(url, decrypting) {
   var b = new Bitmap();
@@ -111,9 +111,9 @@ function load(url, decrypting) {
 
 var hooked, orig, missing;
 function start() {
-  hooked = load('../../assets/quad.png');
-  orig = load('../../assets/quad.png', originalDecrypting);
-  missing = load('../../assets/none.png');
+  hooked = load('assets/quad.png');
+  orig = load('assets/quad.png', originalDecrypting);
+  missing = load('assets/none.png');
   setTimeout(check, 10);
 }
 

@@ -29,7 +29,7 @@ function (original) {
       this._savePicture = this.snap();
     }
   };
-  if (!__quixEngine.sameCode(original, MODEL['SceneManager.snapForSave'])) return original;
+  if (!quix.engine.sameCode(original, MODEL['SceneManager.snapForSave'])) return original;
   var K = 4; // a 1/K del ancho y del alto
   return function () {
     var renderer = Graphics._renderer,

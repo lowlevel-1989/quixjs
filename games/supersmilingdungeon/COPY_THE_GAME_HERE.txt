@@ -1,0 +1,12 @@
+Copy the game here, next to port.toml.
+
+You need Super Smiling Dungeon for Windows (Steam). In the folder of the game,
+inside resources/, there is a file named app.asar: copy it here as it is:
+
+supersmilingdungeon/
+  port.toml
+  app.asar
+
+If your file has another name, write it in port.toml, in
+rom = "app.asar".
+See README.md for the full steps.

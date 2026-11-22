@@ -141,6 +141,28 @@ int platform_vibrate(int ms, int amplitude) {
   return done;
 }
 
+// ------------------------------------------------------------- capturas
+
+// La captura, tambien en la galeria: GameActivity.savePicture(path) la copia
+// a Pictures/quixjs (MediaStore)
+int platform_add_picture(const char *path) {
+  JNIEnv *env = SDL_AndroidGetJNIEnv();
+  jobject activity = SDL_AndroidGetActivity();
+  if (!env || !activity) return 0;
+  jclass type = (*env)->GetObjectClass(env, activity);
+  jmethodID method = (*env)->GetStaticMethodID(env, type, "savePicture", "(Ljava/lang/String;)Z");
+  jstring jpath = (*env)->NewStringUTF(env, path);
+  int done = method && jpath && (*env)->CallStaticBooleanMethod(env, type, method, jpath);
+  if ((*env)->ExceptionCheck(env)) {
+    (*env)->ExceptionClear(env);
+    done = 0;
+  }
+  if (jpath) (*env)->DeleteLocalRef(env, jpath);
+  (*env)->DeleteLocalRef(env, type);
+  (*env)->DeleteLocalRef(env, activity);
+  return done;
+}
+
 // ------------------------------------------------------------- la entrada
 
 // stdout y stderr de quixjs: a logcat (etiqueta "quixjs") y a log.txt en la

@@ -1,12 +1,11 @@
 [game]
-cache_dir = "cache/tests/core/hooks-late-plugin"
-game_dir  = "games/tests/core/hooks-late-plugin"
+rom       = "."
 width     = 64
 height    = 64
 
 [scripts]
 libs     = []
-includes = ["../../lib/assert.js"]
+includes = ["../lib/assert.js"]
 entry    = "main.js"
 
 # un plugin que se carga tarde pisa la funcion con hook: quixjs lo vuelve a

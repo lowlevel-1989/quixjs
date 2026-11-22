@@ -125,6 +125,40 @@ function run() {
     T.equal(gl.isFramebuffer(fb), false, 'deleted');
   });
 
+  // como three.js (HexGL): textura de color y despues un renderbuffer de
+  // profundidad en el mismo framebuffer; el color tiene que seguir ahi
+  T.test('framebuffer with depth', function () {
+    var tex = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, tex);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 8, 8, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+    var rb = gl.createRenderbuffer();
+    gl.bindRenderbuffer(gl.RENDERBUFFER, rb);
+    gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, 8, 8);
+    var fb = gl.createFramebuffer();
+    gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, tex, 0);
+    gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, rb);
+    T.equal(gl.checkFramebufferStatus(gl.FRAMEBUFFER), gl.FRAMEBUFFER_COMPLETE, 'FRAMEBUFFER_COMPLETE');
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
+    gl.viewport(0, 0, 8, 8);
+    gl.clearColor(1, 1, 0, 1);
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    T.deepEqual(pixel(1, 1), [255, 255, 0, 255], 'drawn into the texture');
+    // la textura en otro framebuffer: tiene lo dibujado
+    var fb2 = gl.createFramebuffer();
+    gl.bindFramebuffer(gl.FRAMEBUFFER, fb2);
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, tex, 0);
+    T.deepEqual(pixel(1, 1), [255, 255, 0, 255], 'the texture has it');
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    gl.viewport(0, 0, 64, 64);
+    gl.deleteFramebuffer(fb);
+    gl.deleteFramebuffer(fb2);
+    gl.deleteRenderbuffer(rb);
+    gl.deleteTexture(tex);
+    T.equal(gl.getError(), gl.NO_ERROR, 'no error');
+  });
+
   // un canvas que cambia y se vuelve a subir (texSubImage2D), con y sin
   // UNPACK_FLIP_Y: la textura queda como el canvas
   T.test('texture re-upload', function () {
@@ -225,5 +259,5 @@ function run() {
     });
     T.done();
   };
-  img.src = '../../assets/quad.png';
+  img.src = 'assets/quad.png';
 }

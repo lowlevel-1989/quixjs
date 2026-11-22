@@ -3,7 +3,7 @@
 var app = new PIXI.Application(200, 200, T.pixiOptions({ backgroundColor: 0x000000 }));
 document.body.appendChild(app.view);
 
-var texture = PIXI.Texture.fromImage('../../assets/white8.png');   // 8x8 blanco, (0,0) transparente
+var texture = PIXI.Texture.fromImage('assets/white8.png');   // 8x8 blanco, (0,0) transparente
 var container = new PIXI.Container();
 app.stage.addChild(container);
 

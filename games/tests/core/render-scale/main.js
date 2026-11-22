@@ -27,7 +27,7 @@ frame = 0;
 requestAnimationFrame(function () {
   T.test('installed', function () {
     T.equal(Graphics._updateRenderer.__quixHook, 'rpgmaker-mv/render-scale', 'the hook');
-    T.equal(quix.renderScale(), 0.5, 'quix.renderScale()');
+    T.equal(quix.gpu.renderScale, 0.5, 'quix.gpu.renderScale');
   });
   T.test('drawn at half the resolution', function () {
     var r = Graphics._renderer;

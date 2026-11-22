@@ -39,6 +39,9 @@ typedef struct {
   int profile;
   int fullscreen;   // en el PC: la ventana a pantalla completa
   int no_vibration; // Vibration: Off (vibration = false)
+  int scaling;           // Scaling: 1 + SCALING_* (backend.h); 0: el de [engine] scaling
+  int quality;           // Quality: 1 low, 2 medium, 3 high (0: la de [engine] quality)
+  int fps;               // FPS: 30 o 60 (0: el de [engine] fps)
   char cheats[MAX_SETTING_CHEATS][64];   // los trucos activos (Cheats), por id
   int  cheats_count;
   int  mods_set;                          // 1: mods manda sobre [game] mods

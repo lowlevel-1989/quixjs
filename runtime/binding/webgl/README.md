@@ -40,3 +40,25 @@ read and opened in an editor by itself.
 | `queries.c` | `getParameter`, `getError`, `get*Parameter`... |
 | `extensions.c` | `getExtension` and `getSupportedExtensions` |
 | `api.c` | the list of methods of `WebGLRenderingContext`, `js_api_add_webgl` and `js_create_webgl_context` |
+
+## Framebuffers and textures, on handhelds
+
+- **One framebuffer per target texture** (`objects.c`, `fb_alias`): Construct
+  2 draws its effects in textures with a single framebuffer whose texture it
+  changes (`framebufferTexture2D`). On Mali that re-validates the framebuffer,
+  ~0.3 ms each time; changing framebuffer does not. While the game's
+  framebuffer has only a colour texture attached, quixjs uses one of its own
+  with that texture, made once (until the texture is deleted). When the game
+  attaches a renderbuffer (three.js: depth after colour), its own framebuffer
+  is used again, with the colour texture attached too. The game sees no
+  difference. Gunfield on the RGB30 (libmali): from ~11 to ~19 fps; RX6S
+  (Panfrost): from 5.9 to 7.8.
+- **Textures filled when the image is decoded** (`textures.c`,
+  `upload_later`): with `[engine] lazy_images` an image is decoded when it is
+  used; `texImage2D` with an image without pixels makes the texture empty, of
+  its size, decodes it in the worker thread and fills it then (with the same
+  premultiply / flip_y, and mipmaps again if they were asked for). A sprite
+  sheet of 2048x2048 took up to 0.5 s on a handheld, in the frame where a new
+  enemy appeared; now it is not shown for a moment instead. Only with
+  `lazy_images`: an image released for lack of RAM (RPG Maker) is decoded
+  again at once, as before.

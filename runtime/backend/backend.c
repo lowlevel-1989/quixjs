@@ -27,6 +27,7 @@
 #include "backend/sdl/backend.h"
 #include "core/args.h"
 #include "backend.h"
+#include "core/dispatch.h"
 
 Backend* backend_create(int type) {
   Backend *backend = NULL;
@@ -52,6 +53,7 @@ void backend_process_events(Backend* backend) {
   if (backend && backend->iface && backend->iface->process_events) {
     backend->iface->process_events(backend);
   }
+  dispatch_run();   // lo pendiente del juego, al hardware (core/dispatch.h)
 }
 
 void backend_present(Backend* backend, const uint8_t *rgba, int w, int h) {
@@ -103,9 +105,53 @@ int backend_capture_input(Backend* backend, int step, char *out, size_t room) {
   return -1;
 }
 
+// La vibracion pasa por el dispatch (core/dispatch.h): el juego pide y
+// quixjs manda al mando una cada vez, cuando la anterior acabo, y despues una
+// pausa (VIBRATE_GAP_MS). En la RG CubeXX (ROCKNIX, H700) muchas seguidas
+// colgaban la consola entera: Gunfield con el mod rumble y los enemigos a x3
+// (explosiones sin parar) la congelaba en uno a tres minutos; sin vibrar, no.
+// Si llegan varias mientras tanto, se queda la mas fuerte.
+#define VIBRATE_GAP_MS 150
+
+typedef struct {
+  Backend *backend;
+  float strong, weak;
+  int ms;
+  double at;   // cuando se pidio (ms): lo que ya paso no se vibra
+} VibrateItem;
+
+static double vib_now(void) {
+  struct timespec t;
+  clock_gettime(CLOCK_MONOTONIC, &t);
+  return t.tv_sec * 1000.0 + t.tv_nsec / 1e6;
+}
+
+static int vib_send(void *user, const void *item) {
+  (void)user;
+  const VibrateItem *v = item;
+  Backend *b = v->backend;
+  if (b->no_vibration || !b->iface || !b->iface->vibrate) return 0;
+  int left = v->ms - (int)(vib_now() - v->at);
+  if (v->ms > 0 && left <= 0) return 0;   // ya habria acabado
+  b->iface->vibrate(b, v->strong, v->weak, v->ms > 0 ? left : 0);
+  return v->ms > 0 ? left : 0;
+}
+
+// la nueva gana si es al menos igual de fuerte
+static int vib_merge(const void *a, const void *b) {
+  const VibrateItem *x = a, *y = b;
+  float fx = x->strong > x->weak ? x->strong : x->weak;
+  float fy = y->strong > y->weak ? y->strong : y->weak;
+  return fy >= fx;
+}
+
+static DispatchChannel vibrate_channel = { .name = "vibrate", .gap_ms = VIBRATE_GAP_MS,
+                                           .send = vib_send, .merge = vib_merge };
+
 void backend_vibrate(Backend* backend, float strong, float weak, int ms) {
-  if (backend && !backend->no_vibration && backend->iface && backend->iface->vibrate)
-    backend->iface->vibrate(backend, strong, weak, ms);
+  if (!backend || backend->no_vibration || !backend->iface || !backend->iface->vibrate) return;
+  VibrateItem v = { backend, strong, weak, ms > 0 ? ms : 0, vib_now() };
+  dispatch_push(&vibrate_channel, &v, sizeof v);
 }
 
 int backend_test_pad(Backend* backend, int button, int type) {
@@ -181,7 +227,9 @@ int backend_presented(Backend* backend, double *ms, int max) {
 // sigue hasta LOADING_CALM_MS de imagenes normales, o como mucho
 // LOADING_MAX_MS desde que empezo.
 #define LOADING_CALM_MS 1000.0
-#define LOADING_SLOW_MS 150.0     // una imagen mas larga no es normal
+// una imagen mas larga es un paron de la carga; un juego lento (6 fps en una
+// portatil: ~170 ms) no lo es, y con 150 el aviso no se iba hasta LOADING_MAX_MS
+#define LOADING_SLOW_MS 400.0
 #define LOADING_MAX_MS  30000.0
 
 static double loading_now(void) {
@@ -248,6 +296,10 @@ void backend_loading_now(Backend* backend) {
   if (!backend->iface || !backend->iface->repaint) return;
   loading_repainted = loading_now();
   backend->iface->repaint(backend);
+}
+
+void backend_loading_hold(Backend* backend) {
+  if (backend && backend->loading == 2) backend->loading_calm = loading_now();
 }
 
 void backend_loading_tick(Backend* backend) {

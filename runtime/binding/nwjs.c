@@ -27,14 +27,19 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include "core/save.h"
+#include "core/sandbox.h"
 #include "core/app_context.h"
 #include "core/url.h"
+#include "version.h"
 #include "binding/quix.h"
 #include "nwjs.h"
 
 // ------------------------------------------------------------- __quixFs
 // Funciones de archivos en C. La capa de Node (fs.existsSync...) esta en JS
-// y las rutas ya llegan absolutas.
+// y las rutas ya llegan absolutas. Con el sandbox (runtime/core/sandbox.c): leer solo
+// dentro de la carpeta del port; escribir, crear, borrar y renombrar solo
+// dentro de la de las partidas.
 
 static const char *arg_path(JSContext *ctx, JSValueConst v) {
   return JS_ToCString(ctx, v);
@@ -43,8 +48,11 @@ static const char *arg_path(JSContext *ctx, JSValueConst v) {
 static JSValue js_fs_exists(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
   const char *p = arg_path(ctx, argv[0]);
   if (!p) return JS_EXCEPTION;
-  struct stat st;
-  int r = stat(p, &st) == 0;
+  if (!sandbox_check(p, "exists")) {
+    JS_FreeCString(ctx, p);
+    return JS_FALSE;
+  }
+  int r = url_exists(p);   // en disco o en la rom
   JS_FreeCString(ctx, p);
   return JS_NewBool(ctx, r);
 }
@@ -53,6 +61,10 @@ static JSValue js_fs_exists(JSContext *ctx, JSValueConst this_val, int argc, JSV
 static JSValue js_fs_read(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv, int binary) {
   const char *p = arg_path(ctx, argv[0]);
   if (!p) return JS_EXCEPTION;
+  if (!sandbox_check(p, "read")) {
+    JS_FreeCString(ctx, p);
+    return JS_NULL;
+  }
   size_t len = 0;
   uint8_t *data = url_read_file(p, &len);
   JS_FreeCString(ctx, p);
@@ -75,6 +87,10 @@ static JSValue js_fs_write(JSContext *ctx, JSValueConst this_val, int argc, JSVa
   if (argc < 2) return JS_FALSE;
   const char *p = arg_path(ctx, argv[0]);
   if (!p) return JS_EXCEPTION;
+  if (!sandbox_check_write(p, "write")) {
+    JS_FreeCString(ctx, p);
+    return JS_FALSE;
+  }
   int append = argc > 2 && JS_ToBool(ctx, argv[2]);
 
   const uint8_t *data = NULL;
@@ -89,17 +105,9 @@ static JSValue js_fs_write(JSContext *ctx, JSValueConst this_val, int argc, JSVa
   }
 
   int ok = 0;
-  if (data || len == 0) {
-    // se escribe en un temporal y se renombra: una partida no queda a medias
-    char tmp[PATH_MAX];
-    snprintf(tmp, sizeof(tmp), "%s.quixtmp", p);
-    FILE *f = fopen(append ? p : tmp, append ? "ab" : "wb");
-    if (f) {
-      ok = fwrite(data, 1, len, f) == len;
-      ok = (fclose(f) == 0) && ok;
-      if (!append) ok = ok && rename(tmp, p) == 0;
-    }
-  }
+  // por el canal save (core/save.h): a un temporal que se renombra, asi una
+  // partida no queda a medias
+  if (data || len == 0) ok = save_write(p, data ? (const void *)data : "", len, append);
   if (str) JS_FreeCString(ctx, str);
   JS_FreeValue(ctx, buf);
   JS_FreeCString(ctx, p);
@@ -122,6 +130,10 @@ static int mkdir_p(const char *path) {
 static JSValue js_fs_mkdir(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
   const char *p = arg_path(ctx, argv[0]);
   if (!p) return JS_EXCEPTION;
+  if (!sandbox_check_write(p, "mkdir")) {
+    JS_FreeCString(ctx, p);
+    return JS_FALSE;
+  }
   int recursive = argc > 1 && JS_ToBool(ctx, argv[1]);
   int ok = recursive ? mkdir_p(p) == 0 : mkdir(p, 0755) == 0;
   JS_FreeCString(ctx, p);
@@ -131,6 +143,10 @@ static JSValue js_fs_mkdir(JSContext *ctx, JSValueConst this_val, int argc, JSVa
 static JSValue js_fs_unlink(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
   const char *p = arg_path(ctx, argv[0]);
   if (!p) return JS_EXCEPTION;
+  if (!sandbox_check_write(p, "unlink")) {
+    JS_FreeCString(ctx, p);
+    return JS_FALSE;
+  }
   int ok = unlink(p) == 0;
   JS_FreeCString(ctx, p);
   return JS_NewBool(ctx, ok);
@@ -139,6 +155,10 @@ static JSValue js_fs_unlink(JSContext *ctx, JSValueConst this_val, int argc, JSV
 static JSValue js_fs_rmdir(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
   const char *p = arg_path(ctx, argv[0]);
   if (!p) return JS_EXCEPTION;
+  if (!sandbox_check_write(p, "rmdir")) {
+    JS_FreeCString(ctx, p);
+    return JS_FALSE;
+  }
   int ok = rmdir(p) == 0;
   JS_FreeCString(ctx, p);
   return JS_NewBool(ctx, ok);
@@ -148,41 +168,63 @@ static JSValue js_fs_rename(JSContext *ctx, JSValueConst this_val, int argc, JSV
   if (argc < 2) return JS_FALSE;
   const char *a = arg_path(ctx, argv[0]);
   const char *b = arg_path(ctx, argv[1]);
-  int ok = a && b && rename(a, b) == 0;
+  int ok = a && b && sandbox_check_write(a, "rename") && sandbox_check_write(b, "rename") && rename(a, b) == 0;
   if (a) JS_FreeCString(ctx, a);
   if (b) JS_FreeCString(ctx, b);
   return JS_NewBool(ctx, ok);
 }
 
+typedef struct {
+  JSContext *ctx;
+  JSValue    list;
+  uint32_t   i;
+} DirList;
+
+static void dir_add(void *user, const char *name, int is_dir) {
+  (void)is_dir;
+  DirList *d = user;
+  JS_SetPropertyUint32(d->ctx, d->list, d->i++, JS_NewString(d->ctx, name));
+}
+
+// lo que hay en la carpeta, en disco y en la rom
 static JSValue js_fs_readdir(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
   const char *p = arg_path(ctx, argv[0]);
   if (!p) return JS_EXCEPTION;
-  DIR *d = opendir(p);
-  JS_FreeCString(ctx, p);
-  if (!d) return JS_NULL;
-  JSValue list = JS_NewArray(ctx);
-  uint32_t i = 0;
-  struct dirent *e;
-  while ((e = readdir(d)) != NULL) {
-    if (strcmp(e->d_name, ".") == 0 || strcmp(e->d_name, "..") == 0) continue;
-    JS_SetPropertyUint32(ctx, list, i++, JS_NewString(ctx, e->d_name));
+  if (!sandbox_check(p, "readdir")) {
+    JS_FreeCString(ctx, p);
+    return JS_NULL;
   }
-  closedir(d);
-  return list;
+  DirList d = { ctx, JS_NewArray(ctx), 0 };
+  int n = url_list_dir(p, dir_add, &d);
+  JS_FreeCString(ctx, p);
+  if (n < 0) {
+    JS_FreeValue(ctx, d.list);
+    return JS_NULL;
+  }
+  return d.list;
 }
 
 static JSValue js_fs_stat(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
   const char *p = arg_path(ctx, argv[0]);
   if (!p) return JS_EXCEPTION;
+  if (!sandbox_check(p, "stat")) {
+    JS_FreeCString(ctx, p);
+    return JS_NULL;
+  }
   struct stat st;
-  int ok = stat(p, &st) == 0;
+  long long size = 0, mtime = 0;
+  int is_dir = 0;
+  // en disco (con la fecha exacta) o en la rom
+  int disk = stat(p, &st) == 0;
+  int ok = disk || url_stat(p, &size, &mtime, &is_dir) == 0;
   JS_FreeCString(ctx, p);
   if (!ok) return JS_NULL;
   JSValue o = JS_NewObject(ctx);
-  JS_SetPropertyStr(ctx, o, "file", JS_NewBool(ctx, S_ISREG(st.st_mode)));
-  JS_SetPropertyStr(ctx, o, "dir", JS_NewBool(ctx, S_ISDIR(st.st_mode)));
-  JS_SetPropertyStr(ctx, o, "size", JS_NewInt64(ctx, st.st_size));
-  JS_SetPropertyStr(ctx, o, "mtimeMs", JS_NewFloat64(ctx, st.st_mtim.tv_sec * 1000.0 + st.st_mtim.tv_nsec / 1e6));
+  JS_SetPropertyStr(ctx, o, "file", JS_NewBool(ctx, disk ? S_ISREG(st.st_mode) : !is_dir));
+  JS_SetPropertyStr(ctx, o, "dir", JS_NewBool(ctx, disk ? S_ISDIR(st.st_mode) : is_dir));
+  JS_SetPropertyStr(ctx, o, "size", JS_NewInt64(ctx, disk ? st.st_size : size));
+  JS_SetPropertyStr(ctx, o, "mtimeMs", JS_NewFloat64(ctx, disk ? st.st_mtim.tv_sec * 1000.0 + st.st_mtim.tv_nsec / 1e6
+                                                               : mtime * 1000.0));
   return o;
 }
 
@@ -201,9 +243,11 @@ static const JSCFunctionListEntry js_quixfs_funcs[] = {
 
 // ----------------------------------------------------------- capa de Node
 
-// runtime/binding/nwjs.js: tools/embed_js.py lo mete en el binario al compilar;
-// js_nwjs.h (en obj/gen/) define NWJS_JS, su texto. Ver docs/embedded-js.md.
-#include "js_nwjs.h"
+// runtime/binding/nwjs/*.js: los modulos de Node (path, fs, events...), un
+// archivo cada uno. tools/embed_js.py los mete en el binario al compilar;
+// nwjs_parts.h (en obj/gen/) define NWJS_PARTS[], {nombre, texto}, en orden
+// alfabetico. Ver runtime/binding/nwjs/README.md y docs/embedded-js.md.
+#include "nwjs_parts.h"
 
 int js_api_add_nwjs(JSContext *ctx) {
   AppContext *app = JS_GetContextOpaque(ctx);
@@ -215,23 +259,43 @@ int js_api_add_nwjs(JSContext *ctx) {
     fprintf(stderr, "[nwjs] game_dir not found: %s\n", app->cfg->game.game_dir);
     return -1;
   }
+  char cwd[PATH_MAX];
+  // la carpeta de las partidas, absoluta: la unica donde el juego puede
+  // escribir (runtime/core/sandbox.c); runtime/binding/nwjs/greenworks.js deja
+  // ahi los logros que pide el juego y runtime/binding/nwjs/electron.js la da
+  // como Documents
+  char saves[PATH_MAX + 2];
+  const char *sd = app->cfg->saves.dir[0] ? app->cfg->saves.dir : app->cfg->game.game_dir;
+  if (sd[0] == '/' || !getcwd(cwd, sizeof(cwd))) snprintf(saves, sizeof(saves), "%s", sd);
+  else snprintf(saves, sizeof(saves), "%.*s/%s", (int)(sizeof(saves) / 2), cwd, sd);
 
-  // runtime/binding/nwjs.js: lo que necesita, en las globales temporales
-  // __quixFs y __quixGameDir; el archivo se llama a si mismo con ellas al final
-  // y las borra
+  // lo que comparten los archivos, en la global temporal __quixNw (la borra
+  // require.js, el ultimo): g, fsn (las funciones de archivos de C), GAME_DIR,
+  // CWD (nw.js arranca en la carpeta del juego), VERSION y SAVES_DIR; cada
+  // archivo deja ahi su modulo
   JSValue global = JS_GetGlobalObject(ctx);
+  JSValue n = JS_NewObject(ctx);
   JSValue fs = JS_NewObject(ctx);
   JS_SetPropertyFunctionList(ctx, fs, js_quixfs_funcs, countof(js_quixfs_funcs));
-  JS_SetPropertyStr(ctx, global, "__quixFs", fs);
-  JS_SetPropertyStr(ctx, global, "__quixGameDir", JS_NewString(ctx, real));
+  JS_SetPropertyStr(ctx, n, "g", JS_DupValue(ctx, global));
+  JS_SetPropertyStr(ctx, n, "fsn", fs);
+  JS_SetPropertyStr(ctx, n, "GAME_DIR", JS_NewString(ctx, real));
+  JS_SetPropertyStr(ctx, n, "CWD", JS_NewString(ctx, real));
+  JS_SetPropertyStr(ctx, n, "VERSION", JS_NewString(ctx, QUIX_VERSION));
+  JS_SetPropertyStr(ctx, n, "SAVES_DIR", JS_NewString(ctx, saves));
+  JS_SetPropertyStr(ctx, global, "__quixNw", n);
   JS_FreeValue(ctx, global);
 
-  JSValue r = JS_Eval(ctx, NWJS_JS, strlen(NWJS_JS), "<quix-nwjs>", JS_EVAL_TYPE_GLOBAL);
-  if (JS_IsException(r)) {
-    js_std_dump_error(ctx);
-    return -1;
+  for (size_t i = 0; i < sizeof(NWJS_PARTS) / sizeof(NWJS_PARTS[0]); i++) {
+    char name[96];
+    snprintf(name, sizeof(name), "<quix-nwjs/%s>", NWJS_PARTS[i].name);
+    JSValue r = JS_Eval(ctx, NWJS_PARTS[i].src, strlen(NWJS_PARTS[i].src), name, JS_EVAL_TYPE_GLOBAL);
+    if (JS_IsException(r)) {
+      js_std_dump_error(ctx);
+      return -1;
+    }
+    JS_FreeValue(ctx, r);
   }
-  JS_FreeValue(ctx, r);
   printf("nw.js mode: game dir %s\n", real);
   return 0;
 }

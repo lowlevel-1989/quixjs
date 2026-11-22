@@ -105,30 +105,46 @@ int toast_render(const Toast *t, int px, Surface *out) {
     if (w > text_wd) text_wd = w;
     text_h += heights[i];
   }
+  // la barra de progreso, debajo del texto
+  int bar_h = t->goal > 0 ? 4 * u : 0;
+  text_h += bar_h ? bar_h + 2 * u : 0;
 
   int badge = text_h - 2 * u;
   int w = pad_x + badge + pad + text_wd + pad_x;
   int h = pad + text_h + pad - 2 * u;
   if (surface_init(out, w, h) != 0) return -1;
 
-  // el panel: un borde duro del color y dentro el fondo oscuro
-  fill(out, 0, 0, w, h, color);
+  // el panel: un borde duro del color (gris si aun no se consiguio) y
+  // dentro el fondo oscuro
+  fill(out, 0, 0, w, h, t->locked ? 0x50525c : color);
   fill(out, u, u, w - 2 * u, h - 2 * u, 0x101014);
-  // el distintivo: un cuadrado del color, con borde, y la inicial
+  // el distintivo: un cuadrado del color, con borde, y la inicial; sin
+  // conseguir, hueco (solo el marco del color y la inicial del color),
+  // como los bloqueados del launcher
   int bx = pad_x, by = (h - badge) / 2;
+  int is = badge / 10 < 1 ? 1 : badge / 10;
   fill(out, bx, by, badge, badge, shade(color, 0.5f));
   fill(out, bx + u, by + u, badge - 2 * u, badge - 2 * u, color);
-  int is = badge / 10 < 1 ? 1 : badge / 10;
+  if (t->locked) fill(out, bx + 2 * u, by + 2 * u, badge - 4 * u, badge - 4 * u, 0x101014);
   if (t->badge[0]) {
-    text(out, bx + (badge - text_w(t->badge, is)) / 2, by + (badge - 7 * is) / 2, t->badge, is, 0x101014);
+    text(out, bx + (badge - text_w(t->badge, is)) / 2, by + (badge - 7 * is) / 2, t->badge, is,
+         t->locked ? color : 0x101014);
   }
-  // las lineas: cabecera del color, titulo blanco, texto gris
-  unsigned rgb[3] = { shade(color, 1.2f), 0xffffff, 0xb4b6c2 };
+  // las lineas: cabecera del color, titulo blanco (gris claro sin
+  // conseguir), texto gris
+  unsigned rgb[3] = { shade(color, 1.2f), t->locked ? 0xb4b6c2 : 0xffffff, 0xb4b6c2 };
   int tx = bx + badge + pad, ty = (h - text_h) / 2 + u;
   for (int i = 0; i < 3; i++) {
     if (!heights[i]) continue;
     text(out, tx, ty, lines[i], scales[i], rgb[i]);
     ty += heights[i];
+  }
+  // la barra: el fondo oscuro con un borde gris y lo hecho del color
+  if (bar_h) {
+    int done = t->done < 0 ? 0 : t->done > t->goal ? t->goal : t->done;
+    fill(out, tx, ty, text_wd, bar_h, 0x50525c);
+    fill(out, tx + u, ty + u, text_wd - 2 * u, bar_h - 2 * u, 0x24262e);
+    fill(out, tx + u, ty + u, (int)((long)(text_wd - 2 * u) * done / t->goal), bar_h - 2 * u, color);
   }
   return 0;
 }
@@ -143,6 +159,14 @@ static unsigned serial = 0;
 static double   busy_until = 0;
 
 void toast_push(const Toast *t) {
+  // un contador ("3/12") que aun espera en la cola: el nuevo lo cambia, y
+  // asi no salen uno detras de otro todos los que subio
+  for (int i = 0; t->goal > 0 && i < queued; i++) {
+    if (queue[i].goal > 0 && strcmp(queue[i].title, t->title) == 0) {
+      queue[i] = *t;
+      return;
+    }
+  }
   if (queued == TOAST_QUEUE) return;   // demasiados a la vez: el resto no sale
   queue[queued++] = *t;
 }

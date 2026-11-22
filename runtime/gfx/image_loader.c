@@ -27,6 +27,8 @@
 #include <string.h>
 #include "image_loader.h"
 #include "platform/platform.h"
+#include "core/url.h"
+#include <unistd.h>
 
 static int surface_from_sdl(SDL_Surface *img, Surface *out) {
   if (!img) return -1;
@@ -70,8 +72,20 @@ static int pixels_from_sdl(SDL_Surface *img, uint8_t **px, int *w, int *h) {
   return 0;
 }
 
+// en la rom ([game] rom): no esta en disco, se lee del zip y se decodifica
+// desde memoria
+static uint8_t *from_rom(const char *path, size_t *len) {
+  return access(path, R_OK) == 0 ? NULL : url_read_file(path, len);
+}
+
 int image_decode_pixels(const uint8_t *data, size_t len, const char *path, uint8_t **px, int *w, int *h) {
   char abs[1024];
+  uint8_t *rom = path ? from_rom(path, &len) : NULL;
+  if (rom) {
+    int r = image_decode_pixels(rom, len, NULL, px, w, h);
+    free(rom);
+    return r;
+  }
   if (path) return pixels_from_sdl(IMG_Load(platform_file_path(path, abs, sizeof abs)), px, w, h);
   SDL_RWops *rw = SDL_RWFromConstMem(data, (int)len);
   if (!rw) return -1;
@@ -85,6 +99,13 @@ static double now_ms(void) {
 }
 
 int image_load_file(const char *path, Surface *out) {
+  size_t len = 0;
+  uint8_t *rom = from_rom(path, &len);
+  if (rom) {
+    int r = image_load_memory(rom, len, out);
+    free(rom);
+    return r;
+  }
   double t = now_ms();
   char abs[1024];
   int r = surface_from_sdl(IMG_Load(platform_file_path(path, abs, sizeof abs)), out);

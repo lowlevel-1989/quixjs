@@ -1,0 +1,13 @@
+[game]
+rom       = "."
+width     = 64
+height    = 64
+
+[scripts]
+includes = ["../lib/assert.js"]
+entry    = "main.js"
+
+# localStorage en disco: en la cache de la prueba, no en el repositorio
+[saves]
+dir           = "../cache/saves"
+local_storage = "localstorage.json"

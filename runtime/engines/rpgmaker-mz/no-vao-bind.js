@@ -30,7 +30,7 @@
 // llama runtime/hooks/hooks.c (hooks_install) al instalar el hook, cuando el
 // juego ya cargo sus scripts. Ver runtime/engines/README.md.
 function (original) {
-  var sameCode = __quixEngine.sameCode;
+  var sameCode = quix.engine.sameCode;
   // MODEL: las funciones que espera el hook, tal cual (las de PixiJS
   // v5.3.12, js/libs/pixi.js de RPG Maker MZ 1.8.1), copiadas con
   // tools/rpgmaker_mv_model.py

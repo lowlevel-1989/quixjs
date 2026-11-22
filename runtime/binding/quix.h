@@ -20,16 +20,16 @@
 
 // Objeto global "quix": utilidades del runtime para tests y juegos.
 //   quix.exit(code)          termina el loop con ese codigo de salida
-//   quix.pressKey(code, t)   mete una tecla en la cola de entrada
+//   quix.input.pressKey(code, t)   mete una tecla en la cola de entrada
 //                            (t: "down", "up" o "press" = down + up)
 //   quix.frame               frames mostrados
 //   quix.backend             "sdl" o "dummy"
 //   quix.fixedStep           true si el reloj es fijo
-//   quix.registerFont(f, u)  registra una fuente (lo usan FontFace y @font-face)
-//   quix.hasFont(f)          true si la familia esta registrada
-//   quix.version, quix.frameTime, quix.achievements(), quix.achievementUnlocked(id),
-//   quix.achievementsIcon(), quix.isGpuCanvas(c), quix.collectGarbage(),
-//   quix.gcPressure(): ver quix.c y la tabla de docs/usage.md
+//   quix.fonts.register(f, u)  registra una fuente (lo usan FontFace y @font-face)
+//   quix.fonts.has(f)          true si la familia esta registrada
+//   quix.version, quix.frameTime, quix.achievements.list(), quix.achievements.unlocked(id),
+//   quix.achievements.icon, quix.gpu.isCanvas(c), quix.memory.collect(),
+//   quix.memory.pressure(): ver quix.c y la tabla de docs/usage.md
 //   quix.lan: la red local para juegos, en binding/lan.c
 
 #include "js/js.h"
@@ -41,5 +41,5 @@
 void js_api_add_quix(JSContext *ctx);
 
 // [game] render_scale ya resuelto (1: a la resolucion del juego); lo lee
-// quix.renderScale()
+// quix.gpu.renderScale
 void quix_set_render_scale(double scale);

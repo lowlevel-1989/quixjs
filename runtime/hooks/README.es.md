@@ -8,7 +8,7 @@ port). La clave es la ruta de la función desde `window`; el valor, el hook.
 
 | archivo   | qué hace |
 |-----------|----------|
-| `hooks.c` | lee `[hooks]`, agrega `__quixGpuScope`, envuelve cada función en JS cuando existe y da `__quixEngine.lib` (los modulos de `runtime/engines/lib`) |
+| `hooks.c` | lee `[hooks]`, agrega `quix.gpu.scope`, envuelve cada función en JS cuando existe y da `quix.engine.lib` (los modulos de `runtime/engines/lib`) |
 | `hooks.h` | el formato de `[hooks]` y las funciones que llama `core/main.c` |
 
 ## El formato
@@ -85,11 +85,11 @@ objetos.
 
 ## gpu-canvas
 
-La envoltura llama a `__quixGpuScope(1)` antes de la función y a
-`__quixGpuScope(-1)` después (también si lanza una excepción). Un canvas
+La envoltura llama a `quix.gpu.scope(1)` antes de la función y a
+`quix.gpu.scope(-1)` después (también si lanza una excepción). Un canvas
 creado dentro queda marcado para la GPU si hay WebGL. Dibuja en la GPU desde
 su primer dibujo; algo que la GPU no hace lo devuelve a la CPU para siempre.
-`quix.isGpuCanvas(canvas)` dice si un canvas está en la GPU. Los detalles
+`quix.gpu.isCanvas(canvas)` dice si un canvas está en la GPU. Los detalles
 están en [gfx](../gfx/README.es.md).
 
 El test es `games/tests/canvas/gpu`: los tres hooks, y la misma máscara de

@@ -26,6 +26,13 @@
 #include <stddef.h>
 #include <stdint.h>
 
+// [engine] scaling y Options > Scaling
+enum {
+  SCALING_SHARP = 0,   // llena la pantalla, nitido (sharp bilinear: present.frag)
+  SCALING_SMOOTH,      // llena la pantalla, suavizado (el filtro lineal solo)
+  SCALING_PIXEL        // solo 1x, 2x... (pixel perfect), con bordes
+};
+
 typedef struct Backend Backend;
 
 // Eventos de entrada que el backend deja en la cola y el runtime pasa a JS
@@ -41,7 +48,7 @@ typedef struct {
   char      key[24];    // KeyboardEvent.key  ("a", "Enter", "ArrowLeft"...)
   char      code[24];   // KeyboardEvent.code ("KeyA", "Enter", "ArrowLeft"...)
   int       repeat;
-  int       synthetic;  // 1 si viene de quix.pressKey (no del teclado real)
+  int       synthetic;  // 1 si viene de quix.input.pressKey (no del teclado real)
 } InputEvent;
 
 #define INPUT_QUEUE_SIZE 128
@@ -81,6 +88,9 @@ typedef struct {
   char     text[160];    // la descripcion; puede ir vacia
   char     badge[8];     // lo que va dentro del distintivo (la inicial)
   unsigned color;        // 0xRRGGBB del distintivo y del borde
+  int      locked;       // aun sin conseguir (el progreso, "3/12"): el
+                         // distintivo hueco y el borde gris
+  int      done, goal;   // goal > 0: una barra de progreso, done de goal
 } Toast;
 
 typedef struct {
@@ -130,6 +140,19 @@ struct Backend {
   int   resizable;    // ventana redimensionable (en un tiling WM no flota)
   int   no_vsync;     // presentar sin esperar al refresco (se fija antes de backend_init)
   int   no_vibration; // Options > Vibration: Off (backend_vibrate no hace nada)
+  int   scaling;       // como se amplia el juego a la pantalla: SCALING_SHARP, _SMOOTH o _PIXEL
+  int   back_to_menu;  // Select + R2: cerrar el juego y volver al launcher
+  int   menu_back;     // Select + R2 permitido: el juego corre y se abrio desde el launcher
+  int   want_screenshot; // Select + R1: el loop guarda una captura (y lo pone a 0)
+  // La lupa, en todos los juegos: Select + L1 (o su boton de Controls, con
+  // [controls] magnifier = true) abre un cuadro que se mueve con la cruceta
+  // o las palancas y muestra ampliado lo que tiene debajo; R1 acerca, L1
+  // aleja, A la vuelve al centro, Y la agranda, X la achica, B (o el combo)
+  // la cierra; arriba a la izquierda, su icono. El juego no recibe el mando
+  // mientras
+  float magnify;       // 0: sin lupa; si no, cuanto amplia (2 a 6)
+  float mag_size;      // el tamano del cuadro: la parte del juego (1/3 a 1)
+  float mag_x, mag_y;  // el centro del cuadro (0 a 1 del juego)
   char  overlay[32];  // texto encima de la ventana, arriba a la derecha (--fps)
   // controller.map: las asignaciones del mando hechas en el launcher (lineas
   // de SDL_GAMECONTROLLERCONFIG, como las de PortMaster). Se fija antes de
@@ -182,19 +205,23 @@ int  backend_get_gamepads(Backend* backend, GamepadState *pads, int max);
 const char *backend_name(Backend* backend);
 
 // Asignar el mando, entrada a entrada (Controls del launcher):
-//   CAPTURE_START  abre el primer mando sin mapeo (lo crudo); -1 si no hay
+//   CAPTURE_START  abre el primer mando sin mapeo (lo crudo); sin mando, se
+//                  asigna el teclado
 //   CAPTURE_POLL   1 cuando se ha pulsado y soltado una entrada nueva: out es
-//                  "b3" (boton), "h0.1" (cruceta, con su direccion) o "-a1"
-//                  (eje, con su direccion); -1 si se cancela (Escape, se
-//                  desconecta el mando); 0 mientras espera
+//                  "b3" (boton), "h0.1" (cruceta, con su direccion), "-a1"
+//                  (eje, con su direccion) o "k:Return" (una tecla: la
+//                  primera entrada decide si se asigna el mando o el
+//                  teclado); -1 si se cancela (Escape, se desconecta el
+//                  mando); 0 mientras espera
 //   CAPTURE_STOP   lo cierra
 // Con lo pedido, backend_save_controller guarda la linea del mando en
 // controller_map ("dpup:h0.1,a:b0,-leftx:-a0,...": se sustituye la de ese
-// mando) y la aplica ya, sin reiniciar. 0 si va bien.
+// mando) y la aplica ya, sin reiniciar; si se asigno el teclado, en
+// keyboard.map, junto a controller_map (runtime/backend/sdl/keypad.c). 0 si va bien.
 enum { CAPTURE_START, CAPTURE_POLL, CAPTURE_STOP };
 int  backend_capture_input(Backend* backend, int step, char *out, size_t room);
 int  backend_save_controller(Backend* backend, const char *pairs);
-// Un mando de prueba para los tests (quix.pressPad): la primera vez conecta
+// Un mando de prueba para los tests (quix.input.pressPad): la primera vez conecta
 // un mando virtual (SDL_JoystickAttachVirtual) y le pulsa (TEST_PAD_DOWN) o
 // suelta (TEST_PAD_UP) el boton (indice del mapeo "standard"); con
 // TEST_PAD_PRESS lo pulsa y lo suelta antes de la siguiente imagen (sus dos
@@ -235,7 +262,10 @@ void   backend_loading_poke(void);
 void   backend_loading_now(Backend* backend);
 // Una vez por imagen presentada: quita el aviso cuando toca
 void   backend_loading_tick(Backend* backend);
+// el juego aun carga (archivos, imagenes, sonidos): el aviso que se esta
+// yendo espera
+void   backend_loading_hold(Backend* backend);
 
-// Cola de entrada (la llenan los backends y quix.pressKey en los tests)
+// Cola de entrada (la llenan los backends y quix.input.pressKey en los tests)
 void backend_push_input(Backend* backend, const InputEvent *ev);
 int  backend_pop_input(Backend* backend, InputEvent *ev);

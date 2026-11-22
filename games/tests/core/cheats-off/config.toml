@@ -1,12 +1,11 @@
 [game]
-cache_dir = "cache/tests/core/cheats-off"
-game_dir  = "games/tests/core/cheats-off"
+rom       = "."
 width     = 320
 height    = 240
 
 [scripts]
 libs     = []
-includes = ["../../lib/assert.js"]
+includes = ["../lib/assert.js"]
 entry    = "main.js"
 
 # sin fichero: cada vez empiezan sin conseguir

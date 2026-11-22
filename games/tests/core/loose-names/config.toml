@@ -1,0 +1,8 @@
+[game]
+rom       = "."
+width     = 64
+height    = 64
+
+[scripts]
+includes = ["../lib/assert.js"]
+entry    = "main.js"

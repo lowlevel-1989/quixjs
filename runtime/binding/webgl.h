@@ -34,7 +34,8 @@
 int     webgl_enabled(void);
 void    webgl_set_enabled(int enabled, int headless);
 void    js_api_add_webgl(JSContext *ctx);
-JSValue js_create_webgl_context(JSContext *ctx, JSValueConst canvas, JSValueConst attrs);
+// version2: getContext("webgl2"); NULL si el driver no es OpenGL ES 3.x
+JSValue js_create_webgl_context(JSContext *ctx, JSValueConst canvas, JSValueConst attrs, int version2);
 void    webgl_canvas_sync(CanvasData *cd);
 void    webgl_canvas_resized(CanvasData *cd);
 // Textura del canvas para presentarla sin leerla (0 si no hay)

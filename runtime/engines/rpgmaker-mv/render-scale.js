@@ -35,8 +35,8 @@ function (original) {
         }
     }
   };
-  if (!__quixEngine.sameCode(original, MODEL['Graphics._updateRenderer'])) return original;
-  var s = typeof quix === 'object' && typeof quix.renderScale === 'function' ? quix.renderScale() : 1;
+  if (!quix.engine.sameCode(original, MODEL['Graphics._updateRenderer'])) return original;
+  var s = typeof quix === 'object' && quix.gpu ? quix.gpu.renderScale : 1;
   if (!(s > 0 && s < 1) || typeof PIXI !== 'object') return original;
 
   // los filtros, a la resolucion del renderer (su textura intermedia). La

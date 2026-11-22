@@ -5,7 +5,7 @@
 Hooks para RPG Maker MZ (1.8): lo justo para que un juego de MZ arranque en
 quixjs, y lo que el profiler (`--profile`) encontró en una portátil (probado
 con Look Outside, MZ 1.8.1). Cada uno comprueba que la función es la de RPG
-Maker MZ (o la de PixiJS v5 que trae) con `__quixEngine.sameCode`; si no,
+Maker MZ (o la de PixiJS v5 que trae) con `quix.engine.sameCode`; si no,
 deja la original.
 
 `[hooks] engine = "rpgmaker-mz"` pone los hooks de `hooks.toml`.

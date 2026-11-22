@@ -38,14 +38,11 @@ def main():
 
     root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     with open(os.path.join(root, "portmaster", "portmaster.sh")) as f:
-        game_dir = data.get("game", {}).get("game_dir", "gamedata")
+        # la rom ([game] rom): el .zip del juego, junto a port.toml
+        rom = data.get("game", {}).get("rom", "game.zip")
         sh = (f.read().replace("@PORT@", port).replace("@TITLE@", title)
               .replace("@PORT_VERSION@", p.get("version", "?"))
-              .replace("@GAME_DIR_PARENT@", os.path.dirname(game_dir) or game_dir)
-              # MV: la carpeta www/; MZ (sin www/): lo de la carpeta del juego
-              .replace("@GAME_WHAT@", "the folder " + os.path.basename(game_dir) + "/"
-                       if os.path.dirname(game_dir) else "the contents of the game folder (the one with index.html)")
-              .replace("@GAME_DIR@", game_dir))
+              .replace("@ROM@", rom))
     with open(os.path.join(out, script), "w") as f:
         f.write(sh)
     os.chmod(os.path.join(out, script), 0o755)

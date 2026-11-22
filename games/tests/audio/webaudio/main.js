@@ -34,7 +34,7 @@ T.test('AudioParam ramps', function () {
   T.equal(g.gain.value, 0.25, 'value cancels the automation');
 });
 
-load('../../assets/tone.ogg', function (data) {
+load('assets/tone.ogg', function (data) {
   ctx.decodeAudioData(data, function (buffer) {
     T.test('decode', function () {
       T.near(buffer.duration, 1, 0.01, 'duration 1 s');
@@ -91,7 +91,7 @@ load('../../assets/tone.ogg', function (data) {
   });
 });
 
-load('../../assets/short.ogg', function (data) {
+load('assets/short.ogg', function (data) {
   ctx.decodeAudioData(data).then(function (buffer) {
     T.test('mono 22 kHz', function () {
       T.near(buffer.duration, 0.5, 0.01, 'duration 0.5 s');
@@ -102,7 +102,7 @@ load('../../assets/short.ogg', function (data) {
   });
 });
 
-load('../../assets/bad.ogg', function (data) {
+load('assets/bad.ogg', function (data) {
   ctx.decodeAudioData(data, function () {
     T.ok(false, 'a file that is not ogg must not decode');
     finish();

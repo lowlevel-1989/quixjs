@@ -86,6 +86,10 @@ STEP int start_window(Run *r, Loop *l) {
   clock_init(r->args.fixed_step);
 
   // Crear el backend seleccionado
+  // Como los navegadores (ANGLE): las variables de los shaders sin valor
+  // inicial empiezan en 0. Mesa (Panfrost, llvmpipe...) lo hace con esta
+  // opcion; sin ella, un vec3 sin valor inicial (la luz de un juego) salia negro
+  setenv("glsl_zero_init", "true", 0);
   Backend *backend = backend_create(r->args.backend);
   if (!backend) {
     fprintf(stderr, "Failed to create backend: %d\n", r->args.backend);
@@ -96,6 +100,7 @@ STEP int start_window(Run *r, Loop *l) {
   backend->resizable = r->args.resizable;
   backend->no_vsync = !r->cfg.engine.vsync;
   backend->present_ahead = r->cfg.engine.present_ahead;
+  backend->scaling = r->cfg.engine.scaling;
   // controller.map junto al toml del juego (Controls del launcher)
   const char *cfg_slash = strrchr(r->args.config_path, '/');
   if (cfg_slash) snprintf(backend->controller_map, sizeof backend->controller_map, "%.*s/controller.map",
@@ -110,8 +115,7 @@ STEP int start_window(Run *r, Loop *l) {
   // la ventana: "quixjs | <juego>" ([game] title); document.title la cambia
   backend_set_title(backend, r->cfg.launcher.title);
   backend_init(backend, r->cfg.game.width, r->cfg.game.height);
-  // los programas de WebGL ya enlazados, en <cache_dir>/shaders (sin
-  // cache_dir, no se guardan)
+  // los programas de WebGL ya enlazados, en <cache_dir>/shaders
   if (r->cfg.game.cache_dir[0]) {
     char shaders[MAX_PATH_LEN + 16];
     snprintf(shaders, sizeof shaders, "%s/shaders", r->cfg.game.cache_dir);
@@ -126,7 +130,7 @@ STEP int start_window(Run *r, Loop *l) {
   if (scale < 0) scale = fit;   // 0 sin pantalla: no se reducen
   // [game] render_scale: el juego se dibuja a menos resolucion (la logica
   // sigue en width x height; lo usa el hook rpgmaker-mv/render-scale con
-  // quix.renderScale()). "auto": la escala con la que se ve en la pantalla
+  // quix.gpu.renderScale). "auto": la escala con la que se ve en la pantalla
   double rs = r->cfg.game.render_scale;
   if (rs < 0) rs = fit;
   if (rs > 0 && rs < 1) {
@@ -150,6 +154,14 @@ STEP int load_port(Run *r, Loop *l) {
   for (int i = 0; i < cfg->saves.files_count; i++) patterns[i] = cfg->saves.files[i];
   // dir: la carpeta de las partidas, como game_dir (sin dir, game_dir)
   const char *saves_dir = cfg->saves.dir[0] ? cfg->saves.dir : cfg->game.game_dir;
+  // el sandbox: leer dentro de la carpeta del toml, escribir dentro de la de
+  // las partidas; las rutas del toml tampoco pueden salir de ella
+  if (sandbox_init(r->args.config_path, saves_dir) != 0 ||
+      (cfg->game.game_dir[0] && !sandbox_check(cfg->game.game_dir, "[game] game_dir")) ||
+      (cfg->game.rom[0] && !sandbox_check(cfg->game.rom, "[game] rom"))) {
+    quit_early(l);
+    return 0;
+  }
   int npatterns = cfg->saves.files_count;
   // los logros van con las partidas: en su carpeta, y Transfer Save los manda
   // con ellas (el que llega pisa al que habia, como una partida)
@@ -180,6 +192,8 @@ STEP int load_port(Run *r, Loop *l) {
   // los ajustes del jugador (Options del launcher)
   settings_load(&r->settings, config_path);
   settings_apply_cheats(&r->settings);
+  // Options > Scaling, si se toco; si no, [engine] scaling
+  if (r->settings.scaling) l->backend->scaling = r->settings.scaling - 1;
 #ifndef QUIX_HANDHELD
   // Options: a pantalla completa (--fullscreen ya la pone al crear la ventana)
   if (r->settings.fullscreen && !l->backend->fullscreen) backend_set_fullscreen(l->backend, 1);
@@ -216,8 +230,29 @@ STEP int launcher(Run *r, Loop *l, int *code) {
 // Los mods, el motor de JS, las APIs, las fuentes y los scripts del juego.
 // 0 si no se pudo crear el motor (ya cerrado); un fallo despues deja
 // l->failed y el programa sale por el final, como siempre
+// [game] rom (runtime/rom): el juego (un .zip o una carpeta, junto al toml),
+// montado en gamedata/ antes de leer nada del juego. El primer script del port
+// ([scripts]: libs, includes o entry) solo sirve para avisar si el juego no
+// esta donde dice game_dir
+static void mount_rom(Run *r, Loop *l) {
+  Config *cfg = &r->cfg;
+  if (!cfg->game.rom[0]) return;
+  const char *first = "";
+  const ScriptConfig *sc = &cfg->scripts;
+  for (int i = 0; !first[0] && i < sc->libs_count; i++) if (strncmp(sc->libs[i], "../", 3) != 0) first = sc->libs[i];
+  for (int i = 0; !first[0] && i < sc->includes_count; i++) if (strncmp(sc->includes[i], "../", 3) != 0) first = sc->includes[i];
+  if (!first[0] && sc->entry && strncmp(sc->entry, "../", 3) != 0) first = sc->entry;
+  launcher_mount_rom(r->args.test ? NULL : l->backend, cfg, first);
+}
+
 STEP int start_js(Run *r, Loop *l) {
   Config *cfg = &r->cfg;
+  mount_rom(r, l);
+  // el aviso de carga desde el principio, tambien sin launcher (con el, ya
+  // sale desde Play): el juego tarda en leer y correr sus scripts
+  if (!r->args.launcher && !r->args.test) backend_loading_now(l->backend);
+  // Select + R2 vuelve al launcher, ya en el juego
+  l->backend->menu_back = r->args.launcher;
   // [controls] vibration y Options > Vibration (ya con lo elegido en el
   // launcher), antes del juego
   l->backend->no_vibration = !cfg->controls.vibration || r->settings.no_vibration;
@@ -282,13 +317,48 @@ STEP int start_js(Run *r, Loop *l) {
   js_api_add_quix(ctx);
   js_api_add_lan(ctx);
   if (r->args.expose_gc) {
-    static const char gc_js[] = "globalThis.gc = function () { quix.collectGarbage(); };";
+    static const char gc_js[] = "globalThis.gc = function () { quix.memory.collect(); };";
     JSValue v = JS_Eval(ctx, gc_js, strlen(gc_js), "<expose-gc>", 0);
     JS_FreeValue(ctx, v);
   }
   js_api_add_video(ctx);
   hooks_add_api(ctx);
   engines_add_api(ctx);
+  // Como en un navegador, cada elemento con id es tambien una variable global
+  // (window.c, o c a secas). Los que quixjs conoce de antemano: el
+  // canvas (canvas_id) y los de [html] elements. Un var, let o function del
+  // juego con ese nombre la tapa, como alli
+  {
+    static const char named_js[] =
+      "(function (ids) { ids.forEach(function (id) {"
+      " if (!id || id in globalThis) return;"
+      " Object.defineProperty(globalThis, id, { configurable: true,"
+      "  get: function () { return document.getElementById(id); },"
+      "  set: function (v) { Object.defineProperty(globalThis, id, { value: v, writable: true, configurable: true, enumerable: true }); } });"
+      "}); })";
+    JSValue fn = JS_Eval(ctx, named_js, strlen(named_js), "<named-elements>", 0);
+    JSValue ids = JS_NewArray(ctx);
+    uint32_t k = 0;
+    JS_SetPropertyUint32(ctx, ids, k++, JS_NewString(ctx, cfg->engine.canvas_id));
+    for (int i = 0; i < cfg->html_count; i++) JS_SetPropertyUint32(ctx, ids, k++, JS_NewString(ctx, cfg->html[i].id));
+    JSValue global = JS_GetGlobalObject(ctx);
+    JSValue res = JS_Call(ctx, fn, global, 1, (JSValueConst *)&ids);
+    JS_FreeValue(ctx, res);
+    JS_FreeValue(ctx, global);
+    JS_FreeValue(ctx, ids);
+    JS_FreeValue(ctx, fn);
+  }
+  // [engine] quality u Options > Quality: devicePixelRatio, los pixeles que
+  // dibuja un juego 3D por cada pixel del juego (three.js lo usa: low dibuja
+  // la cuarta parte). Lo demas (el marcador en otro canvas) sigue nitido
+  int quality = r->settings.quality ? r->settings.quality : cfg->engine.quality;
+  if (quality) {
+    static const double scale[] = { 1, 0.5, 0.75, 1 };
+    JSValue global = JS_GetGlobalObject(ctx);
+    JS_SetPropertyStr(ctx, global, "devicePixelRatio", JS_NewFloat64(ctx, scale[quality]));
+    JS_FreeValue(ctx, global);
+    printf("[engine] quality %s: devicePixelRatio %.2f\n", quality == 1 ? "low" : quality == 2 ? "medium" : "high", scale[quality]);
+  }
 
   // [fonts] del toml del juego (de un mod si lo trae) y despues los
   // @font-face de fonts/gamefont.css (RPG Maker MV y MZ), que mandan: un
@@ -318,9 +388,10 @@ STEP int start_js(Run *r, Loop *l) {
   if (!failed && hooks_pending()) hooks_install(ctx);
   // DOMContentLoaded y window.onload, despues de los <script> del arranque
   if (!failed) script_document_loaded(ctx);
-  // el aviso de Play (si lo hay) se va cuando el juego ya dibuja normal; si
-  // el juego tiene su propia carga, sigue la suya
-  if (r->args.launcher) backend_set_loading(l->backend, 0, 0);
+  // el aviso del arranque se va cuando el juego ya dibuja normal y no le
+  // quedan cargas (archivos, imagenes, sonidos); si el juego tiene su propia
+  // carga, sigue la suya
+  backend_set_loading(l->backend, 0, 0);
   l->failed = failed;
   return 1;
 }
@@ -341,6 +412,8 @@ STEP void start_tools(Run *r, Loop *l) {
   }
   // el tope de fps: el del toml (lo decide el port: en el launcher no se
   // cambia); --frame-rate para probar
+  // Options > FPS y, por encima, --frame-rate
+  if (r->settings.fps) r->cfg.engine.fps = r->settings.fps;
   if (r->args.frame_rate > 0) r->cfg.engine.fps = r->args.frame_rate;
   if (!l->failed && r->args.debug_sock && debug_init(r->args.debug_sock) != 0) l->failed = 1;
   r->debug_env = (DebugEnv){ l->ctx, l->backend, &r->app.frame, script_screen, &r->shot_ctx, &r->cfg.engine.fps };

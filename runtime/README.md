@@ -58,6 +58,8 @@ core/main (main loop) --present--> backend/ (sdl: window, keys, pads | dummy: no
 | `binding/canvas/2d/` | CanvasRenderingContext2D, one file per topic ([README](binding/canvas/2d/README.md)) |
 | `audio/`      | audio mixer: ogg vorbis decoded while it plays, and the audio stream of a video ([README](audio/README.md)) |
 | `video/`      | WebM and MP4 video for `<video>`: nestegg, libvpx (VP8/VP9) and libopus; minimp4 and FFmpeg (H.264, AAC) ([README](video/README.md)) |
+| `rom/`        | the rom (`[game] rom`): the game in a `.zip` (or a folder), mounted on `gamedata/`; one file per kind ([README](rom/README.md)) |
+| `zip/`        | read a `.zip` in place and pass a compressed one to uncompressed, with zlib ([README](zip/README.md)) |
 | `hooks/`      | `[hooks]` of the toml of the game: change how a function of the game runs (`gpu-canvas`, `skip`, `once-per-frame`, engine hooks, `engine = "rpgmaker-mv"`) ([README](hooks/README.md)) |
 | `engines/`    | the engine hooks (RPG Maker MV...): `.js` files embedded in the binary and their natives in C ([README](engines/README.md)) |
 | `shaders/`    | the GLSL shaders, embedded in the binary at build time ([README](shaders/README.md)) |
@@ -126,8 +128,17 @@ The main files. The README of each folder has the rest.
 | `backend/dummy/backend.c`   | no window: keeps the last frame |
 | `hooks/hooks.c`             | reads `[hooks]` and wraps the functions of the game when they exist |
 | `launcher/settings.c`       | `quixjs-settings.toml`: what is changed in Options and Cheats |
-| `video/video.c`             | WebM: demux with nestegg, VP8/VP9 with libvpx, Opus with libopus, YUV to RGBA |
+| `video/video.c`             | the common part of video: open by format, play, the queue of pictures, YUV to RGBA |
+| `video/video_webm.c`        | WebM: demux with nestegg, VP8/VP9 with libvpx, Opus with libopus |
+| `video/video_mp4.c`         | MP4: minimp4 and FFmpeg (H.264, AAC) |
+| `rom/rom.c`                 | the rom (`[game] rom`): mount it on `gamedata/` and pass each path of the game to its kind |
+| `rom/rom_zip.c`             | the rom in a `.zip` (uncompressed once if needed) |
+| `rom/rom_dir.c`             | the rom in a folder (tests, or a game unzipped on the PC) |
+| `zip/zip.c`                 | read a `.zip` in place: central directory, search, data of each file |
+| `zip/convert.c`             | pass a compressed `.zip` to one without compression |
+| `zip/asar.c`                | read the `.asar` of an Electron game as a zip without compression |
 | `audio/mixer.c`             | voices and the stream of a video, mixed in the SDL audio thread |
+| `audio/decoder.c`           | open a sound without knowing its format: ogg (`vorbis.c`), mp3 (`mp3.c`) or wav (`wav.c`) |
 
 ## Memory
 

@@ -1,0 +1,4 @@
+# performance-mode: sin los efectos de color que obligan a dibujar un objeto aparte.
+# Ver README.md.
+[hooks]
+"cr.layer.prototype.drawInstanceWithShadersGL" = "performance-mode.js"

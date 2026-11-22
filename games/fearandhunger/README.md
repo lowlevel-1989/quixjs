@@ -1,5 +1,46 @@
 English | [Español](README.es.md)
 
+[![Buy Me A Coffee](https://raw.githubusercontent.com/lowlevel-1989/quixjs/master/docs/coffee.svg)](https://ko-fi.com/lowlevel1989)
+
+If you want [quixjs](https://github.com/lowlevel-1989/quixjs) to keep getting updates and support,
+you can support the project by buying me a coffee.
+
+## Notes
+
+Thanks to Miro Haverinen for creating Fear & Hunger. This port only runs
+the game, on quixjs: https://github.com/lowlevel-1989/quixjs.
+
+Needs Fear & Hunger **1.4.1** for Windows (itch.io or Steam).
+
+## Controls
+
+| Button | Action |
+|--|--|
+| D-Pad / left stick | Move |
+| A | OK |
+| B | Cancel |
+| X | Skill |
+| Y | Menu |
+| L1 / R1 | Previous / next character or page, in the menus |
+| (you choose it in Controls) | Torch |
+| (you choose it in Controls) | Phase |
+| Select + L1 | Magnifier: a box that enlarges; d-pad or sticks move it, R1 / L1 zoom, Y / X size, A centers, B closes |
+| Select + R1 | Screenshot (in `screenshots/`) |
+| Select + R2 | Back to the port menu |
+| Select + Start | Quit |
+
+Mods (on): [rumble](mods/rumble/README.md) (vibration), [party-bars](mods/party-bars/README.md) (Hunger, Body and Mind on the map; L1 / R1 change the member).
+
+## Compile
+
+```
+git clone https://github.com/lowlevel-1989/quixjs.git
+cd quixjs
+make PLATFORM=portmaster PORT=fearandhunger
+```
+
+It builds `fearandhunger.zip`.
+
 ## Install
 
 To use this port you need the game: Fear & Hunger 1.4.1 for Windows, which
@@ -25,21 +66,28 @@ you can buy on itch.io (https://mirohaver.itch.io/fear-hunger) or on Steam
    itself (with the image that EmulationStation shows) and removes it from
    `autoinstall`. You can close PortMaster after that.
 
-3. **Copy the game.** Copy the folder `www/` of step 1 into
-   `ports/fearandhunger/gamedata/`, in the ports folder of your device (where
-   `Fear and Hunger.sh` is). It must end up like this:
+3. **Copy the game.** Compress the folder `www/` of step 1 into a zip named `www.zip` (on
+   Windows: right click on `www`, Send to, Compressed (zipped) folder) and copy
+   it into `ports/fearandhunger/`, next to `port.toml`, in the
+   ports folder of your device (where `Fear and Hunger.sh` is). It must end up like this:
 
    ```
    ports/
      Fear and Hunger.sh
      fearandhunger/
-       gamedata/
-         www/
-           data/  img/  js/  audio/ ...
+       port.toml
+       www.zip
    ```
 
    On ROCKNIX the ports folder is `/roms/ports/` (`/storage/roms/ports/` over
    SSH).
+
+   Best: a zip without compression (with 7-Zip: Compression level, Store; on
+   Linux or macOS: `zip -0 -r`). A compressed one also works: the first time
+   the game starts it is prepared (a moment, only once).
+
+   If your file has another name, write it in `ports/fearandhunger/port.toml`, in
+   `rom = "www.zip"`.
 
 4. **Play.** Restart EmulationStation (or update its list of games) and open
    Fear & Hunger from Ports.
@@ -61,46 +109,14 @@ You need the game and two files from the releases of quixjs
 1. Install the `.apk` on the phone.
 2. On your PC, unzip `fearandhunger-0.4.0-portmaster.zip`. You get the folder
    `fearandhunger/`.
-3. Copy the folder `www/` of the game (step 1 of Install) into `fearandhunger/gamedata/`. It ends up like this:
+3. Copy the game (`www.zip`, step 3 of Install) into `fearandhunger/`, next to `port.toml`. It ends up like this:
 
    ```
    fearandhunger/
      port.toml
-     gamedata/
-       www/
+     www.zip
    ```
 
 4. Zip the folder `fearandhunger/` and copy the `.zip` to the phone.
 5. In quixjs, tap "Import game" and choose that `.zip`. Then tap the game
    and Play.
-
-## Notes
-
-Fear & Hunger is by Miro Haverinen. This port only runs the game, on quixjs:
-https://github.com/lowlevel-1989/quixjs.
-
-## Controls
-
-| Button | Action |
-|--|--|
-| D-Pad / left stick | Move |
-| A | OK |
-| B | Cancel |
-| X | Skill |
-| Y | Menu |
-| L1 / R1 | Previous / next character or page, in the menus |
-| (you choose it in Controls) | Torch |
-| (you choose it in Controls) | Phase |
-| Select + Start | Quit |
-
-Vibration: on by default with the `rumble` mod; Options > Vibration turns it off ([mods/rumble](mods/rumble/README.md)).
-
-## Compile
-
-```
-git clone https://github.com/lowlevel-1989/quixjs.git
-cd quixjs
-make PLATFORM=portmaster PORT=fearandhunger
-```
-
-It builds `fearandhunger.zip`.

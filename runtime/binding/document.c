@@ -339,7 +339,15 @@ void element_setup(JSContext *ctx, JSValueConst elem, const char *tag) {
   JS_SetPropertyStr(ctx, elem, "children", JS_DupValue(ctx, kids));
   JS_SetPropertyStr(ctx, elem, "childNodes", kids);
 
-  JSValue style = JS_NewObject(ctx);
+  // el style, con los metodos de CSSStyleDeclaration (setProperty...: los
+  // pone polyfill/dom.js; los elementos de antes de el no los tienen)
+  JSValue global = JS_GetGlobalObject(ctx);
+  JSValue css = JS_GetPropertyStr(ctx, global, "CSSStyleDeclaration");
+  JSValue css_proto = JS_IsObject(css) ? JS_GetPropertyStr(ctx, css, "prototype") : JS_UNDEFINED;
+  JSValue style = JS_IsObject(css_proto) ? JS_NewObjectProto(ctx, css_proto) : JS_NewObject(ctx);
+  JS_FreeValue(ctx, css_proto);
+  JS_FreeValue(ctx, css);
+  JS_FreeValue(ctx, global);
   JS_SetPropertyStr(ctx, style, "width",    JS_NewInt32(ctx, app->cfg->game.width));
   JS_SetPropertyStr(ctx, style, "height",   JS_NewInt32(ctx, app->cfg->game.height));
   JS_SetPropertyStr(ctx, style, "position", JS_NewInt32(ctx,  0));
@@ -420,6 +428,13 @@ static JSValue find_by_id(JSContext *ctx, JSValueConst node, const char *id, int
   return found;
 }
 
+// [html] elements del toml: el elemento de ese id, o NULL
+static const HtmlElement *html_element(AppContext *app, const char *id) {
+  for (int i = 0; i < app->cfg->html_count; i++)
+    if (strcmp(app->cfg->html[i].id, id) == 0) return &app->cfg->html[i];
+  return NULL;
+}
+
 static JSValue js_getElementById(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
 
   if (argc < 1) {
@@ -442,12 +457,19 @@ static JSValue js_getElementById(JSContext *ctx, JSValueConst this_val, int argc
   }
 
   // El canvas del juego (engine.canvas_id) existe siempre, como si estuviera
-  // en el index.html
-  if (JS_IsNull(elem) && strcmp(id, app->cfg->engine.canvas_id) == 0) {
-    elem = js_create_element(ctx, "canvas");
+  // en el index.html, y los de [html] elements del toml: se crean al pedirlos,
+  // dentro del body
+  const HtmlElement *h = html_element(app, id);
+  int is_canvas = strcmp(id, app->cfg->engine.canvas_id) == 0;
+  if (JS_IsNull(elem) && (is_canvas || h)) {
+    elem = js_create_element(ctx, is_canvas ? "canvas" : h->tag);
     JS_SetPropertyStr(ctx, elem, "id", JS_NewString(ctx, id));
+    if (!is_canvas && h->type[0]) JS_SetPropertyStr(ctx, elem, "type", JS_NewString(ctx, h->type));
     register_element_with_id(ctx, elem, id);
-    screen_attach(ctx, elem);
+    if (is_canvas) screen_attach(ctx, elem);
+    JSValue body = JS_GetPropertyStr(ctx, this_val, "body");
+    if (JS_IsObject(body)) JS_FreeValue(ctx, js_element_appendChild(ctx, body, 1, &elem));
+    JS_FreeValue(ctx, body);
   }
 
   JS_FreeCString(ctx, id);

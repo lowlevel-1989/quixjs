@@ -66,13 +66,13 @@ Todos los canvas WebGL comparten un contexto GL: en la practica un juego usa uno
 | API                                   | estado   | nota |
 |---------------------------------------|----------|------|
 | AudioContext / webkitAudioContext     | si       | |
-| decodeAudioData                       | parcial  | solo ogg vorbis (stb_vorbis); otros formatos fallan con EncodingError |
+| decodeAudioData                       | parcial  | ogg vorbis (stb_vorbis), mp3 (minimp3) y wav; otros formatos (opus, aac...) fallan con EncodingError |
 | AudioBufferSourceNode                 | si       | start, stop, loop, loopStart, loopEnd, playbackRate, onended |
 | GainNode, PannerNode, StereoPannerNode | si      | |
 | AudioParam                            | parcial  | setValueAtTime y rampas lineales; las rampas exponenciales son lineales |
 | compressor, biquad, delay, convolver, analyser | parcial | existen y dejan pasar el sonido sin cambios |
 | OscillatorNode                        | no       | existe pero no suena |
-| `new Audio()`, `<audio>`              | parcial  | solo `canPlayType` (dice que si a ogg); `play()` no suena |
+| `new Audio()`, `<audio>`              | parcial  | solo `canPlayType` (dice que si a ogg, mp3 y wav); `play()` no suena |
 
 El mezclador (`runtime/audio`) decodifica el ogg mientras suena, asi una cancion no
 ocupa su tamano en PCM. Sin dispositivo de audio (backend dummy) las voces avanzan

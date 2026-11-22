@@ -33,6 +33,8 @@
 #include "backend/backend.h"
 #include "binding/webgl_constants.h"
 #include "core/trace.h"
+#include "core/app_context.h"
+#include "core/timer.h"
 
 #define UNPACK_FLIP_Y_WEBGL            0x9240
 #define UNPACK_PREMULTIPLY_ALPHA_WEBGL 0x9241
@@ -64,7 +66,9 @@ typedef struct WebGLCtx {
   int     unit;
 } WebGLCtx;
 
-typedef enum { OBJ_BUFFER, OBJ_FRAMEBUFFER, OBJ_PROGRAM, OBJ_RENDERBUFFER, OBJ_SHADER, OBJ_TEXTURE, OBJ_COUNT } ObjKind;
+typedef enum { OBJ_BUFFER, OBJ_FRAMEBUFFER, OBJ_PROGRAM, OBJ_RENDERBUFFER, OBJ_SHADER, OBJ_TEXTURE,
+               // WebGL 2 (webgl2.c)
+               OBJ_VERTEX_ARRAY, OBJ_QUERY, OBJ_SAMPLER, OBJ_SYNC, OBJ_COUNT } ObjKind;
 
 typedef struct {
   GLuint  name;
@@ -73,6 +77,13 @@ typedef struct {
   // buffers: su tamano y uso (bufferData), para bufferSubData sin esperas
   GLsizeiptr size;
   GLenum     usage;
+  // framebuffers: el framebuffer de quixjs que hace de este mientras tiene
+  // una textura enganchada (objects.c, fb_alias), o 0; no_alias: tiene
+  // renderbuffers, se usa tal cual
+  GLuint     alias;
+  int        no_alias;
+  // WebGL 2: un WebGLSync es un puntero, no un nombre
+  GLsync     sync;
 } GLObj;
 
 typedef struct {

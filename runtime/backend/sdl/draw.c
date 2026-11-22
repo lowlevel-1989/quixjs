@@ -35,6 +35,8 @@ static void swap_window(SDLPlatformData* data) {
   if (data->shown_n < SHOWN_MAX) data->shown[data->shown_n++] = now;
 }
 
+
+
 // Varias capas: cada canvas 2d se sube solo si cambio; los WebGL van directos.
 // Todas se escalan al rectangulo de la primera (el canvas del juego). Con el
 // contexto que presenta ya actual (en este thread o en el que presenta).
@@ -49,9 +51,19 @@ static void draw_layers(Backend* backend, SDLPlatformData* data, const PresentLa
   if (n > 0 && layers[0].w > 0 && layers[0].h > 0) {
     int w = layers[0].w, h = layers[0].h;
     double scale = (double)ww / w < (double)wh / h ? (double)ww / w : (double)wh / h;
+    // pixel perfect: cada pixel del juego, el mismo numero de pixeles de la
+    // pantalla (con 1,125x unos salen dobles y otros no: la letra se deforma)
+    if (backend->scaling == SCALING_PIXEL && scale >= 1) scale = (int)scale;
     int dw = (int)(w * scale + 0.5), dh = (int)(h * scale + 0.5);
     int dx = (ww - dw) / 2, dy = (wh - dh) / 2;
     qgl.Enable(GL_BLEND);
+    // dos pasadas con la lupa: el juego entero y, encima, el cuadro de la
+    // lupa (magnifier.c)
+    int passes = backend->magnify > 1 ? 2 : 1;
+    for (int pass = 0; pass < passes; pass++) {
+    if (pass == 1) {
+      magnifier_lens(backend, &dx, &dy, &dw, &dh, wh);
+    }
     for (int i = 0; i < n; i++) {
       const PresentLayer *l = &layers[i];
       GLuint tex = l->gl_tex;
@@ -79,15 +91,27 @@ static void draw_layers(Backend* backend, SDLPlatformData* data, const PresentLa
           qgl.TexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, l->w, l->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, l->rgba);
           data->layer_tex[slot].w = l->w;
           data->layer_tex[slot].h = l->h;
-        } else if (l->dirty || fresh) {
+        } else if ((l->dirty && pass == 0) || fresh) {
           qgl.TexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, l->w, l->h, GL_RGBA, GL_UNSIGNED_BYTE, l->rgba);
         }
       }
       if (l->premultiplied) qgl.BlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
       else qgl.BlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+      // ampliado: sharp bilinear (present.frag), salvo en Smooth; reducido,
+      // el lineal tal cual
+      int px = backend->scaling == SCALING_SMOOTH ? 0 : dw / l->w;
+      int py = backend->scaling == SCALING_SMOOTH ? 0 : dh / l->h;
+      data->blit_size[0] = (float)l->w;
+      data->blit_size[1] = (float)l->h;
+      data->blit_prescale[0] = px >= 1 && py >= 1 ? (float)px : 0.0f;
+      data->blit_prescale[1] = px >= 1 && py >= 1 ? (float)py : 0.0f;
       sdl_blit(data, tex, dx, dy, dw, dh, ww, wh, flip);
+      data->blit_prescale[0] = data->blit_prescale[1] = 0.0f;
     }
+    }
+    qgl.Disable(GL_SCISSOR_TEST);
     qgl.Disable(GL_BLEND);
+    if (backend->magnify > 1) magnifier_icon(wh);
   }
   // texturas de canvas que ya no estan en pantalla
   for (int k = 0; k < 8; k++) {

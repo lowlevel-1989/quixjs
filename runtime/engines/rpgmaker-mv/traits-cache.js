@@ -85,7 +85,7 @@ function (original) {
   // sameCode (runtime/engines/same-code.js): la funcion del juego es igual que
   // el modelo, sin contar espacios? Si un plugin la cambio, el hook deja la
   // suya y no hace nada
-  var sameCode = __quixEngine.sameCode;
+  var sameCode = quix.engine.sameCode;
   var cache = new WeakMap(); // personaje -> tabla
   var actorFast = null; // se mira la primera vez (ya con los plugins)
 

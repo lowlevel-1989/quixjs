@@ -56,6 +56,13 @@ anterior), un número, `"texto"`, `true` o `false`.
 - `type`: `win_condition` (dorado), `progression` (azul), `secondary`
   (plateado); otro tipo tiene un color propio.
 - `conditions = []`: sale en la lista pero nunca se consigue.
+- `progress` y `goal` (opcionales): un contador. Mientras el logro no se ha
+  conseguido, cada vez que el símbolo `progress` sube (y aún no llega a
+  `goal`) sale un aviso con cuántos llevas: `Achievement progress 3/12`.
+  Va con una barra de progreso y se ve sin conseguir (distintivo hueco).
+  Solo sale si se cumplen las demás condiciones (las que no leen ese
+  símbolo, como `debug == false`), y no si en ese momento se desbloquea
+  otro logro (saldría doble).
 - Cargar una partida también cambia los valores: un logro que esa partida ya
   tiene se consigue entonces.
 
@@ -103,7 +110,7 @@ ach reset    olvida los conseguidos
 eval $gameVariables.value(88)
 ```
 
-Desde JS, `quix.achievementUnlocked(id)` dice si uno está conseguido,
-`quix.achievements()` da la lista (id, título, descripción, tipo, color,
-fecha) y `quix.achievementsIcon()` el icono de `[achievements_menu]`.
+Desde JS, `quix.achievements.unlocked(id)` dice si uno está conseguido,
+`quix.achievements.list()` da la lista (id, título, descripción, tipo, color,
+fecha) y `quix.achievements.icon` el icono de `[achievements_menu]`.
 `games/tests/core/achievements` y `core/achievements-menu` son sus tests.

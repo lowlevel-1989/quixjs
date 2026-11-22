@@ -20,7 +20,7 @@
 // juego ya cargo sus scripts. Ver runtime/engines/README.md.
 function (original) {
   var native =
-    typeof __quixEngine === 'object' && __quixEngine ? __quixEngine['rpgmaker'] : null;
+    typeof quix.engine === 'object' && quix.engine ? quix.engine['rpgmaker'] : null;
   var ready = false;
   function setup() {
     if (ready) return true;

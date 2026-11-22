@@ -28,7 +28,7 @@ the audio in `audio/` and the window and input in `backend/`.
 | `navigator.c`        | `navigator` and `getGamepads()` (4 slots, "standard" mapping) |
 | `gamepads.js`        | `getGamepads()` in JS, on the state `navigator.c` reads from the backend |
 | `nwjs.c`             | nw.js mode: the natives of `fs` |
-| `nwjs.js`            | nw.js mode in JS: `require('fs')`, `path`, `events`, `os`, `nw.gui`, `process` |
+| `nwjs/`              | nw.js mode in JS, one file per Node module: `require('fs')`, `path`, `events`, `os`, `nw.gui`, `process`, greenworks ([README](nwjs/README.md)) |
 | `quix.c`             | the `quix` object: `exit`, `pressKey`, `frame`, `backend`, `fixedStep`, `registerFont`, `hasFont`, `version`, `frameTime`, `achievementUnlocked`, `achievements`, `achievementsIcon`, `isGpuCanvas`, `collectGarbage`, `gcPressure` |
 | `console.c`          | `console` (log, info, warn, error...) and `print` |
 | `polyfill.c`         | runs the APIs written in JS of `polyfill/` at start |
@@ -48,7 +48,7 @@ It goes in C when:
 1. It touches something native: the GPU (`webgl.c`, `canvas/2d`), files
    (`xhr.c`, `image.c`), the SDL audio (`audio.c`), the video decoder
    (`video.c`), the gamepads (`navigator.c`) or the TTF fonts
-   (`quix.registerFont`).
+   (`quix.fonts.register`).
 2. It is called many times per frame: `drawImage`, `fillRect` or
    `drawElements`. Each call from JS to C costs, but doing the work in JS
    costs much more. That is why the engine hooks move things like the blur or

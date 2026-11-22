@@ -40,6 +40,8 @@ int  font_init(void);
 void font_quit(void);
 
 int  font_register(const char *family, const char *path);
+// La fuente desde memoria (FontFace con un ArrayBuffer): se copia y dura el juego
+int  font_register_data(const char *family, const void *data, size_t len);
 int  font_is_registered(const char *family);
 
 // Fuente para un valor CSS de ctx.font ("bold 20px 'GameFont', sans-serif").

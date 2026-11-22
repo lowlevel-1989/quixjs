@@ -15,8 +15,8 @@ What quixjs can do today, in short. The state of each browser API is in
 - text with SDL_ttf: fillText, strokeText, measureText, `@font-face`, `FontFace`
   and `[fonts]` in the toml of the game
 - audio: WebAudio (AudioContext, decodeAudioData, gain and panner nodes, loops,
-  ramps) on a mixer of its own (`runtime/audio`); ogg vorbis decoded with
-  stb_vorbis while it plays. `new Audio()` exists but only answers
+  ramps) on a mixer of its own (`runtime/audio`); ogg vorbis (stb_vorbis), mp3
+  (minimp3) and wav decoded while they play. `new Audio()` exists but only answers
   `canPlayType` (it does not play)
 - video: `<video>` plays WebM with VP8 or VP9 and Opus audio (nestegg, libvpx,
   libopus) and MP4 with H.264 and AAC audio (minimp4 and a piece of FFmpeg);

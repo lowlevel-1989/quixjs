@@ -76,6 +76,7 @@ int parse_args(int argc, char **argv, Args *args) {
       args->fixed_step = 1;
     } else if (strcmp(a, "--screenshot") == 0 && has_value) {
       args->screenshot = argv[++i];
+
     } else if (strcmp(a, "--expose-gc") == 0) {
       args->expose_gc = 1;
     } else if (strcmp(a, "--no-webgl") == 0) {

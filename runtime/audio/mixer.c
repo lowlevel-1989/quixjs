@@ -16,18 +16,22 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-// El mezclador: los clips ogg, las voces que suenan y la mezcla en el thread
+// El mezclador: los clips (ogg, mp3, wav: decoder.h), las voces que suenan y la mezcla en el thread
 // de audio de SDL. Ver mixer.h.
 
 #include <SDL2/SDL.h>
+#include <fcntl.h>
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
+#include <unistd.h>
 #include "core/timer.h"
+#include "core/url.h"
 #include "mixer.h"
 
-#define STB_VORBIS_HEADER_ONLY
-#include "thirdparty/stb/stb_vorbis.c"
+#include "decoder.h"
 
 #define MAX_VOICES   32
 #define DEC_FRAMES   2048   // frames decodificados de una vez por voz
@@ -41,8 +45,10 @@
 
 struct AudioClip {
   int      refs;          // se toca solo desde el thread principal
-  uint8_t *data;          // el ogg (NULL si ya esta en pcm)
+  uint8_t *data;          // el archivo comprimido (ogg, mp3) o el wav (NULL si ya esta en pcm)
   size_t   len;
+  int      mapped;        // data esta mapeada (mmap), no copiada: 1 + lo que empieza
+                          // antes el mapeo (url_map: el archivo dentro de la rom)
   int16_t *pcm;           // el sonido entero decodificado (interleaved) o NULL
   int      channels;
   int      rate;
@@ -56,7 +62,7 @@ typedef struct {
   int         active;     // la usa el thread de audio
   int         ended;      // la marca el thread de audio, la libera el principal
   AudioClip  *clip;
-  stb_vorbis *dec;
+  Decoder    *dec;
   float       volume, pan, rate;
   int         loop;
   long        loop_start, loop_end;   // en frames del clip
@@ -91,79 +97,134 @@ static int                ready = 0;
 
 // ------------------------------------------------------------------- clips
 
-// El numero que sigue a key ("LOOPSTART=") en los comentarios, como lo busca
-// RPG Maker (WebAudio._readMetaData); -1 si no esta
-static long comment_number(stb_vorbis_comment *cm, const char *key) {
-  size_t n = strlen(key);
-  for (int i = 0; i < cm->comment_list_length; i++) {
-    const char *p = strstr(cm->comment_list[i], key);
-    if (p && p[n] >= '0' && p[n] <= '9') return strtol(p + n, NULL, 10);
-  }
-  return -1;
-}
-
 // Se queda con data (malloc) en vez de copiarlo. Vale desde el thread de
 // trabajo: no toca nada compartido. Si falla, libera data.
-AudioClip *clip_from_ogg_owned(uint8_t *data, size_t len) {
-  int err = 0;
-  stb_vorbis *v = stb_vorbis_open_memory(data, (int)len, &err, NULL);
-  if (!v) {
-    free(data);
+static AudioClip *clip_from_data_owned_flag(uint8_t *data, size_t len, int mapped);
+
+// suelta el archivo: mapeado o la copia
+static void drop(uint8_t *data, size_t len, int mapped) {
+  if (mapped) munmap(data - (mapped - 1), len + (size_t)(mapped - 1));
+  else free(data);
+}
+
+AudioClip *clip_from_data_owned(uint8_t *data, size_t len) {
+  return clip_from_data_owned_flag(data, len, 0);
+}
+
+static AudioClip *clip_from_data_owned_flag(uint8_t *data, size_t len, int mapped) {
+  Decoder *dec = decoder_open(data, len);
+  if (!dec) {
+    drop(data, len, mapped);
     return NULL;
   }
-  stb_vorbis_info info = stb_vorbis_get_info(v);
-  long length = (long)stb_vorbis_stream_length_in_samples(v);
-  stb_vorbis_comment cm = stb_vorbis_get_comment(v);
-  long loop_start = comment_number(&cm, "LOOPSTART=");
-  long loop_length = comment_number(&cm, "LOOPLENGTH=");
-  // corto: entero a pcm ahora (en el thread de trabajo), y fuera el ogg
+  int channels = decoder_channels(dec), rate = decoder_rate(dec);
+  long length = decoder_length(dec), loop_start, loop_length;
+  decoder_loop(dec, &loop_start, &loop_length);
+  // corto: entero a pcm ahora (en el thread de trabajo), y fuera el archivo
   int16_t *pcm = NULL;
-  int ch = info.channels >= 2 ? 2 : 1;
-  if (length > 0 && length <= PCM_MAX_FRAMES && info.channels >= 1) {
+  int ch = channels >= 2 ? 2 : 1;
+  if (length > 0 && length <= PCM_MAX_FRAMES) {
     pcm = malloc(sizeof(int16_t) * (size_t)length * ch);
-    if (pcm) {
-      long got = 0;
-      while (got < length) {
-        int n = stb_vorbis_get_samples_short_interleaved(v, ch, pcm + got * ch, (int)((length - got) * ch));
-        if (n <= 0) break;
-        got += n;
+    float *tmp = malloc(sizeof(float) * 1024 * 2);
+    long got = 0;
+    while (pcm && tmp && got < length) {
+      int want = length - got < 1024 ? (int)(length - got) : 1024;
+      int n = decoder_read(dec, ch, tmp, want);
+      if (n <= 0) break;
+      for (int i = 0; i < n * ch; i++) {
+        float f = tmp[i] > 1.0f ? 1.0f : tmp[i] < -1.0f ? -1.0f : tmp[i];
+        pcm[got * ch + i] = (int16_t)(f * 32767.0f);
       }
-      if (got <= 0) {
-        free(pcm);
-        pcm = NULL;
-      } else {
-        length = got;
-      }
+      got += n;
+    }
+    free(tmp);
+    if (pcm && got <= 0) {
+      free(pcm);
+      pcm = NULL;
+    } else if (pcm) {
+      length = got;
     }
   }
-  stb_vorbis_close(v);
+  decoder_close(dec);
 
   AudioClip *c = calloc(1, sizeof(AudioClip));
   if (!c) {
-    free(data);
+    drop(data, len, mapped);
     return NULL;
   }
   if (pcm) {
-    free(data);
+    drop(data, len, mapped);
     c->pcm = pcm;
   } else {
     c->data = data;
     c->len = len;
+    c->mapped = mapped;
   }
   c->loop_start = loop_start > 0 ? loop_start : 0;
   c->loop_length = loop_length > 0 ? loop_length : 0;
-  c->channels = pcm ? ch : info.channels;
-  c->rate = (int)info.sample_rate;
+  c->channels = pcm ? ch : channels;
+  c->rate = rate;
   c->length = length;
   c->refs = 1;
   return c;
 }
 
-AudioClip *clip_from_ogg(const uint8_t *data, size_t len) {
+// Un sonido largo (musica) se queda mapeado (mmap), no copiado: sus paginas son
+// del archivo, y el kernel las suelta si falta memoria y las vuelve a leer al
+// sonar. Copiado, cada musica que habia sonado seguia en la RAM del programa
+// (Gunfield: 26 musicas, 91 MB). Uno corto se decodifica entero, como siempre.
+AudioClip *clip_from_file(const char *path) {
+  size_t len = 0, delta = 0;
+  uint8_t *map = url_map(path, &len, &delta);
+  if (!map) {
+    // comprimido en la rom: no se puede mapear, se lee entero
+    uint8_t *data = url_read_file(path, &len);
+    return data ? clip_from_data_owned(data, len) : NULL;
+  }
+  Decoder *d = decoder_open(map, len);
+  long length = d ? decoder_length(d) : 0;
+  if (d) decoder_close(d);
+  if (!d || length <= PCM_MAX_FRAMES) {
+    // corto (o no es un sonido): como siempre, desde una copia
+    uint8_t *copy = d ? malloc(len) : NULL;
+    if (copy) memcpy(copy, map, len);
+    munmap(map - delta, len + delta);
+    return copy ? clip_from_data_owned(copy, len) : NULL;
+  }
+  AudioClip *c = clip_from_data_owned_flag(map, len, 1 + (int)delta);
+  return c;
+}
+
+AudioClip *clip_from_data(const uint8_t *data, size_t len) {
   uint8_t *copy = malloc(len ? len : 1);
   if (!copy) return NULL;
   memcpy(copy, data, len);
-  return clip_from_ogg_owned(copy, len);
+  return clip_from_data_owned(copy, len);
+}
+
+AudioClip *clip_from_pcm(const float *left, const float *right, long frames, int rate) {
+  if (!left || frames <= 0 || rate <= 0) return NULL;
+  int ch = right ? 2 : 1;
+  AudioClip *c = calloc(1, sizeof(*c));
+  int16_t *pcm = malloc((size_t)frames * ch * sizeof(int16_t));
+  if (!c || !pcm) {
+    free(c);
+    free(pcm);
+    return NULL;
+  }
+  for (long i = 0; i < frames; i++) {
+    for (int k = 0; k < ch; k++) {
+      float v = (k ? right : left)[i];
+      v = v > 1.0f ? 1.0f : v < -1.0f ? -1.0f : v;
+      pcm[i * ch + k] = (int16_t)(v * 32767.0f);
+    }
+  }
+  c->refs = 1;
+  c->pcm = pcm;
+  c->channels = ch;
+  c->rate = rate;
+  c->length = frames;
+  return c;
 }
 
 void clip_retain(AudioClip *c) {
@@ -172,7 +233,7 @@ void clip_retain(AudioClip *c) {
 
 void clip_release(AudioClip *c) {
   if (c && --c->refs == 0) {
-    free(c->data);
+    drop(c->data, c->len, c->mapped);
     free(c->pcm);
     free(c);
   }
@@ -201,7 +262,7 @@ static int read_frames(Voice *v, long from, int ch, float *tmp, long want) {
     }
     return (int)want;
   }
-  return stb_vorbis_get_samples_float_interleaved(v->dec, ch, tmp, (int)(want * ch));
+  return decoder_read(v->dec, ch, tmp, (int)want);
 }
 
 // Rellena buf de la voz conservando el ultimo frame (para interpolar).
@@ -225,7 +286,7 @@ static int voice_refill(Voice *v) {
   int got = read_frames(v, next_frame, ch, tmp, want);
   if (got <= 0 && v->loop) {
     // vuelta al inicio del loop
-    if (v->dec) stb_vorbis_seek(v->dec, (unsigned int)v->loop_start);
+    if (v->dec) decoder_seek(v->dec, v->loop_start);
     next_frame = v->loop_start;
     want = DEC_FRAMES;
     if (v->loop_end > 0 && next_frame + want > v->loop_end) want = v->loop_end - next_frame;
@@ -387,7 +448,7 @@ static Voice *find(int id) {
 }
 
 static void voice_free(Voice *v) {
-  if (v->dec) stb_vorbis_close(v->dec);
+  if (v->dec) decoder_close(v->dec);
   clip_release(v->clip);
   memset(v, 0, sizeof(*v));
 }
@@ -418,13 +479,12 @@ int voice_play(AudioClip *c, double offset, int loop, double loop_start, double 
   if (device) {
     long start = (long)(v.offset * c->rate);
     if (!c->pcm) {
-      int err = 0;
-      v.dec = stb_vorbis_open_memory(c->data, (int)c->len, &err, NULL);
+      v.dec = decoder_open(c->data, c->len);
       if (!v.dec) {
         clip_release(c);
         return -1;
       }
-      if (start > 0 && start < c->length) stb_vorbis_seek(v.dec, (unsigned int)start);
+      if (start > 0 && start < c->length) decoder_seek(v.dec, start);
     }
     v.buf_start = start > 0 && start < c->length ? start : 0;
   }
@@ -504,10 +564,10 @@ void mixer_update(void) {
     if (v->clip && !v->active && v->ended) {
       lock();
       AudioClip *c = v->clip;
-      stb_vorbis *d = v->dec;
+      Decoder *d = v->dec;
       memset(v, 0, sizeof(*v));
       unlock();
-      if (d) stb_vorbis_close(d);
+      if (d) decoder_close(d);
       clip_release(c);
     }
   }

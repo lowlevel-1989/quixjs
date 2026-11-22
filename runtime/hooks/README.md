@@ -9,7 +9,7 @@ the value is the hook.
 
 | file      | what it does |
 |-----------|--------------|
-| `hooks.c` | reads `[hooks]`, adds `__quixGpuScope`, wraps each function in JS when it exists, and `__quixEngine.lib` (the modules of `runtime/engines/lib`) |
+| `hooks.c` | reads `[hooks]`, adds `quix.gpu.scope`, wraps each function in JS when it exists, and `quix.engine.lib` (the modules of `runtime/engines/lib`) |
 | `hooks.h` | the format of `[hooks]` and the functions that `core/main.c` calls |
 
 ## The format
@@ -86,11 +86,11 @@ method of a prototype it counts the calls of all the objects together.
 
 ## gpu-canvas
 
-The wrapper calls `__quixGpuScope(1)` before the function and
-`__quixGpuScope(-1)` after it (also when it throws). A canvas created inside
+The wrapper calls `quix.gpu.scope(1)` before the function and
+`quix.gpu.scope(-1)` after it (also when it throws). A canvas created inside
 is marked for the GPU when WebGL is available. It draws on the GPU from its
 first drawing; anything the GPU does not do moves it back to the CPU for good.
-`quix.isGpuCanvas(canvas)` says if a canvas is on the GPU. The details are in
+`quix.gpu.isCanvas(canvas)` says if a canvas is on the GPU. The details are in
 [gfx](../gfx/README.md).
 
 The test is `games/tests/canvas/gpu`: the three hooks, and the same light mask

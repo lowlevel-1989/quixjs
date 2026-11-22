@@ -19,7 +19,7 @@
 #pragma once
 
 // Tabla de teclas: KeyboardEvent.code -> key y keyCode, como los da el
-// navegador con un teclado US. La usan el backend sdl y quix.pressKey().
+// navegador con un teclado US. La usan el backend sdl y quix.input.pressKey().
 
 #include "backend/backend.h"
 

@@ -26,6 +26,10 @@
 // Un eje se pide en sus dos direcciones (cada una es "-aN" o "+aN"): asi se
 // sabe cual es y hacia donde va, aunque este invertido. Los ejes se miden
 // desde donde estaban al empezar (un gatillo en reposo puede estar en -32768).
+//
+// Tambien el teclado (runtime/backend/sdl/keypad.c): la primera entrada decide si se asigna el
+// mando o el teclado (sin mando, el teclado); una tecla es "k:<nombre de SDL>"
+// y lo asignado va a keyboard.map.
 
 #include <SDL2/SDL.h>
 #include <stdio.h>
@@ -33,6 +37,7 @@
 #include <string.h>
 #include "backend/backend.h"
 #include "mapper.h"
+#include "keypad.h"
 
 #define AXIS_PRESSED  16000   // de 32767: mas alla, el eje cuenta como pulsado
 #define AXIS_RELEASED 8000
@@ -41,9 +46,12 @@
 static SDL_Joystick *joy = NULL;
 static SDL_JoystickID joy_id = -1;
 static Sint16 rest[MAX_AXES];   // los ejes al empezar
-static char   held[16];         // la entrada pulsada, a la espera de que se suelte
-static char   done[16];         // pulsada y soltada
+static char   held[24];         // la entrada pulsada, a la espera de que se suelte
+static char   done[24];         // pulsada y soltada
 static int    cancelled = 0;
+static int    capturing = 0;
+enum { MODE_ANY, MODE_PAD, MODE_KEYS };
+static int    mode = MODE_ANY;  // que se asigna: aun no se sabe, el mando o el teclado
 
 // controller.map al final de SDL_GAMECONTROLLERCONFIG. PortMaster (el
 // script del port) exporta esa variable con su asignacion del mando, y SDL
@@ -214,17 +222,25 @@ static void reset(void) {
 }
 
 void mapper_event(const SDL_Event *e) {
-  if (!joy) return;
+  if (!capturing) return;
   if (e->type == SDL_KEYDOWN && (e->key.keysym.sym == SDLK_ESCAPE || e->key.keysym.sym == SDLK_BACKSPACE)) {
     cancelled = 1;
     return;
   }
-  if (e->type == SDL_JOYDEVICEREMOVED && e->jdevice.which == joy_id) {
+  if (e->type == SDL_JOYDEVICEREMOVED && joy && e->jdevice.which == joy_id && mode != MODE_KEYS) {
     cancelled = 1;
     return;
   }
-  char text[16] = "";
+  char text[24] = "";
   int released = 0;
+  // el teclado: una tecla, y se suelta con su SDL_KEYUP
+  if (mode != MODE_PAD && (e->type == SDL_KEYDOWN || e->type == SDL_KEYUP)) {
+    char name[24];
+    snprintf(name, sizeof name, "k:%s", SDL_GetKeyName(e->key.keysym.sym));
+    if (e->type == SDL_KEYDOWN && !e->key.repeat) memcpy(text, name, sizeof text);
+    else if (e->type == SDL_KEYUP && strcmp(held, name) == 0) released = 1;
+  }
+  if (mode == MODE_KEYS || !joy) goto decide;
   switch (e->type) {
     case SDL_JOYBUTTONDOWN:
       if (e->jbutton.which == joy_id) snprintf(text, sizeof text, "b%d", e->jbutton.button);
@@ -245,10 +261,12 @@ void mapper_event(const SDL_Event *e) {
       break;
     }
   }
+decide:
   if (held[0]) {
     if (released) {
       memcpy(done, held, sizeof done);
       held[0] = 0;
+      if (mode == MODE_ANY) mode = done[0] == 'k' ? MODE_KEYS : MODE_PAD;
     }
   } else if (text[0] && !done[0]) {
     memcpy(held, text, sizeof held);
@@ -257,13 +275,16 @@ void mapper_event(const SDL_Event *e) {
 
 int mapper_capture(int step, char *out, size_t room) {
   if (step == CAPTURE_START) {
-    if (!joy) {
-      if (SDL_NumJoysticks() < 1) return -1;
+    // sin mando: el teclado
+    if (!joy && SDL_NumJoysticks() > 0) {
       joy = SDL_JoystickOpen(0);
-      if (!joy) return -1;
-      joy_id = SDL_JoystickInstanceID(joy);
-      SDL_JoystickEventState(SDL_ENABLE);
+      if (joy) {
+        joy_id = SDL_JoystickInstanceID(joy);
+        SDL_JoystickEventState(SDL_ENABLE);
+      }
     }
+    if (!capturing) mode = joy ? MODE_ANY : MODE_KEYS;
+    capturing = 1;
     reset();
     return 0;
   }
@@ -271,9 +292,10 @@ int mapper_capture(int step, char *out, size_t room) {
     if (joy) SDL_JoystickClose(joy);
     joy = NULL;
     joy_id = -1;
+    capturing = 0;
     return 0;
   }
-  if (!joy || cancelled) return -1;
+  if (!capturing || cancelled) return -1;
   if (!done[0]) return 0;
   snprintf(out, room, "%s", done);
   done[0] = 0;
@@ -330,7 +352,9 @@ static int keys_save(const char *map, const char *guid, const char *pairs) {
 // La linea de este mando en controller.map: las de los demas se conservan y
 // la suya (el mismo GUID, el principio de la linea) se sustituye
 int mapper_save(const char *path, const char *pairs_in) {
-  if (!joy || !path || !path[0]) return -1;
+  if (!path || !path[0]) return -1;
+  if (mode == MODE_KEYS) return keypad_save(path, pairs_in);
+  if (!joy) return -1;
   char guid[33], line[2048], all[1600], pairs[1600];
   // las acciones de [controls.keys] (@) van a controller.keys
   size_t pn = 0;

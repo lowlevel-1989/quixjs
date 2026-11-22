@@ -62,18 +62,23 @@ licenses() {   # licenses <carpeta> <arquitectura>
 port_release() {   # port_release <port>
   PORT=$1
   PM=obj/portmaster/zip/$PORT
-  make PLATFORM=portmaster PORT="$PORT"
+  # -W: se rehace aunque el zip ya estuviera (su carpeta en $PM es la del
+  # ultimo port que se hizo)
+  make PLATFORM=portmaster PORT="$PORT" -W "games/$PORT/port.toml"
 
   # el port para PortMaster, tal cual lo hace make PLATFORM=portmaster
   # (PortMaster lo instala por el port.json de dentro, no por el nombre del zip)
   cp "$PORT.zip" "$OUT/$PORT-$V-portmaster.zip"
 
-  # el port para el PC: quixjs del PC con el port.toml, los mods y los README
-  # del port, gamedata/ vacia (ahi se copia el juego) y un script para abrirlo
+  # el port para el PC: quixjs del PC con el port.toml, los mods, los
+  # scripts y los README del port, gamedata/ vacia (ahi guarda el juego), el
+  # aviso de la rom (que se copia junto a port.toml) y un script para abrirlo
   d="$OUT/$PORT"
   mkdir -p "$d/gamedata"
+  cp "$PM/COPY_THE_GAME_HERE.txt" "$d/"
   cp quixjs "$d/"
   cp "$PM/port.toml" "$PM"/README*.md "$d/"
+  for f in "$PM"/*.js; do if [ -f "$f" ]; then cp "$f" "$d/"; fi; done
   if [ -d "$PM/mods" ]; then cp -r "$PM/mods" "$d/"; fi
   cp -r "$PM/fonts" "$d/fonts"
   licenses "$d" x86_64
@@ -90,8 +95,7 @@ EOF
   cat > "$d/README.txt" <<EOF
 $TITLE for Linux x86_64 (PC), quixjs $V
 
-1. Copy the game into gamedata/ (see README.md: for most games, its www/
-   folder, so it ends up as gamedata/www/).
+1. Copy the game next to port.toml, as COPY_THE_GAME_HERE.txt says.
 2. Run ./$PORT.sh
 
 quixjs uses the libraries of the system: SDL2, SDL2_image, SDL2_ttf, ICU,

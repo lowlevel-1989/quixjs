@@ -35,7 +35,7 @@ function step() {
   }
   if (frame === 5) game.gold = 500;
   if (frame === 8) T.test('a marked playthrough', function () {
-    T.ok(!quix.achievementUnlocked('rich'), 'no achievements, even without cheats on');
+    T.ok(!quix.achievements.unlocked('rich'), 'no achievements, even without cheats on');
     T.equal($gameSystem._encounterEnabled, true, 'the symbol is back to its value before the cheat');
     T.ok(!('encounters' in $gameSystem._quix.orig), 'nothing left to give back');
     T.ok($gameSystem._quix.cheats === true, 'the mark stays');
@@ -45,7 +45,7 @@ function step() {
   if (frame < 14) return requestAnimationFrame(step);
 
   T.test('a clean playthrough', function () {
-    T.ok(quix.achievementUnlocked('rich'), 'unlocks achievements again');
+    T.ok(quix.achievements.unlocked('rich'), 'unlocks achievements again');
     T.ok(!$gameSystem._quix, 'it is not marked');
   });
   T.done();

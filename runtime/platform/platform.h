@@ -89,3 +89,9 @@ int platform_vblank(double *last_ms, double *period_ms);
 // plataforma no tiene vibrador propio (en Linux, siempre 0: vibran los
 // mandos). En Android, el telefono, como vibracion de un juego
 int platform_vibrate(int ms, int amplitude);
+
+// ------------------------------------------------------------- capturas
+
+// Una captura ya guardada en path: en Android se copia tambien a la galeria
+// (Pictures/quixjs) y devuelve 1; en Linux se queda donde esta (0)
+int platform_add_picture(const char *path);

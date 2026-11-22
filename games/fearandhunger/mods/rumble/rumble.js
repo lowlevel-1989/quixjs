@@ -15,7 +15,7 @@ function (original, path) {
     'Game_Actor.prototype.performCollapse': 'fade',   // cae alguien del grupo
     'Game_Actor.prototype.performMapDamage': 'sting'  // dano en el mapa (veneno, sangrado)
   };
-  var rumble = __quixEngine.lib('rumble'),
+  var rumble = quix.engine.lib('rumble'),
     effect = EFFECT[path];
   if (!rumble || !effect) return original;
   return function () {

@@ -46,4 +46,9 @@ void js_image_uploaded(JSContext *ctx, JSValueConst val);
 // una textura y nunca se dibujaron en 2d (se decodifican otra vez si hacen
 // falta). Devuelve los bytes soltados y en count cuantas
 size_t js_image_release_uploaded(int *count);
+// Los pixeles de una imagen soltada, decodificados en segundo plano y
+// entregados a deliver (thread principal). -1: no hace falta (tiene pixeles)
+// o no se puede
+int js_image_decode_pixels(JSContext *ctx, JSValueConst val, int *w, int *h,
+                           void (*deliver)(void *user, uint8_t *px, int w, int h), void *user);
 

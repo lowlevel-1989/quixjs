@@ -53,7 +53,7 @@ function (original) {
   // sameCode (runtime/engines/same-code.js): la funcion del juego es igual que
   // el modelo, sin contar espacios? Si un plugin la cambio, el hook deja la
   // suya y no hace nada
-  var sameCode = __quixEngine.sameCode;
+  var sameCode = quix.engine.sameCode;
   if (!sameCode(original, MODEL['Window_EnemyVisualSelect.refresh'])) return original;
   return function () {
     var battler = this._battler;

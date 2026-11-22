@@ -24,7 +24,7 @@
 #include "tomlc17.h"
 #include "symbols.h"
 
-#define MAX_SYMBOLS 64
+#define MAX_SYMBOLS 256   // como los logros: uno por logro de Steam (Look Outside: 152)
 
 typedef enum { SYM_PATH, SYM_VAR, SYM_SWITCH } SymbolKind;
 
@@ -83,6 +83,8 @@ int symbols_load(const char *config_path) {
       }
       count++;
     }
+    if (syms.u.tab.size > MAX_SYMBOLS)
+      fprintf(stderr, "[symbols] %d symbols, only the first %d are read\n", syms.u.tab.size, MAX_SYMBOLS);
   }
   toml_free(result);
   first_tick = 1;
@@ -190,11 +192,59 @@ static void read_symbol(JSContext *ctx, Symbol *s, int i) {
   JS_FreeValue(ctx, v);
 }
 
-void symbols_tick(JSContext *ctx) {
-  for (int i = 0; i < count; i++) {
-    symbols[i].prev = first_tick ? (SymValue){ .type = SV_MISSING } : symbols[i].now;
-    read_symbol(ctx, &symbols[i], i);
+// En un tick, muchos simbolos cuelgan del mismo objeto (los logros de Steam
+// de quix.steam.achievements, las variables de $gameVariables._data): se
+// busca una vez y se lee cada clave de el. Look Outside, 152 simbolos: ~2 ms
+// por imagen en una RG CubeXX buscando cada camino desde el principio
+typedef struct {
+  char    path[256];
+  size_t  len;
+  JSValue obj;
+} Parent;
+
+static JSValue parent_of(JSContext *ctx, Parent *c, const char *path, size_t len) {
+  if (c->len == len && len < sizeof c->path && memcmp(c->path, path, len) == 0) return c->obj;
+  JS_FreeValue(ctx, c->obj);
+  c->obj = get_path_n(ctx, path, len);
+  c->len = len < sizeof c->path ? len : 0;
+  memcpy(c->path, path, c->len);
+  return c->obj;
+}
+
+// symbols_get, con el padre de cache
+static JSValue tick_get(JSContext *ctx, Parent *c, const Symbol *s) {
+  JSValue parent, v;
+  if (s->kind == SYM_PATH) {
+    const char *last = strrchr(s->path, '.');
+    if (!last) return get_path(ctx, s->path);
+    parent = parent_of(ctx, c, s->path, (size_t)(last - s->path));
+    if (!JS_IsObject(parent)) return JS_UNDEFINED;
+    v = JS_GetPropertyStr(ctx, parent, last + 1);
+  } else {
+    const char *data = s->kind == SYM_VAR ? "$gameVariables._data" : "$gameSwitches._data";
+    parent = parent_of(ctx, c, data, strlen(data));
+    if (!JS_IsObject(parent)) return JS_UNDEFINED;
+    v = JS_GetPropertyUint32(ctx, parent, (uint32_t)s->index);
+    if (!JS_IsException(v) && (JS_IsUndefined(v) || JS_IsNull(v)))
+      return s->kind == SYM_VAR ? JS_NewInt32(ctx, 0) : JS_FALSE;
   }
+  if (JS_IsException(v)) {
+    JS_FreeValue(ctx, JS_GetException(ctx));
+    v = JS_UNDEFINED;
+  }
+  return v;
+}
+
+void symbols_tick(JSContext *ctx) {
+  Parent cache = { "", 0, JS_UNDEFINED };
+  for (int i = 0; i < count; i++) {
+    Symbol *s = &symbols[i];
+    s->prev = first_tick ? (SymValue){ .type = SV_MISSING } : s->now;
+    JSValue v = tick_get(ctx, &cache, s);
+    to_value(ctx, v, &s->now);
+    JS_FreeValue(ctx, v);
+  }
+  JS_FreeValue(ctx, cache.obj);
   first_tick = 0;
 }
 

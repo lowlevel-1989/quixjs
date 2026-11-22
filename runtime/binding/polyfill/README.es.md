@@ -15,12 +15,17 @@ ejecutan después de ellas (`core/main/start.c`): `fonts.js` y `media.js` usan
 | archivo       | qué hace |
 |---------------|----------|
 | `console.js`  | los métodos que no tiene `console.c` (group, assert, time, timeEnd...) |
-| `storage.js`  | `localStorage` y `sessionStorage`, en memoria |
+| `storage.js`  | `localStorage` (en disco si el toml lo pide) y `sessionStorage` |
 | `window.js`   | `self`, `screen`, `devicePixelRatio`, `alert`, `confirm`, `matchMedia`, `getComputedStyle`, `queueMicrotask`... |
 | `base64.js`   | `atob` y `btoa` |
-| `media.js`    | `new Audio()` (solo `canPlayType`) y `<video>` sobre `__quixVideo` |
-| `dom.js`      | `item()` en las listas de `getElementsByTagName` |
+| `media.js`    | `<audio>` / `new Audio()` sobre el WebAudio de quixjs, y `<video>` sobre `__quixVideo` |
+| `dom.js`      | lo que pide jQuery 3 (`cloneNode`, `createDocumentFragment`, `getClientRects`...), `<select>` e `item()` en las listas de `getElementsByTagName` |
+| `xml.js`      | `DOMParser` para XML y `evaluate` con un subconjunto de XPath (el plugin XML de Construct 2) |
 | `fonts.js`    | `FontFace`, `document.fonts` y `@font-face` en `<style>` (`insertRule`) |
+| `abort.js`    | `AbortController` y `AbortSignal` (cancelar una carga; quixjs solo avisa) |
+| `text.js`     | `TextDecoder` / `TextEncoder` (UTF-8) y `structuredClone` |
+| `fetch.js`    | `fetch()` sobre `XMLHttpRequest` (archivos, `data:` y `blob:`), con `Response` y `Headers` |
+| `url.js`      | `URLSearchParams` (los parámetros `?a=b` de una dirección) y `URL.prototype.searchParams` |
 
 ## Agregar una API
 
@@ -52,7 +57,26 @@ archivo de esta carpeta. Si la API necesita C, va en un `binding/*.c` (ver
 Maker, vienen con JavaScriptCore (el test `games/tests/core/legacy` lo
 comprueba).
 
+## Audio
+
+`<audio>` y `new Audio()` (`media.js`) suenan con el WebAudio de quixjs
+(`binding/webaudio.js`), el mismo mezclador que los efectos: poner `src` abre
+el archivo entero en segundo plano (`quixLoadFile`) y lanza `canplay` y
+`canplaythrough`; funcionan `play()`, `pause()`, `loop`, `volume`, `muted` y
+`currentTime`, y al terminar lanza `ended`. Construct 2 pone así su música.
+
 ## localStorage
 
-De momento localStorage está en memoria (`storage.js`): se pierde al salir.
-Los juegos en modo nw.js guardan con `fs`.
+`localStorage` (`storage.js`) está en memoria, salvo que el toml del juego
+pida guardarlo:
+
+```
+[saves]
+local_storage = "localstorage.json"   # en la carpeta de las partidas
+```
+
+Entonces se lee del archivo la primera vez que el juego lo usa y, después de
+un cambio, se escribe entero al poco (varios `setItem` seguidos son una sola
+escritura). `localStorage.x` y `localStorage['x'] = v` son `getItem` y
+`setItem`, como en el navegador. `sessionStorage` siempre está en memoria.
+Los juegos en modo nw.js suelen guardar con `fs`.

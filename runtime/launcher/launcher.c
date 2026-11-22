@@ -63,13 +63,15 @@ static int achievements_screen(const char *logo) {
     s.legend_rgb[k] = rgb;
     s.legend_count++;
   }
-  // a la izquierda; los que faltan, en gris; los conseguidos, en el color del
-  // texto; delante, el cuadrado del color de su tipo
+  // a la izquierda; delante, el cuadrado del color de su tipo: lleno los
+  // conseguidos; los que faltan, solo su borde y el texto en gris (tambien
+  // con la barra encima)
   s.align_left = 1;
   for (int i = 0; i < ach_count(); i++) {
     ui_item(&s, ach_title(i));
     if (!ach_unlocked(i)) s.item_rgb[s.count - 1] = ui_colors()->muted;
     s.item_badge[s.count - 1] = ach_color(i);
+    s.item_hollow[s.count - 1] = !ach_unlocked(i);
   }
   ui_item(&s, "Back");
   s.fixed = 1;
@@ -123,19 +125,26 @@ static int reset_achievements(const char *logo) {
 // Options: cada opcion cambia al elegirla y se guarda enseguida
 static int options_screen(Backend *backend, const char *logo, const Config *cfg, const char *config_path,
                           Settings *st) {
-  enum { OPT_FPS_SHOW, OPT_PROFILE, OPT_VIBRATION, OPT_FULLSCREEN, OPT_RESET, OPT_BACK };
+  enum { OPT_FPS_SHOW, OPT_PROFILE, OPT_VIBRATION, OPT_QUALITY, OPT_PIXEL, OPT_FPS, OPT_FULLSCREEN, OPT_RESET, OPT_BACK };
+  static const char *quality_names[] = { "", "Low", "Medium", "High" };
   Screen s;
   ui_reset(&s, logo, "options");
   ui_line(&s, ui_colors()->muted, "the profiler writes quixjs-profile.txt");
   s.list_top = 150;
   s.rows = 6;
   for (;;) {
-    int actions[8], n = 0;
-    char a[64], p[64], v[64], f[64];
+    int actions[10], n = 0;
+    char a[64], p[64], v[64], f[64], x[64], q[64], r[64];
+    int quality = st->quality ? st->quality : cfg->engine.quality;
+    snprintf(q, sizeof(q), "Quality: %s", quality_names[quality]);
     snprintf(a, sizeof(a), "Show FPS: %s", st->show_fps ? "On" : "Off");
     snprintf(p, sizeof(p), "Profiler: %s", st->profile ? "On" : "Off");
     snprintf(v, sizeof(v), "Vibration: %s", st->no_vibration ? "Off" : "On");
     snprintf(f, sizeof(f), "Fullscreen: %s", backend->fullscreen ? "On" : "Off");
+    int fps = st->fps ? st->fps : cfg->engine.fps;
+    snprintf(r, sizeof(r), "FPS: %d", fps == 30 ? 30 : 60);
+    snprintf(x, sizeof(x), "Scaling: %s", backend->scaling == SCALING_SMOOTH ? "Smooth"
+                                         : backend->scaling == SCALING_PIXEL ? "Pixel perfect" : "Sharp");
     s.count = 0;
     ui_item(&s, a);
     actions[n++] = OPT_FPS_SHOW;
@@ -146,6 +155,18 @@ static int options_screen(Backend *backend, const char *logo, const Config *cfg,
       ui_item(&s, v);
       actions[n++] = OPT_VIBRATION;
     }
+    // solo si el port la trae ([engine] quality): un juego 3D, cuantos
+    // pixeles dibuja
+    if (cfg->engine.quality) {
+      ui_item(&s, q);
+      actions[n++] = OPT_QUALITY;
+    }
+    // como se amplia el juego: Sharp (nitido), Smooth o Pixel perfect (1x, 2x...)
+    ui_item(&s, x);
+    actions[n++] = OPT_PIXEL;
+    // 30 o 60 (sin elegir, el del port.toml)
+    ui_item(&s, r);
+    actions[n++] = OPT_FPS;
 #ifndef QUIX_HANDHELD
     // en el PC (en una portatil el juego ya ocupa la pantalla)
     ui_item(&s, f);
@@ -163,7 +184,19 @@ static int options_screen(Backend *backend, const char *logo, const Config *cfg,
     int action = chosen >= 0 && chosen < n ? actions[chosen] : OPT_BACK;
     if (action == OPT_FPS_SHOW) st->show_fps = !st->show_fps;
     else if (action == OPT_PROFILE) st->profile = !st->profile;
-    else if (action == OPT_VIBRATION) st->no_vibration = !st->no_vibration;
+    else if (action == OPT_VIBRATION) {
+      st->no_vibration = !st->no_vibration;
+      // al encenderla, un golpe corto: se nota que funciona
+      if (!st->no_vibration) backend_vibrate(backend, 0.8f, 0.8f, 300);
+    }
+    else if (action == OPT_QUALITY) st->quality = quality % 3 + 1;   // Low, Medium, High, Low...
+    else if (action == OPT_PIXEL) {
+      // Sharp, Smooth, Pixel perfect, Sharp... Se ve en el momento: el
+      // launcher se escala igual que el juego
+      backend->scaling = (backend->scaling + 1) % 3;
+      st->scaling = backend->scaling + 1;
+    }
+    else if (action == OPT_FPS) st->fps = fps == 30 ? 60 : 30;
     else if (action == OPT_FULLSCREEN) {
       st->fullscreen = !backend->fullscreen;
       backend_set_fullscreen(backend, st->fullscreen);
@@ -280,7 +313,7 @@ typedef struct {
   int      step, count;
   int      idx[PLAN_MAX];          // lo que se pide, en orden
   char     label[PLAN_MAX][72];    // como se pide: "Confirm (A)", "Torch"
-  char     raw[PLAN_MAX][16];      // "" = saltada
+  char     raw[PLAN_MAX][24];      // "" = saltada; "k:Return": una tecla
 } Capture;
 
 // las acciones de [controls.keys] siempre se pueden saltar
@@ -329,8 +362,9 @@ static void plan_add(Capture *c, int i, const char *name) {
 }
 
 // Lo que se pide: sin [controls.buttons], todo el mando estandar; con ella,
-// Start (con el se saltan las que no tenga el mando), los botones con nombre
-// en su orden y siempre las dos palancas
+// Start (con el se saltan las que no tenga el mando), Select, los botones con
+// nombre y lo que usa el menu, en el orden del mando estandar (la cruceta
+// junta), y siempre las dos palancas
 static void capture_plan(Capture *c, const ControlsConfig *cc) {
   c->count = 0;
   c->cc = cc;
@@ -349,10 +383,19 @@ static void capture_plan(Capture *c, const ControlsConfig *cc) {
     }
     plan_add(c, START_STEP, start_name);
     plan_add(c, select, select_name);
+    const char *named[WANTED] = {0};
     for (int k = 0; k < cc->names_count; k++) {
       int i = wanted_index(cc->button[k]);
       if (i < 0) printf("[controls] unknown button \"%s\" in [controls.buttons]\n", cc->button[k]);
-      else plan_add(c, i, cc->name[k]);
+      else if (!named[i]) named[i] = cc->name[k];
+    }
+    // y siempre lo que usa este menu: la cruceta, A y B (aunque el juego no
+    // los nombre: un juego que solo usa la palanca no podria moverse por el menu)
+    static const char *menu[] = { "dpup", "dpdown", "dpleft", "dpright", "a", "b" };
+    int in_menu[WANTED] = {0};
+    for (size_t m = 0; m < sizeof menu / sizeof menu[0]; m++) in_menu[wanted_index(menu[m])] = 1;
+    for (int i = 0; i < WANTED; i++) {
+      if (named[i] || in_menu[i]) plan_add(c, i, named[i]);
     }
   }
   // las acciones de [controls.keys], por su nombre, y al final las palancas
@@ -380,7 +423,7 @@ static void capture_lines(Screen *s, const Capture *c) {
 // 1 al terminar, 2 si se cancela
 static int capture_tick(Screen *s, void *context) {
   Capture *c = context;
-  char raw[16];
+  char raw[24];
   int r = backend_capture_input(c->backend, CAPTURE_POLL, raw, sizeof raw);
   if (r < 0) return 2;
   if (r == 0) return 0;
@@ -437,7 +480,7 @@ static int controls_screen(Backend *backend, const char *logo, const ControlsCon
 }
 
 // Las pantallas, con los colores de [launcher]
-static void open_screens(Backend *backend, const Config *cfg) {
+void launcher_open_screens(Backend *backend, const Config *cfg) {
   UiColors colors = {
     .background = rgb_of(cfg->launcher.background, 0x101014),
     .text       = rgb_of(cfg->launcher.text, 0xe8e8e8),
@@ -451,7 +494,7 @@ static void open_screens(Backend *backend, const Config *cfg) {
 }
 
 void launcher_controls(Backend *backend, const Config *cfg) {
-  open_screens(backend, cfg);
+  launcher_open_screens(backend, cfg);
   const char *title = cfg->launcher.title[0] ? cfg->launcher.title : cfg->engine.name;
   printf("[launcher] controls: %s\n", title);
   controls_screen(backend, title, &cfg->controls);
@@ -461,7 +504,7 @@ void launcher_controls(Backend *backend, const Config *cfg) {
 int launcher_run(Backend *backend, const Config *cfg, const char *config_path, Settings *settings,
                  int *exit_code) {
   *exit_code = 0;
-  open_screens(backend, cfg);
+  launcher_open_screens(backend, cfg);
 
   const char *title = cfg->launcher.title[0] ? cfg->launcher.title : cfg->engine.name;
   enum { PLAY, TRANSFER, ACHIEVEMENTS, CONTROLS, MODS, CHEATS, OPTIONS, EXIT };
@@ -521,6 +564,8 @@ int launcher_run(Backend *backend, const Config *cfg, const char *config_path, S
     int action = chosen >= 0 && chosen < n ? actions[chosen] : EXIT;
     if (chosen == SCREEN_QUIT) action = EXIT;
     if (action == PLAY) {
+      // el juego tarda en arrancar: el aviso de carga del motor (abajo a la
+      // derecha) sale desde aqui (core/main/start.c)
       result = LAUNCHER_PLAY;
       break;
     }

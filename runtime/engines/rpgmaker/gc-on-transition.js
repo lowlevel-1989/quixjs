@@ -10,7 +10,7 @@
 // Despues de crear la escena, un GC parcial suelta los bitmaps que RPG Maker
 // crea y tira al montar sus ventanas (cientos al empezar una batalla).
 // Con lazy-data, antes devuelve a texto los datos convertidos durante la
-// escena anterior (__quixLazyData.trim). Si quix.collectGarbage no esta, nada.
+// escena anterior (__quixLazyData.trim). Si quix.memory.collect no esta, nada.
 //
 // Al volver al mapa desde el menu (o una pantalla del menu: Scene_MenuBase)
 // no hay pantalla en negro: el mapa aparece en cuanto se crea, y los dos GC
@@ -40,18 +40,18 @@ function (original) {
     );
   };
   return function () {
-    var gc = typeof quix === 'object' && quix && typeof quix.collectGarbage === 'function';
+    var gc = typeof quix === 'object' && quix && typeof quix.memory.collect === 'function';
     if (gc && typeof Scene_Map === 'function' && this instanceof Scene_Map && fromMenu())
       gc = false;
     if (globalThis.__quixLazyData) __quixLazyData.trim();
-    if (gc) quix.collectGarbage();
+    if (gc) quix.memory.collect();
     var r = original.apply(this, arguments);
     // al crear sus ventanas, RPG Maker crea y tira cientos de bitmaps (cada
     // cambio de tamano de una ventana hace sus marcos de nuevo): un GC
     // parcial ahora (solo lo recien creado: pocos ms) los suelta antes de
     // que se acumulen
     if (gc) {
-      var ms = quix.collectGarbage('due');
+      var ms = quix.memory.collect('due');
       if (globalThis.__quixGcLog)
         console.log('[gc-on-transition] after create: ' + ms.toFixed(1) + ' ms');
     }

@@ -56,7 +56,7 @@ delete globalThis.__quixPads;
 ```
 
 When it only needs globals that already exist, there is nothing temporary:
-`same-code.js` ends with `})(__quixEngine);`.
+`same-code.js` ends with `})(quix.engine);`.
 
 When C has to call the JS **again later** (every frame, or for the report of
 the profiler), the file leaves a global with the function or the object, and C
@@ -73,9 +73,9 @@ each `.c` says next to its `#include` where the `.h` comes from.
 | `runtime/binding/polyfill/*.js` | `runtime/binding/polyfill.c` (`js_api_add_polyfill`) | at start, after the APIs in C | `globalThis` | the browser APIs (`localStorage`, `atob`, `FontFace`...) |
 | `runtime/binding/gamepads.js` | `runtime/binding/navigator.c` (`js_create_navigator`) | at start | `__quixPads` | `navigator.getGamepads` |
 | `runtime/binding/webaudio.js` | `runtime/binding/audio.c` (`js_api_add_audio`) | at start | `__quixAudio`, `__quixAudioDevice` | `AudioContext`...; `__quixAudioTick`, called every frame by `audio_tick` |
-| `runtime/binding/nwjs.js` | `runtime/binding/nwjs.c` (`js_api_add_nwjs`) | at start, only with `[engine] nwjs = true` | `__quixFs`, `__quixGameDir` | `require`, `process`, `nw` |
+| `runtime/binding/nwjs/*.js` | `runtime/binding/nwjs.c` (`js_api_add_nwjs`), in alphabetical order | at start, only with `[engine] nwjs = true` | `__quixNw` | `require`, `process`, `nw`, `quix.steam` ([README](../runtime/binding/nwjs/README.md)) |
 | `runtime/core/profiler.js` | `runtime/core/profiler.c` (`profiler_start`) | the first time the profiler starts | nothing | `__quixProf`: `reset`, `add`, `addAlloc`, `frameTop`, `top`... called by `profiler.c` |
-| `runtime/engines/same-code.js` | `runtime/engines/engine_api.c` (`engines_add_api`) | at start, before the game | `__quixEngine` | `__quixEngine.sameCode`, used by the engine hooks |
+| `runtime/engines/same-code.js` | `runtime/engines/engine_api.c` (`engines_add_api`) | at start, before the game | `quix.engine` | `quix.engine.sameCode`, used by the engine hooks |
 
 The polyfill is a folder: `tools/embed_js.py` puts all its files in one table
 (`POLYFILLS[]`, in `obj/gen/polyfills.h`) and `polyfill.c` runs them in order
@@ -124,7 +124,7 @@ The polyfill is a folder: `tools/embed_js.py` puts all its files in one table
 - The engine hooks (`runtime/engines/<engine>/*.js`) go inside the binary
   with another tool, `tools/embed_engines.py`, and are run by
   `runtime/hooks/hooks.c` when the game has loaded; the modules of
-  `runtime/engines/lib/` too, run when a hook asks for them (`__quixEngine.lib`)
+  `runtime/engines/lib/` too, run when a hook asks for them (`quix.engine.lib`)
   ([engines](../runtime/engines/README.md)).
 - The shaders (`runtime/shaders/`) are GLSL, with `tools/embed_shaders.py`
   ([shaders](../runtime/shaders/README.md)).

@@ -1,8 +1,8 @@
-# quixjs 0.4.0
+# quixjs 0.5.0
 
 [English](README.md) | Español
 
-quixjs ejecuta juegos de JavaScript (RPG Maker MV y MZ, PixiJS v4, three.js, JS sin motor) en
+quixjs ejecuta juegos de JavaScript (RPG Maker MV y MZ, Construct 2, PixiJS v4, three.js, JS sin motor) en
 portatiles con Linux, sin navegador y sin X11. Usa JavaScriptCore, SDL2 y
 OpenGL ES 2, y las APIs del navegador que necesitan los juegos estan escritas
 en C.
@@ -25,6 +25,9 @@ juego no van incluidos: el jugador los copia de su propia copia.
 | Look Outside | RPG Maker MZ | [games/lookoutside](games/lookoutside/README.es.md) |
 | Felvidék | RPG Maker MV | [games/felvidek](games/felvidek/README.es.md) |
 | HexGL (carreras entre handhelds de la misma red) | three.js | [games/hexgl](games/hexgl/README.es.md) |
+| Gunfield | Construct 2 | [games/gunfield](games/gunfield/README.es.md) |
+| L'Abbaye des Morts | Phaser 2 | [games/abbaye](games/abbaye/README.es.md) |
+| Super Smiling Dungeon | GDevelop 5 | [games/supersmilingdungeon](games/supersmilingdungeon/README.es.md) |
 
 ## Jugar un juego en Linux
 

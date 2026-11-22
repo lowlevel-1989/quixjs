@@ -48,3 +48,8 @@ int launcher_run(Backend *backend, const Config *cfg, const char *config_path, S
 // la app de Android, que tiene su menu pero asigna el mando con este codigo
 // (controller.map con el GUID de SDL)
 void launcher_controls(Backend *backend, const Config *cfg);
+// Las pantallas del launcher abiertas (ui_open) con los colores de [launcher]
+void launcher_open_screens(Backend *backend, const Config *cfg);
+// Monta la rom ([game] rom): si va comprimida, con una pantalla de progreso
+// mientras se descomprime (una vez). 0 si va bien
+int  launcher_mount_rom(Backend *backend, const Config *cfg, const char *first_script);

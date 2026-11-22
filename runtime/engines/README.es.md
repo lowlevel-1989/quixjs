@@ -9,12 +9,13 @@ un port activa los que quiere en su tabla `[hooks]`.
 
 | archivo / carpeta | de qué se encarga |
 |-------------------|-------------------|
-| `engine_api.c`    | `__quixEngine`: un objeto por motor con sus funciones nativas |
-| `same-code.js`    | `__quixEngine.sameCode(fn, modelo)`: es `fn` la funcion original? ([abajo](#es-la-original-samecode)) |
-| `lib/`            | modulos de JS que no saben de ningun motor, para cualquier hook (`__quixEngine.lib`, [abajo](#lib)) |
-| `rpgmaker/`       | lo comun a RPG Maker MV y MZ: el hook `rpgmaker/gc-on-transition` y el descifrador en C (`decrypt.c`, `__quixEngine["rpgmaker"].setDecryptKey`) |
+| `engine_api.c`    | `quix.engine`: un objeto por motor con sus funciones nativas |
+| `same-code.js`    | `quix.engine.sameCode(fn, modelo)`: es `fn` la funcion original? ([abajo](#es-la-original-samecode)) |
+| `lib/`            | modulos de JS que no saben de ningun motor, para cualquier hook (`quix.engine.lib`, [abajo](#lib)) |
+| `rpgmaker/`       | lo comun a RPG Maker MV y MZ: el hook `rpgmaker/gc-on-transition` y el descifrador en C (`decrypt.c`, `quix.engine["rpgmaker"].setDecryptKey`) |
 | `rpgmaker-mv/`    | hooks para RPG Maker MV ([README](rpgmaker-mv/README.es.md)) |
 | `rpgmaker-mz/`    | hooks para RPG Maker MZ ([README](rpgmaker-mz/README.es.md)) |
+| `construct2/`      | hooks para Construct 2 ([README](construct2/README.es.md)) |
 | `rpgmaker-mv/hooks.toml` | los del motor: los hooks que tiene cualquier juego de MV con `[hooks] engine = "rpgmaker-mv"`; cada uno comprueba que la función es la original y, si no, la deja |
 
 ## Un hook
@@ -53,7 +54,7 @@ descifrador en C (el mismo formato: 16 bytes de cabecera y XOR con
 ## lib
 
 `lib/<nombre>.js` no es un hook: es una funcion que devuelve lo que exporta.
-Un hook lo pide con `__quixEngine.lib("<nombre>")` (la primera llamada lo
+Un hook lo pide con `quix.engine.lib("<nombre>")` (la primera llamada lo
 ejecuta, las siguientes devuelven lo mismo; `undefined` si no existe). Van en
 el binario como los hooks (`tools/embed_engines.py`, `ENGINE_LIBS`) y los
 carga `runtime/hooks/hooks.c`.
@@ -64,7 +65,7 @@ carga `runtime/hooks/hooks.c`.
 | `rumble.js` | efectos de vibracion con forma: `play(preset)` o `play([[fuerte, debil, ms], ...])`, `names()`, `steps(preset)`; presets `heartbeat`, `impact`, `heavy-impact`, `fade`, `quake`, `alarm`, `sting`, `tick` | el mod `rumble` de Fear & Hunger |
 
 ```js
-var tiles = __quixEngine.lib('tile-index');
+var tiles = quix.engine.lib('tile-index');
 var index = tiles.create();
 index.add(e._x, e._y, e);
 index.at(x, y);   // [e]
@@ -80,7 +81,7 @@ dejarla. Por eso cada hook guarda la original, tal cual, en su `MODEL`
 pregunta:
 
 ```js
-var sameCode = __quixEngine.sameCode;
+var sameCode = quix.engine.sameCode;
 if (!sameCode(original, MODEL['Game_Event.isStarting'])) return original;
 ```
 
@@ -102,8 +103,8 @@ Se usa al instalar el hook (o la primera vez que se usa), no en cada imagen.
 De donde sale:
 
 ```
-al arrancar (main)     engine_api.c crea la global __quixEngine (las nativas de cada motor)
-                       y ejecuta same-code.js una vez: agrega __quixEngine.sameCode
+al arrancar (main)     engine_api.c crea la global quix.engine (las nativas de cada motor)
+                       y ejecuta same-code.js una vez: agrega quix.engine.sameCode
 al cargar el juego     hooks.c instala cada hook; el hook pregunta
                        sameCode(original, MODEL[...]) y deja la original si no es igual
 ```

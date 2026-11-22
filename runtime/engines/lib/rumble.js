@@ -4,7 +4,7 @@
 // grave; debil: el pequeno, un temblor agudo) y cuanto dura; [0, 0, ms] es
 // una pausa.
 //
-//   var rumble = __quixEngine.lib('rumble');
+//   var rumble = quix.engine.lib('rumble');
 //   rumble.play('heartbeat');                  // un preset (ver PRESETS)
 //   rumble.play([[1, 1, 80], [0.3, 0.6, 120]]); // unos pasos propios
 //   rumble.names();                            // los presets
@@ -17,7 +17,7 @@
 // momento de la partida.
 //
 // El archivo es una funcion que devuelve lo que exporta; la llama
-// __quixEngine.lib la primera vez que se pide (runtime/hooks/hooks.c).
+// quix.engine.lib la primera vez que se pide (runtime/hooks/hooks.c).
 function () {
   function times(n, steps) {
     var out = [];

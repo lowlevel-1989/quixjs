@@ -40,7 +40,7 @@ function step() {
     T.equal($gameSystem._encounterEnabled, false, 'its symbol is set');
     T.ok($gameSystem._quix && $gameSystem._quix.cheats === true, 'the playthrough is marked (saved with it)');
     T.equal($gameSystem._quix.orig.encounters, true, 'the value before the cheat is kept');
-    T.ok(!quix.achievementUnlocked('rich'), 'no achievements for a marked playthrough');
+    T.ok(!quix.achievements.unlocked('rich'), 'no achievements for a marked playthrough');
   });
   // el juego vuelve a encender los encuentros (al cambiar de mapa, por ejemplo)
   if (frame === 9) $gameSystem._encounterEnabled = true;
@@ -48,7 +48,7 @@ function step() {
 
   T.test('the cheat holds while it is on', function () {
     T.equal($gameSystem._encounterEnabled, false, 'set again after the game changed it');
-    T.ok(!quix.achievementUnlocked('rich'), 'still no achievements');
+    T.ok(!quix.achievements.unlocked('rich'), 'still no achievements');
   });
   T.done();
 }

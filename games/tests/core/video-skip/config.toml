@@ -2,12 +2,11 @@
 # termino. Asignar src empieza a cargarlo (como en el navegador), y load()
 # despues no lo carga dos veces
 [game]
-cache_dir = "cache/tests/core/video-skip"
-game_dir  = "games/tests/core/video-skip"
+rom       = "."
 width     = 64
 height    = 64
 
 [scripts]
 libs     = []
-includes = ["../../lib/assert.js"]
+includes = ["../lib/assert.js"]
 entry    = "main.js"

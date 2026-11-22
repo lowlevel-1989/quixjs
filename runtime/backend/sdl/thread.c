@@ -49,10 +49,24 @@ static double mono_ms(void) {
 // (esta parado cargando), el thread vuelve a mostrar la ultima con el aviso
 #define LOADING_REPAINT_MS 250
 
+// Lo que el thread que presenta toma del backend para dibujar cada imagen:
+// el texto del contador, los avisos, el escalado y la lupa (Options y el
+// mando los cambian mientras se juega)
+static void shadow_update(Backend *shadow, Backend *backend, const char *overlay, Toast toast) {
+  memcpy(shadow->overlay, overlay, sizeof shadow->overlay);
+  shadow->toast = toast;
+  shadow->loading = backend_loading_visible(backend);
+  shadow->scaling = backend->scaling;
+  shadow->magnify = backend->magnify;
+  shadow->mag_size = backend->mag_size;
+  shadow->mag_x = backend->mag_x;
+  shadow->mag_y = backend->mag_y;
+}
+
 static int present_thread(void *arg) {
   Backend *backend = arg;
   SDLPlatformData *data = backend->platform_data;
-  Backend shadow;   // el texto del contador y el aviso de la imagen
+  Backend shadow;   // lo que dibuja del backend (shadow_update)
   memset(&shadow, 0, sizeof shadow);
   int ok = SDL_GL_MakeCurrent(data->window, data->gl) == 0;
   SDL_LockMutex(data->mx);
@@ -99,9 +113,7 @@ static int present_thread(void *arg) {
       data->job_busy = 1;
       SDL_UnlockMutex(data->mx);
       for (int i = 0; i < last.n; i++) last.layers[i].dirty = 0;
-      memcpy(shadow.overlay, last.overlay, sizeof shadow.overlay);
-      shadow.toast = last.toast;
-      shadow.loading = backend_loading_visible(backend);
+      shadow_update(&shadow, backend, last.overlay, last.toast);
       draw_layers(&shadow, data, last.layers, last.n, last.ww, last.wh, 0);
       qgl.Flush();
       SDL_LockMutex(data->mx);
@@ -137,9 +149,7 @@ static int present_thread(void *arg) {
 #else
     gpu_driver()->thread_wait(job.fence);
 #endif
-    memcpy(shadow.overlay, job.overlay, sizeof shadow.overlay);
-    shadow.toast = job.toast;
-    shadow.loading = backend_loading_visible(backend);
+    shadow_update(&shadow, backend, job.overlay, job.toast);
     draw_layers(&shadow, data, job.layers, job.n, job.ww, job.wh, 0);
     last = job;
     have_last = 1;

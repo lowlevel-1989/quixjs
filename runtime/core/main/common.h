@@ -26,6 +26,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <sys/stat.h>
 #include <time.h>
 #include "platform/platform.h"
 #include "core/url.h"
@@ -41,6 +42,7 @@
 #include "core/timer.h"
 #include "core/app_context.h"
 #include "core/gen_config.h"
+#include "core/sandbox.h"
 #include "core/input_script.h"
 #include "core/debug_server.h"
 #include "binding/timer.h"

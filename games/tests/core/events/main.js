@@ -1,4 +1,4 @@
-// EventTarget, Event y teclado (quix.pressKey -> keydown/keyup)
+// EventTarget, Event y teclado (quix.input.pressKey -> keydown/keyup)
 
 T.test('addEventListener / dispatchEvent', function () {
   var calls = [];
@@ -49,18 +49,18 @@ if (typeof quix === 'undefined') {
 } else {
   var keys = [];
   // con ventana (-b sdl) tambien llegan las teclas reales: solo cuentan las
-  // que pulsa el test (quix.pressKey las marca con quixSynthetic)
+  // que pulsa el test (quix.input.pressKey las marca con quixSynthetic)
   function mine(e) { return e.quixSynthetic === true; }
   document.addEventListener('keydown', function (e) { if (mine(e)) keys.push('doc:' + e.type + ':' + e.key + ':' + e.code + ':' + e.keyCode); });
   window.addEventListener('keydown', function (e) { if (mine(e)) keys.push('win:' + e.key); });
   window.addEventListener('keyup', function (e) { if (mine(e)) keys.push('up:' + e.keyCode); });
 
-  quix.pressKey('ArrowLeft', 'down');
-  quix.pressKey('KeyA');           // down + up
-  quix.pressKey('Enter', 'up');
+  quix.input.pressKey('ArrowLeft', 'down');
+  quix.input.pressKey('KeyA');           // down + up
+  quix.input.pressKey('Enter', 'up');
 
-  T.test('quix.pressKey bad code', function () {
-    T.throws(function () { quix.pressKey('NoSuchKey'); }, 'unknown code throws');
+  T.test('quix.input.pressKey bad code', function () {
+    T.throws(function () { quix.input.pressKey('NoSuchKey'); }, 'unknown code throws');
   });
 
   setTimeout(function () {

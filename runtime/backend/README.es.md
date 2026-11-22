@@ -5,7 +5,7 @@
 Ventana, entrada y presentación del frame. `backend.h` es la interfaz común
 (una tabla de funciones) y `backend.c` llama al backend elegido con `-b`. Los
 backends dejan las teclas en una cola de entrada; `core/main.c` las saca y las
-convierte en KeyboardEvent. `quix.pressKey()` usa la misma cola.
+convierte en KeyboardEvent. `quix.input.pressKey()` usa la misma cola.
 
 | archivo           | de qué se encarga |
 |-------------------|-------------------|

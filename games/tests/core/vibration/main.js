@@ -1,6 +1,6 @@
 // navigator.vibrate (ms o un patron), gamepad.vibrationActuator (playEffect
 // con su promesa: 'complete' al acabar, 'preempted' si otro lo corta) y los
-// presets de __quixEngine.lib('rumble')
+// presets de quix.engine.lib('rumble')
 T.test('navigator.vibrate', function () {
   T.equal(navigator.vibrate(50), true, 'ms');
   T.equal(navigator.vibrate([30, 20, 30]), true, 'a pattern');
@@ -8,7 +8,7 @@ T.test('navigator.vibrate', function () {
   T.equal(navigator.vibrate([]), true, '[] stops');
 });
 
-var rumble = __quixEngine.lib('rumble');
+var rumble = quix.engine.lib('rumble');
 T.test('presets', function () {
   var names = rumble.names();
   ['heartbeat', 'impact', 'heavy-impact', 'fade', 'quake', 'alarm', 'sting', 'tick'].forEach(function (n) {
@@ -23,7 +23,7 @@ T.test('presets', function () {
   T.equal(rumble.play('nope'), false, 'an unknown preset does not play');
 });
 
-var pad = quix.pressPad(0, 'press');
+var pad = quix.input.pressPad(0, 'press');
 if (pad < 0) {
   T.ok(true, 'no test gamepad (' + quix.backend + '), skipped');
   T.done();

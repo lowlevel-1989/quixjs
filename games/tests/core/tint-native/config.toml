@@ -1,12 +1,11 @@
 [game]
-cache_dir = "cache/tests/core/tint-native"
-game_dir  = "games/tests/core/tint-native"
+rom       = "."
 width     = 64
 height    = 64
 
 [scripts]
 libs     = []
-includes = ["../../lib/assert.js"]
+includes = ["../lib/assert.js"]
 entry    = "main.js"
 
 # rpgmaker-mv/tint-native: el recoloreado de los sprites en C, con el mismo

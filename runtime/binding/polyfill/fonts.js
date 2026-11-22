@@ -19,10 +19,12 @@
   }
   FontFace.prototype.load = function () {
     if (this.status === 'unloaded') {
+      var s = this.source;
+      var bytes = s && typeof s === 'object' && (s instanceof ArrayBuffer || ArrayBuffer.isView(s));
       if (
-        typeof this.source === 'string' &&
         g.quix &&
-        quix.registerFont(this.family, srcUrl(this.source))
+        (typeof s === 'string' ? quix.fonts.register(this.family, srcUrl(s))
+         : bytes && quix.fonts.register(this.family, s))
       ) {
         this.status = 'loaded';
         this._resolve(this);
@@ -57,7 +59,7 @@
       var m = /\d+(?:\.\d+)?(?:px|pt|em)\s+(.*)$/.exec(String(font));
       if (!m) return false;
       return m[1].split(',').some(function (f) {
-        return g.quix ? quix.hasFont(familyName(f)) : false;
+        return g.quix ? quix.fonts.has(familyName(f)) : false;
       });
     },
     load: function (font) {

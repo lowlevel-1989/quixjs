@@ -17,7 +17,7 @@
  */
 #pragma once
 
-// Las funciones nativas comunes a RPG Maker MV y MZ (__quixEngine["rpgmaker"]).
+// Las funciones nativas comunes a RPG Maker MV y MZ (quix.engine["rpgmaker"]).
 // Una nativa nueva: su .c, su declaracion aqui y una linea en natives.c.
 
 #include "js/js.h"

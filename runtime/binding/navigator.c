@@ -16,7 +16,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-// navigator: userAgent, platform, language, getGamepads() (la Gamepad API) y
+// navigator: userAgent, platform, language(s), getGamepads() (la Gamepad API) y
 // vibrate() (la Vibration API).
 
 #include <stdio.h>
@@ -99,7 +99,17 @@ JSValue js_create_navigator(JSContext *ctx) {
   JSValue navigator = JS_NewObject(ctx);
   JS_SetPropertyStr(ctx, navigator, "userAgent", JS_NewString(ctx, "Mozilla/5.0 (Linux) quixjs"));
   JS_SetPropertyStr(ctx, navigator, "platform", JS_NewString(ctx, "Linux"));
-  JS_SetPropertyStr(ctx, navigator, "language", JS_NewString(ctx, "en-US"));
+  // appVersion: lo que sigue a "Mozilla/" en userAgent (Howler lo lee al arrancar)
+  JS_SetPropertyStr(ctx, navigator, "appVersion", JS_NewString(ctx, "5.0 (Linux) quixjs"));
+  JS_SetPropertyStr(ctx, navigator, "vendor", JS_NewString(ctx, ""));   // Howler lo lee al acabar un sonido
+  // el idioma: [game] language del toml ("es", "pt-BR"...), por defecto "en";
+  // languages, la lista del preferido al ultimo, como en un navegador
+  AppContext *app = JS_GetContextOpaque(ctx);
+  const char *lang = app && app->cfg && app->cfg->game.language[0] ? app->cfg->game.language : "en";
+  JS_SetPropertyStr(ctx, navigator, "language", JS_NewString(ctx, lang));
+  JSValue langs = JS_NewArray(ctx);
+  JS_SetPropertyUint32(ctx, langs, 0, JS_NewString(ctx, lang));
+  JS_SetPropertyStr(ctx, navigator, "languages", langs);
   JS_SetPropertyStr(ctx, navigator, "maxTouchPoints", JS_NewInt32(ctx, 0));
   JS_SetPropertyStr(ctx, navigator, "onLine", JS_FALSE);
 

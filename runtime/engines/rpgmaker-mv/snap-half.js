@@ -24,7 +24,7 @@
 // llama runtime/hooks/hooks.c (hooks_install) al instalar el hook, cuando el
 // juego ya cargo sus scripts. Ver runtime/engines/README.md.
 function (original) {
-  var E = globalThis.__quixEngine && __quixEngine['rpgmaker-mv'];
+  var E = globalThis.quix.engine && quix.engine['rpgmaker-mv'];
   if (!E || !E.blur || typeof PIXI !== 'object' || !PIXI.RenderTexture) return original;
   // solo la de RPG Maker MV (snap y despues blur)
   var src = String(original);

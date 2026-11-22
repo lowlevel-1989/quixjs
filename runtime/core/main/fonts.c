@@ -62,7 +62,7 @@ static void register_css_fonts(const char *game_dir, const char *css_url) {
     if (!family[0] || !url[0] || strstr(url, "://")) continue;
     char rel[1024], path[1024];
     snprintf(rel, sizeof(rel), "%s%s", url[0] == '/' ? "" : dir, url[0] == '/' ? url + 1 : url);
-    if (url_resolve(game_dir, rel, path, sizeof(path)) != URL_FILE || access(path, R_OK) != 0) continue;
+    if (url_resolve(game_dir, rel, path, sizeof(path)) != URL_FILE || !url_exists(path)) continue;
     if (font_register(family, path) == 0) printf("Font: %s -> %s (%s)\n", family, path, css_url);
   }
   free(css);

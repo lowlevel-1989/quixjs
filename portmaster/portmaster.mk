@@ -25,7 +25,7 @@ PM_SUITE    := buster
 PM_PACKAGES := libc6 libc6-dev linux-libc-dev libgcc1 libgcc-8-dev \
                libsdl2-2.0-0 libsdl2-dev libsdl2-image-2.0-0 libsdl2-image-dev \
                libsdl2-ttf-2.0-0 libsdl2-ttf-dev libfreetype6 libpng16-16 libjpeg62-turbo \
-               libtiff5 libwebp6 libjbig0 libzstd1 liblzma5 zlib1g fonts-dejavu-core \
+               libtiff5 libwebp6 libjbig0 libzstd1 liblzma5 zlib1g zlib1g-dev fonts-dejavu-core \
                libgles2-mesa-dev mesa-common-dev libegl1-mesa-dev \
                libvpx5 libvpx-dev libopus0 libopus-dev
 # las que no traen todos los CFW: el video (libvpx, libopus) y SDL2_ttf. SDL2,
@@ -67,7 +67,7 @@ pm_ffmpeg_cflags = $(FFMPEG_CFLAGS) -I$(FFMPEG_DIR)/config/$(1)
 # JavaScriptCore, ICU y libc++ van dentro del binario (estaticos)
 pm_libs = -L$(PM_DEPS)/jsc-$(1)/lib -lJavaScriptCore -lWTF -lbmalloc $(JSC_EXTRA_$(1)) \
           -licui18n -licuuc -licudata -l:libc++.a -l:libc++abi.a \
-          -lvpx -lopus -lSDL2_ttf -lSDL2_image -lSDL2 -lm -lpthread -ldl -Wl,--gc-sections -Wl,--strip-all \
+          -lvpx -lopus -lz -lSDL2_ttf -lSDL2_image -lSDL2 -lm -lpthread -ldl -Wl,--gc-sections -Wl,--strip-all \
           -Wl,--allow-shlib-undefined -Wl,--disable-new-dtags -Wl,-rpath,'$$$$ORIGIN/libs.$(1)' -static-libgcc
 
 # con video siempre: WebM (nestegg + libvpx + libopus, estas dos en
@@ -127,7 +127,7 @@ $(foreach a,$(PM_ARCHES),$(foreach d,$(INDEX_FILES),$(eval $(PM)/$(a)/$(d).o: $(
 
 # 4. El .zip
 PM_STAGE := $(PM)/zip
-$(PM_ZIP): $(PM_BINS) portmaster/portmaster.mk portmaster/portmaster.sh tools/portmaster.py $(shell find $(PM_PORTDIR) -path $(PM_PORTDIR)/gamedata -prune -o -type f -print 2>/dev/null)
+$(PM_ZIP): $(PM_BINS) portmaster/portmaster.mk portmaster/portmaster.sh tools/portmaster.py $(shell find $(PM_PORTDIR) -path $(PM_PORTDIR)/gamedata -prune -o -path $(PM_PORTDIR)/cache -prune -o -type f -not -name '*.zip' -not -name '*.nw' -print 2>/dev/null) $(PM_PORTDIR)/COPY_THE_GAME_HERE.txt
 	rm -rf $(PM_STAGE) && mkdir -p $(PM_STAGE)
 	# el script .sh, port.json y gameinfo.xml salen del port.toml del port
 	PM_ARCHES="$(PM_ARCHES)" python3 tools/portmaster.py $(PM_PORTDIR)/port.toml $(PM_STAGE)
@@ -135,9 +135,11 @@ $(PM_ZIP): $(PM_BINS) portmaster/portmaster.mk portmaster/portmaster.sh tools/po
 	if [ -f $(PM_PORTDIR)/README.es.md ]; then cp $(PM_PORTDIR)/README.es.md $(PM_STAGE)/$(PORT)/; fi
 	# los mods que trae el port (mods/<nombre>/, se activan en la opcion Mods)
 	if [ -d $(PM_PORTDIR)/mods ]; then cp -r $(PM_PORTDIR)/mods $(PM_STAGE)/$(PORT)/; fi
-	# los scripts propios del port (games/hexgl/menu.js), junto a port.toml
+	# los scripts propios del port (games/hexgl/entry.js), junto a port.toml
 	for f in $(wildcard $(PM_PORTDIR)/*.js); do cp $$f $(PM_STAGE)/$(PORT)/; done
 	mkdir -p $(PM_STAGE)/$(PORT)/licenses $(PM_STAGE)/$(PORT)/gamedata
+	# el aviso de que copiar ahi: la rom del juego, junto a port.toml
+	cp $(PM_PORTDIR)/COPY_THE_GAME_HERE.txt $(PM_STAGE)/$(PORT)/
 	# cada arquitectura: su quixjs y sus librerias en libs.ARCH/
 	set -e; for a in $(PM_ARCHES); do \
 	  cp $(PM)/quixjs.$$a $(PM_STAGE)/$(PORT)/; \

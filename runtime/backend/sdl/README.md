@@ -27,11 +27,14 @@ editor by itself.
 | `input.c` | keyboard and gamepads: SDL keys as `KeyboardEvent.code`, the mapping of a gamepad (Controls of the launcher), fullscreen, title, refresh rate and the event queue (`sdl_process_events`) |
 | `overlay.c` | what is drawn over the game at the resolution of the window: the `--fps` counter, the notice of an achievement and the loading notice |
 | `draw.c` | showing a frame: the canvas layers scaled to the window and the buffer swap |
+| `magnifier.c` | the magnifier (Select + L1): open and close it, its buttons, moving it, hiding the gamepad from the game, the box and its icon |
 | `thread.c` | the thread that presents (`[engine] present_ahead`): it gets each frame with its time and shows it then, without the game waiting |
 | `present.c` | handing over a frame: with the thread or without it (`gpu_present` and the `Presenter` of the driver), repainting during a load, and the three entries of the backend (`present_layers`, `present`, `present_gl`) |
-| `gamepads.c` | `getGamepads`: the state of the gamepads in the "standard" mapping, read from SDL once per frame (the same until the events of the next one; a press shorter than a frame is seen in all the reads of that frame), and the test gamepad (`quix.pressPad`) |
+| `gamepads.c` | `getGamepads`: the state of the gamepads in the "standard" mapping, read from SDL once per frame (the same until the events of the next one; a press shorter than a frame is seen in all the reads of that frame), and the test gamepad (`quix.input.pressPad`) |
 | `api.c` | close, the `BackendInterface` table and `sdl_backend_create` |
 
-Compiled apart (not parts): `mapper.c`, the mapping of a gamepad to the
-buttons of the game (Controls of the launcher). `backend.h` is what the rest
+Compiled apart (not parts): `mapper.c`, the mapping of a gamepad or of the
+keyboard to the buttons of the game (Controls of the launcher), and
+`keypad.c`, the keyboard as a gamepad (`keyboard.map`: the assigned keys come
+in through the same standard gamepad as the buttons). `backend.h` is what the rest
 of quixjs sees: `sdl_backend_create`.

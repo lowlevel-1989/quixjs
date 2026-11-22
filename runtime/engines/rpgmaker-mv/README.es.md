@@ -58,10 +58,13 @@ los pone cada port en su propio `[hooks]`.
 | `save-picture-small.js` | `SceneManager.snapForSave` | port de Firework (KJ_Menu): la foto que guarda para la partida, en cada cambio de mapa, menu y guardado automatico, se lee de la GPU a un cuarto de la resolucion (de ~450 ms a ~100 ms en la RG CubeXX); el juego no la muestra |
 | `skip-hidden-sprites.js` | `Sprite_Character.prototype.update` | del motor (aun sin comprobar): los sprites sin imagen o fuera de la pantalla no se actualizan mientras sigan así |
 | `terrax-lights-only.js`  | `Spriteset_Map.prototype.update` | TerraxLighting solo recorre los eventos cuya nota es una luz |
+| `terrax-mask-scale.js`  | `Spriteset_Map.prototype.createLightmask` | en lugar de `gpu-canvas`: la máscara de luces de TerraxLighting en la GPU y a la resolución con la que se ve el juego (`render_scale`); en Firework en una RG CubeXX, caminando a 30 fps estables (antes, casi un tercio de las imágenes pasaba de 38 ms) |
 | `snap-half.js`           | `SceneManager.snapForBackground` | la foto desenfocada detras del menu y las batallas se lee de la GPU a media resolucion y C la amplia antes del desenfoque: la cuarta parte de `readPixels` (de 113 ms a 29 ms en la RG CubeXX, donde leer de la GPU es lento); algo mas borrosa que la original |
+| `transfer-no-snap.js`   | `SceneManager.snapForBackground` | port de Firework: al pasar de un mapa a otro no se hace la foto desenfocada para el fondo de los menus (ni la de MK_SceneGradualOut, salvo si va a hacer su fundido): no se usan, y en la RG CubeXX eran ~1 s de pantalla quieta en cada cambio de mapa |
+| `tilemap-no-clear.js`   | `Spriteset_Map.prototype.createTilemap` | port de Firework: el tilemap no borra su textura (4 MB de ceros) antes de subir cada tileset nuevo; no se ve, porque muestrea con NEAREST y cada tile lee solo dentro de su tileset |
 | `tone-filter-when-needed.js` | `Spriteset_Base.prototype.updateToneChanger` | del motor (aun sin comprobar): con tono 0,0,0,0 se quita el ToneFilter de la capa base (dos pasadas de pantalla completa menos por imagen) |
 | `playthrough.js`         | | no es un hook: la partida en curso (`$gameSystem._quix`) para los trucos y los logros |
-| `natives.c`, `natives.h` | | la lista de funciones nativas (`__quixEngine["rpgmaker-mv"]`) |
+| `natives.c`, `natives.h` | | la lista de funciones nativas (`quix.engine["rpgmaker-mv"]`) |
 
 Medido en una RG CubeXX con Fear & Hunger: `requestImages` era el 35% del
 tiempo de JS en un mapa con 60 eventos paralelos, `skipBranch` recorría allí
@@ -99,7 +102,7 @@ partida.
            ...   // lo que escribio el paso 2
        }
      };
-     var sameCode = __quixEngine.sameCode;
+     var sameCode = quix.engine.sameCode;
      if (!sameCode(original, MODEL['Game_Event.isNearThePlayer'])) return original;
      return function () {
        // la version rapida, con el mismo resultado
@@ -130,5 +133,6 @@ lineas) en su cabecera. Gracias a sus autores.
 | `yep-enemy-name-refresh.js`, `yep-enemy-select-refresh.js` | YEP_BattleEngineCore v1.39b, Yanfly Engine Plugins ([yanfly.moe](https://yanfly.moe/yep/)) |
 | `olivia-meta-fast.js`, `refresh-on-net-change.js` | Olivia_MetaControls v1.6.1, Fallen Angel Olivia ([pagina](https://fallenangelolivia.itch.io/meta-controls)) |
 | `terrax-lights-only.js` | TerraxLighting v1.3.1, Terrax (MIT; sin pagina oficial: la copia que trae el juego) |
+| `terrax-mask-scale.js` | TerraxLighting v1.3.1, Terrax (MIT; sin pagina oficial: la copia que trae el juego) |
 | `interpreter-fast.js` | YEP_GabWindow v1.05, Yanfly Engine Plugins ([yanfly.moe](https://yanfly.moe/yep/)) |
 | `fluid-timestep-cap.js` | TDDP_FluidTimestep v1.0.2, Tor Damian Design ([pagina](http://mvplugins.tordamian.com/?p=437)) |

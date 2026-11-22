@@ -65,8 +65,8 @@ function run() {
 
   T.test('gpu-canvas hook', function () {
     T.ok(gl, 'WebGL is available');
-    T.ok(quix.isGpuCanvas(gpu), 'the canvas made inside the hooked function goes to the GPU');
-    T.ok(!quix.isGpuCanvas(cpu), 'one made outside does not');
+    T.ok(quix.gpu.isCanvas(gpu), 'the canvas made inside the hooked function goes to the GPU');
+    T.ok(!quix.gpu.isCanvas(cpu), 'one made outside does not');
   });
 
   paintMask(gpu.getContext('2d'));
@@ -80,7 +80,7 @@ function run() {
       var diff = Math.max.apply(null, ga.map(function (v, k) { return Math.abs(v - cb[k]); }));
       T.ok(diff <= 6, 'pixel ' + p + ': gpu ' + ga + ' cpu ' + cb);
     });
-    T.ok(quix.isGpuCanvas(gpu), 'reading it with drawImage keeps it on the GPU');
+    T.ok(quix.gpu.isCanvas(gpu), 'reading it with drawImage keeps it on the GPU');
   });
 
   T.test('upload to WebGL on the GPU', function () {
@@ -121,7 +121,7 @@ function run() {
     gl.bindTexture(gl.TEXTURE_2D, tex);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, gpu);
     T.equal(texel(tex, 20, 50), '0,255,0,255', 'repainted and uploaded again: the texture has the new pixels');
-    T.ok(quix.isGpuCanvas(gpu), 'still on the GPU');
+    T.ok(quix.gpu.isCanvas(gpu), 'still on the GPU');
     // WebGL borra la textura: el canvas sigue con lo suyo
     gl.deleteTexture(tex);
     var after = pixelsOf(gpu), i2 = (50 * 100 + 20) * 4;
@@ -156,7 +156,7 @@ function run() {
   T.test('what the GPU does not do goes back to the CPU', function () {
     var ctx = gpu.getContext('2d');
     var d = ctx.getImageData(35, 40, 1, 1).data;
-    T.ok(!quix.isGpuCanvas(gpu), 'getImageData takes it to the CPU');
+    T.ok(!quix.gpu.isCanvas(gpu), 'getImageData takes it to the CPU');
     var b = pixelsOf(cpu), i = (40 * 100 + 35) * 4;
     T.ok(Math.abs(d[0] - b[i]) <= 6, 'with what was drawn on the GPU: ' + d[0] + ' vs ' + b[i]);
     ctx.fillStyle = '#00ff00';
@@ -188,7 +188,7 @@ function run() {
     cc.drawImage(g, 0, 0);
     T.pixel(cc, 10, 10, [32, 64, 0, 255], 1, 'only the last repaint: the red is gone');
     T.pixel(cc, 90, 90, [32, 64, 0, 255], 1, 'lighter black changed nothing, the tint added up');
-    T.ok(quix.isGpuCanvas(g), 'still on the GPU');
+    T.ok(quix.gpu.isCanvas(g), 'still on the GPU');
   });
 
   T.test('resize clears a GPU canvas', function () {
@@ -206,7 +206,7 @@ function run() {
     cc.drawImage(g, 0, 0);
     T.pixel(cc, 30, 30, [0, 0, 0, 0], 0, 'the old red is gone');
     T.pixel(cc, 5, 5, [0, 0, 255, 128], 2, 'half blue on transparent');
-    T.ok(quix.isGpuCanvas(g), 'still on the GPU');
+    T.ok(quix.gpu.isCanvas(g), 'still on the GPU');
   });
 }
 

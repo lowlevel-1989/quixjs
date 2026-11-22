@@ -77,6 +77,11 @@ static void sdl_read_gamepads(SDLPlatformData* data) {
     p->pressed[7] = p->value[7] > 0.5f;
     count = i + 1;
   }
+  // el teclado (keyboard.map): por el mismo canal, el primer mando
+  if (keypad_active()) {
+    keypad_merge(&data->pad_cache[0]);
+    if (count == 0) count = 1;
+  }
   data->pad_count = count;
   data->pad_cache_valid = 1;
 }
@@ -86,6 +91,7 @@ static int sdl_get_gamepads(Backend* backend, GamepadState *pads, int max) {
   if (!data->pad_cache_valid) sdl_read_gamepads(data);
   int n = max < GAMEPAD_MAX ? max : GAMEPAD_MAX;
   if (n > 0) memcpy(pads, data->pad_cache, sizeof(GamepadState) * n);
+  magnifier_hide_pads(backend, pads, n);
   return data->pad_count < n ? data->pad_count : n;
 }
 

@@ -1,7 +1,7 @@
 // tile-index: objetos agrupados por casilla (x, y), para no recorrer una
 // lista entera cada vez que se pregunta por una casilla.
 //
-//   var tiles = __quixEngine.lib('tile-index');
+//   var tiles = quix.engine.lib('tile-index');
 //   var index = tiles.create();
 //   index.add(e._x, e._y, e);   // en el orden en que se agregan
 //   index.at(x, y);             // una copia de la lista de esa casilla ([] si no hay)
@@ -11,7 +11,7 @@
 // hook que lo usa (rpgmaker-mv/find-path-index). Ver runtime/engines/README.md.
 //
 // El archivo es una funcion que devuelve lo que exporta; la llama
-// __quixEngine.lib la primera vez que se pide (runtime/hooks/hooks.c).
+// quix.engine.lib la primera vez que se pide (runtime/hooks/hooks.c).
 function () {
   function key(x, y) {
     return (x + 32768) * 65536 + (y + 32768);

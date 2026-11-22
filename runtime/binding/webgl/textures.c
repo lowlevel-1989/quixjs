@@ -245,6 +245,107 @@ static void texture_size(WebGLCtx *w, GLenum target, GLint level, long width, lo
   t->size = bytes;
 }
 
+// ---- texturas que se rellenan cuando la imagen termina de decodificarse
+// Una imagen sin pixeles ([engine] lazy_images) se decodificaba al subirla,
+// en ese momento: hasta 0,5 s por hoja de sprites en una handheld, cuando
+// aparece un enemigo o un disparo nuevo. Ahora la textura se crea vacia, de
+// su tamano, y la imagen se decodifica en el thread de trabajo; al terminar
+// se rellena con las mismas opciones (premultiply, flip_y) y, si el juego
+// pidio mipmaps, se rehacen. Unas imagenes sin ella, no una parada.
+// Mientras, la textura es transparente: vacia (NULL) la GPU mostraba lo que
+// hubiera en esa memoria (Super Smiling Dungeon: un cuadro azul de ruido en
+// el humo de una explosion y botones rotos). Las pequenas (un fotograma de
+// una animacion, un boton) no esperan: se decodifican al momento, como sin
+// lazy_images.
+#define PENDING_MAX 64
+#define LATER_MIN_BYTES (512 * 1024)
+typedef struct {
+  GLuint tex;
+  int    premultiply, flip_y, mipmap;
+  int    used;
+} PendingTex;
+static PendingTex pending[PENDING_MAX];
+
+static void pending_fill(void *user, uint8_t *px, int width, int height) {
+  PendingTex *p = user;
+  if (p->used && p->tex && px) {
+    WebGLCtx tmp = { 0 };
+    tmp.premultiply = p->premultiply;
+    tmp.flip_y = p->flip_y;
+    uint8_t *conv = prepare_pixels(&tmp, px, width, height);
+    GLint bound = 0, align = 4;
+    qgl.GetIntegerv(GL_TEXTURE_BINDING_2D, &bound);
+    qgl.GetIntegerv(GL_UNPACK_ALIGNMENT, &align);
+    qgl.BindTexture(GL_TEXTURE_2D, p->tex);
+    qgl.PixelStorei(GL_UNPACK_ALIGNMENT, 4);
+    qgl.TexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, conv ? conv : px);
+    if (p->mipmap) qgl.GenerateMipmap(GL_TEXTURE_2D);
+    qgl.PixelStorei(GL_UNPACK_ALIGNMENT, align);
+    qgl.BindTexture(GL_TEXTURE_2D, (GLuint)bound);
+    prepare_done(conv);
+  }
+  p->used = 0;
+  p->tex = 0;
+}
+
+static PendingTex *pending_of(GLuint tex) {
+  for (int i = 0; tex && i < PENDING_MAX; i++)
+    if (pending[i].used && pending[i].tex == tex) return &pending[i];
+  return NULL;
+}
+
+// la textura se borra o se vuelve a subir: lo que llegue despues no la toca
+static void pending_forget(GLuint tex) {
+  PendingTex *p = pending_of(tex);
+  if (p) p->tex = 0;   // used sigue hasta que llegue la entrega (que la ignora)
+}
+
+static void evict_track(JSContext *ctx, WebGLCtx *w, GLuint tex, JSValueConst img, long bytes);
+static void evict_mipmap(GLuint tex);
+
+// texImage2D con una imagen sin pixeles: la textura vacia y la decodificacion
+// en segundo plano. 0 si se hizo asi
+static int upload_later(JSContext *ctx, WebGLCtx *w, GLenum target, GLint level, JSValueConst img) {
+  if (target != GL_TEXTURE_2D || level != 0) return -1;
+  int nw = 0, nh = 0;
+  if (js_image_natural_size(ctx, img, &nw, &nh) != 0 || (long)nw * nh * 4 < LATER_MIN_BYTES) return -1;
+  GLuint tex = bound_texture_2d();
+  PendingTex *p = NULL;
+  for (int i = 0; tex && i < PENDING_MAX && !p; i++)
+    if (!pending[i].used) p = &pending[i];
+  if (!p) return -1;
+  int width = 0, height = 0;
+  p->used = 1;
+  p->tex = tex;
+  p->premultiply = w->premultiply;
+  p->flip_y = w->flip_y;
+  p->mipmap = 0;
+  if (js_image_decode_pixels(ctx, img, &width, &height, pending_fill, p) != 0) {
+    p->used = 0;
+    p->tex = 0;
+    return -1;
+  }
+  uint8_t *clear = calloc((size_t)width * height, 4);   // transparente hasta que llegue
+  qgl.TexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, clear);
+  free(clear);
+  texture_size(w, target, level, width, height);
+  js_image_uploaded(ctx, img);
+  evict_track(ctx, w, tex, img, (long)width * height * 4);   // se puede soltar (evict.c)
+  return 0;
+}
+
+// generateMipmap de una textura que aun se va a rellenar: tambien despues
+static JSValue js_gl_generateMipmap(ARGS) {
+  CTX();
+  if (u(0) == GL_TEXTURE_2D) {
+    PendingTex *p = pending_of(bound_texture_2d());
+    if (p) p->mipmap = 1;
+    evict_mipmap(bound_texture_2d());
+  }
+  qgl.GenerateMipmap(u(0));
+  return JS_UNDEFINED;
+}
+
 static JSValue js_gl_texImage2D(ARGS) {
   backend_loading_poke();   // un trabajo largo: el aviso de carga, si toca
   CTX();
@@ -253,7 +354,12 @@ static JSValue js_gl_texImage2D(ARGS) {
   if (argc == 6) {
     // texImage2D(target, level, internalformat, format, type, source)
     if (gpu_canvas_copy(ctx, w, argv[5], target, level, 0, 0, 0) == 0) return JS_UNDEFINED;
-    if (target == GL_TEXTURE_2D) copy_cache_forget(bound_texture_2d());
+    if (target == GL_TEXTURE_2D) {
+      copy_cache_forget(bound_texture_2d());
+      pending_forget(bound_texture_2d());
+      evict_forget(ctx, bound_texture_2d());   // otra imagen: upload_later la vuelve a apuntar
+    }
+    if (upload_later(ctx, w, target, level, argv[5]) == 0) return JS_UNDEFINED;
     const uint8_t *px;
     int width, height;
     if (source_pixels(ctx, argv[5], &px, &width, &height) != 0) return JS_UNDEFINED;
@@ -272,7 +378,11 @@ static JSValue js_gl_texImage2D(ARGS) {
     js_image_uploaded(ctx, argv[5]);
   } else if (argc >= 8) {
     // texImage2D(target, level, internalformat, width, height, border, format, type, pixels)
-    if (target == GL_TEXTURE_2D) copy_cache_forget(bound_texture_2d());
+    if (target == GL_TEXTURE_2D) {
+      copy_cache_forget(bound_texture_2d());
+      pending_forget(bound_texture_2d());
+      evict_forget(ctx, bound_texture_2d());   // otro contenido: ya no se suelta
+    }
     size_t len = 0;
     uint8_t *p = (argc > 8 && JS_IsObject(argv[8])) ? bytes_of(ctx, argv[8], &len) : NULL;
     qgl.TexImage2D(target, level, n(2), n(3), n(4), n(5), u(6), u(7), p);
@@ -284,6 +394,7 @@ static JSValue js_gl_texImage2D(ARGS) {
 static JSValue js_gl_texSubImage2D(ARGS) {
   backend_loading_poke();   // un trabajo largo: el aviso de carga, si toca
   CTX();
+  if (u(0) == GL_TEXTURE_2D) evict_forget(ctx, bound_texture_2d());   // el juego la cambia: no se suelta
   if (argc == 7) {
     // texSubImage2D(target, level, x, y, format, type, source)
     if (gpu_canvas_copy(ctx, w, argv[6], u(0), n(1), 1, n(2), n(3)) == 0) return JS_UNDEFINED;

@@ -246,3 +246,9 @@ int platform_vibrate(int ms, int amplitude) {
   (void)amplitude;
   return 0;
 }
+
+// las capturas se quedan en screenshots/ del port
+int platform_add_picture(const char *path) {
+  (void)path;
+  return 0;
+}

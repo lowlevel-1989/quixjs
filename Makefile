@@ -16,7 +16,7 @@ JSC_LIBS = $(JSC_BUILD)/lib/libJavaScriptCore.a $(JSC_BUILD)/lib/libWTF.a $(JSC_
 
 CFLAGS = -g -O2 -D_GNU_SOURCE
 CFLAGS += -Iruntime -Iruntime/thirdparty -Iruntime/thirdparty/tomlc17 -Iobj/gen $(JSC_CFLAGS)
-LDFLAGS = -lm -lpthread -lSDL2_ttf -lSDL2_image -lSDL2 $(JSC_LIBS)
+LDFLAGS = -lm -lpthread -lz -lSDL2_ttf -lSDL2_image -lSDL2 $(JSC_LIBS)
 
 # Video: WebM (nestegg + libvpx + libopus, si estan instaladas; o VIDEO=1/0)
 # y MP4 (minimp4 + el H.264 y el AAC de FFmpeg, en runtime/thirdparty)
@@ -26,6 +26,14 @@ FFMPEG_ARCH ?= $(shell uname -m)
 ifeq ($(VIDEO),1)
 CFLAGS += -DQUIX_VIDEO $(shell pkg-config --cflags vpx opus) $(FFMPEG_INCLUDES)
 LDFLAGS += $(shell pkg-config --libs vpx opus)
+# el H.264 de FFmpeg en x86_64 usa ensamblador con direcciones fijas: no
+# cabe en un ejecutable PIE, lo que hace por defecto el gcc de Ubuntu (el del
+# CI: "relocation R_X86_64_32 ... can not be used when making a PIE"). Como
+# el de Fedora: un ejecutable normal
+ifeq ($(FFMPEG_ARCH),x86_64)
+CFLAGS += -fno-pie
+LDFLAGS += -no-pie
+endif
 CORE_SRCS_VIDEO = runtime/thirdparty/nestegg/nestegg.c $(FFMPEG_SRCS) $(FFMPEG_SRCS_$(FFMPEG_ARCH))
 endif
 
@@ -46,6 +54,7 @@ CORE_SRCS = runtime/js/jsc.c \
 						runtime/core/timer.c \
 						runtime/core/keymap.c \
 						runtime/core/url.c \
+						runtime/core/sandbox.c \
 						runtime/core/worker.c \
 						runtime/core/gen_config.c \
 						runtime/core/input_script.c \
@@ -77,6 +86,9 @@ CORE_SRCS = runtime/js/jsc.c \
 						runtime/binding/webgl.c \
 						runtime/audio/mixer.c \
 						runtime/audio/vorbis.c \
+						runtime/audio/mp3.c \
+						runtime/audio/wav.c \
+						runtime/audio/decoder.c \
 						runtime/binding/canvas/2d/context2d.c \
 						runtime/binding/canvas/2d/state.c \
 						runtime/binding/canvas/2d/style.c \
@@ -91,8 +103,10 @@ CORE_SRCS = runtime/js/jsc.c \
 						runtime/backend/dummy/backend.c \
 						runtime/backend/sdl.c \
 						runtime/backend/sdl/mapper.c \
+						runtime/backend/sdl/keypad.c \
 						runtime/launcher/ui.c \
 						runtime/launcher/launcher.c \
+						runtime/launcher/rom.c \
 						runtime/launcher/settings.c \
 						runtime/transfer/identity.c \
 						runtime/transfer/net.c \
@@ -103,6 +117,12 @@ CORE_SRCS = runtime/js/jsc.c \
 						runtime/lan/lan.c \
 						runtime/binding/lan.c \
 						runtime/achievements/achievements.c \
+						runtime/zip/zip.c \
+						runtime/zip/convert.c \
+						runtime/zip/asar.c \
+						runtime/rom/rom.c \
+						runtime/rom/rom_zip.c \
+						runtime/rom/rom_dir.c \
 						runtime/symbols/symbols.c \
 						runtime/cheats/cheats.c \
 						runtime/hooks/hooks.c \
@@ -110,7 +130,11 @@ CORE_SRCS = runtime/js/jsc.c \
 						runtime/engines/engine_api.c \
 						$(wildcard runtime/engines/*/*.c) \
 						runtime/core/watchdog.c \
+						runtime/core/dispatch.c \
+						runtime/core/save.c \
 						runtime/video/video.c \
+						runtime/video/video_webm.c \
+						runtime/video/video_mp4.c \
 						runtime/binding/video.c \
 						runtime/gfx/gpu2d.c \
 						runtime/platform/$(PLATFORM_OS)/platform.c \
@@ -141,9 +165,10 @@ $(GEN_ENGINES): $(ENGINE_FILES) tools/embed_engines.py
 GEN_POLYFILLS = obj/gen/polyfills.h
 $(GEN_POLYFILLS): $(wildcard runtime/binding/polyfill/*.js) tools/embed_js.py
 	python3 tools/embed_js.py $@ --table POLYFILLS runtime/binding/polyfill
-GEN_JS = obj/gen/js_nwjs.h obj/gen/js_webaudio.h obj/gen/js_gamepads.h obj/gen/js_profiler.h obj/gen/js_same_code.h
-obj/gen/js_nwjs.h: runtime/binding/nwjs.js tools/embed_js.py
-	python3 tools/embed_js.py $@ NWJS_JS $<
+GEN_NWJS = obj/gen/nwjs_parts.h
+$(GEN_NWJS): $(wildcard runtime/binding/nwjs/*.js) tools/embed_js.py
+	python3 tools/embed_js.py $@ --table NWJS_PARTS runtime/binding/nwjs
+GEN_JS = obj/gen/js_webaudio.h obj/gen/js_gamepads.h obj/gen/js_profiler.h obj/gen/js_same_code.h
 obj/gen/js_webaudio.h: runtime/binding/webaudio.js tools/embed_js.py
 	python3 tools/embed_js.py $@ WEBAUDIO_JS $<
 obj/gen/js_gamepads.h: runtime/binding/gamepads.js tools/embed_js.py
@@ -174,11 +199,11 @@ FORCE_TRACE:
 # solo incluye, en orden, las partes de la carpeta X/ y se compila como un
 # solo archivo, para que el compilador genere el mismo codigo que cuando era
 # uno. Su .o se recompila si cambia una parte
-INDEX_FILES = runtime/js/jsc runtime/binding/webgl runtime/backend/sdl runtime/core/main
+INDEX_FILES = runtime/js/jsc runtime/binding/webgl runtime/backend/sdl runtime/core/main runtime/core/gen_config
 $(foreach d,$(INDEX_FILES),$(eval $(d).o: $(wildcard $(d)/*.c)))
 
 # Las cabeceras propias: si cambia una, se recompila lo nuestro
-HEADERS = $(shell find runtime -name '*.h' -not -path 'runtime/thirdparty/*') $(GEN_SHADERS) $(GEN_ENGINES) $(GEN_POLYFILLS) $(GEN_JS) $(GEN_VERSION) $(GEN_TRACE)
+HEADERS = $(shell find runtime -name '*.h' -not -path 'runtime/thirdparty/*') $(GEN_SHADERS) $(GEN_ENGINES) $(GEN_POLYFILLS) $(GEN_NWJS) $(GEN_JS) $(GEN_VERSION) $(GEN_TRACE)
 
 ifeq ($(PLATFORM),portmaster)
 include portmaster/portmaster.mk

@@ -22,6 +22,7 @@
 // Parte de backend/sdl.c, que une las partes en orden y se compila como
 // un solo archivo (ver README.md): usa lo de las partes anteriores.
 
+#include <stdlib.h>
 #include "common.h"
 
 typedef struct {
@@ -141,6 +142,17 @@ static void pad_key(Backend* backend, SDLPlatformData* data, const char *name, i
     } else {
       if (data->pad_key_down[k] == 0 || --data->pad_key_down[k] != 0) continue;
     }
+    // las de quixjs ([controls] screenshot y magnifier): su boton suelto,
+    // ademas del combo
+    const char *code = backend->pad_keys[k].code;
+    if (strcmp(code, "quix:screenshot") == 0) {
+      if (down) backend->want_screenshot = 1;
+      continue;
+    }
+    if (strcmp(code, "quix:magnifier") == 0) {
+      if (down) magnifier_toggle(backend);
+      continue;
+    }
     InputEvent ev;
     if (keymap_make_event(&ev, down ? INPUT_KEY_DOWN : INPUT_KEY_UP, backend->pad_keys[k].code, 0, 0) == 0) {
       backend_push_input(backend, &ev);
@@ -153,12 +165,27 @@ static void pad_key_cb(void *ctx, const char *name, int down) {
   pad_key(backend, (SDLPlatformData*)backend->platform_data, name, down);
 }
 
+
+
+
+
+// Select + R2: cerrar el juego y volver al launcher (main.c lo vuelve a
+// abrir). Select + Start no sirve: en PortMaster gptokeyb lo usa para matar
+// el juego (la salida de emergencia). Solo en el juego (menu_back)
+static void back_to_menu(Backend* backend, SDLPlatformData* data) {
+  if (!backend->menu_back) return;
+  printf("Select + R2: back to the menu\n");
+  data->should_close = 1;
+  backend->back_to_menu = 1;
+}
+
 static void sdl_process_events(Backend* backend) {
   SDLPlatformData* data = (SDLPlatformData*)backend->platform_data;
   SDL_Event event;
   data->pad_cache_valid = 0;   // getGamepads vuelve a leer los mandos (gamepads.c)
   while (SDL_PollEvent(&event)) {
     mapper_event(&event);   // solo hace algo mientras se asigna el mando
+    keypad_event(&event);   // el teclado como mando (keyboard.map)
     if (backend->pad_keys_count) mapper_key_event(&event, pad_key_cb, backend);
     switch (event.type) {
       case SDL_QUIT:
@@ -169,7 +196,7 @@ static void sdl_process_events(Backend* backend) {
       case SDL_KEYUP: {
         char buf[24];
         const char *code = sdl_scancode_to_code(event.key.keysym.scancode, buf, sizeof(buf));
-        if (!code) break;
+        if (!code || keypad_has(event.key.keysym.sym)) break;   // del mando del teclado (keypad.c)
         InputEvent ev;
         int shift = (event.key.keysym.mod & KMOD_SHIFT) != 0;
         InputType type = event.type == SDL_KEYDOWN ? INPUT_KEY_DOWN : INPUT_KEY_UP;
@@ -182,18 +209,33 @@ static void sdl_process_events(Backend* backend) {
       // Select + Start a la vez: salir (en la portatil no hay ventana que cerrar)
       case SDL_CONTROLLERBUTTONDOWN: {
         SDL_GameController *gc = SDL_GameControllerFromInstanceID(event.cbutton.which);
-        int quit = 0;
+        int quit = 0, b = event.cbutton.button;
         for (int i = 0; i < GAMEPAD_MAX; i++) {
-          if (gc && data->pads[i] == gc && event.cbutton.button < SDL_CONTROLLER_BUTTON_MAX) {
-            data->latch[i][event.cbutton.button] = 1;
-            data->held[i][event.cbutton.button] = 1;
-            quit = data->held[i][SDL_CONTROLLER_BUTTON_BACK] && data->held[i][SDL_CONTROLLER_BUTTON_START];
+          if (gc && data->pads[i] == gc && b < SDL_CONTROLLER_BUTTON_MAX) {
+            Uint8 *held = data->held[i];
+            data->latch[i][b] = 1;
+            held[b] = 1;
+            quit = held[SDL_CONTROLLER_BUTTON_BACK] && held[SDL_CONTROLLER_BUTTON_START];
+            // Select + R1: una captura de pantalla
+            if (held[SDL_CONTROLLER_BUTTON_BACK] && held[SDL_CONTROLLER_BUTTON_RIGHTSHOULDER] &&
+                (b == SDL_CONTROLLER_BUTTON_BACK || b == SDL_CONTROLLER_BUTTON_RIGHTSHOULDER))
+              backend->want_screenshot = 1;
+            // Select + L1: abrir o cerrar la lupa; abierta, sus botones
+            if (held[SDL_CONTROLLER_BUTTON_BACK] && held[SDL_CONTROLLER_BUTTON_LEFTSHOULDER] &&
+                (b == SDL_CONTROLLER_BUTTON_BACK || b == SDL_CONTROLLER_BUTTON_LEFTSHOULDER))
+              magnifier_toggle(backend);
+            else if (backend->magnify > 1)
+              magnifier_button(backend, b);
           }
         }
         if (quit) {
           printf("Select + Start: exit\n");
           data->should_close = 1;
         }
+        // Select + R2 (en orden cualquiera): volver al launcher
+        if (b == SDL_CONTROLLER_BUTTON_BACK && gc &&
+            SDL_GameControllerGetAxis(gc, SDL_CONTROLLER_AXIS_TRIGGERRIGHT) > 16000)
+          back_to_menu(backend, data);
         break;
       }
 
@@ -218,6 +260,24 @@ static void sdl_process_events(Backend* backend) {
         break;
       }
 
+      // L2 y R2 son ejes: cuentan al pasar de la mitad (Select + R2, la lupa)
+      case SDL_CONTROLLERAXISMOTION: {
+        int t = event.caxis.axis == SDL_CONTROLLER_AXIS_TRIGGERLEFT ? 0
+              : event.caxis.axis == SDL_CONTROLLER_AXIS_TRIGGERRIGHT ? 1 : -1;
+        if (t < 0) break;
+        SDL_GameController *gc = SDL_GameControllerFromInstanceID(event.caxis.which);
+        for (int i = 0; i < GAMEPAD_MAX; i++) {
+          if (!gc || data->pads[i] != gc) continue;
+          int down = event.caxis.value > 16000;
+          if (down && !data->trigger_down[i][t]) {
+            if (t == 1 && data->held[i][SDL_CONTROLLER_BUTTON_BACK]) back_to_menu(backend, data);
+            else if (backend->magnify > 1) magnifier_zoom(backend, t == 1 ? 1 : -1);   // la lupa: R2 acerca, L2 aleja
+          }
+          data->trigger_down[i][t] = down;
+        }
+        break;
+      }
+
       case SDL_CONTROLLERDEVICEADDED:
         sdl_open_gamepads(data);
         break;
@@ -232,4 +292,5 @@ static void sdl_process_events(Backend* backend) {
         break;
     }
   }
+  magnifier_pan(backend, data);
 }

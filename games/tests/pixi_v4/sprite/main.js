@@ -3,7 +3,7 @@
 var app = new PIXI.Application(200, 200, T.pixiOptions({ backgroundColor: 0x000000 }));
 document.body.appendChild(app.view);
 
-var texture = PIXI.Texture.fromImage('../../assets/quad.png');   // 4x4: rojo verde / azul blanco
+var texture = PIXI.Texture.fromImage('assets/quad.png');   // 4x4: rojo verde / azul blanco
 texture.baseTexture.scaleMode = PIXI.SCALE_MODES.NEAREST;
 
 var sprite = new PIXI.Sprite(texture);

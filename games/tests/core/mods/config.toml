@@ -2,15 +2,14 @@
 # con las rutas de dentro de [game] game_dir). Si dos traen el mismo archivo,
 # gana el ultimo; "off" no esta activo.
 [game]
-cache_dir = "cache/tests/core/mods"
-game_dir  = "games/tests/core/mods/game"
+rom       = "game"
 width     = 320
 height    = 240
 mods      = ["uno", "dos"]
 
 [scripts]
 libs     = []
-includes = ["../../../lib/assert.js", "lib.js"]
+includes = ["../lib/assert.js", "lib.js"]
 entry    = "main.js"
 
 # el hook del juego; el mod dos pone el suyo encima (mods/dos/hooks.toml)

@@ -228,7 +228,7 @@ public class GameMenuActivity extends Activity {
                     action = v -> showMods(null);
                     break;
                 case "Options":
-                    detail = "show fps " + (opts[0] ? "on" : "off") + ", profiler " + (opts[1] ? "on" : "off")
+                    detail = (opts[4] ? "30" : "60") + " fps, show fps " + (opts[0] ? "on" : "off") + ", profiler " + (opts[1] ? "on" : "off")
                             + (opts[3] ? ", vibration " + (opts[2] ? "on" : "off") : "");
                     action = v -> showOptions(null);
                     break;
@@ -362,6 +362,10 @@ public class GameMenuActivity extends Activity {
         boolean[] on = options();
         screen(Mode.OPTIONS, "Options", gameTitle);
         section("game");
+        add(Ui.link(this, "FPS: " + (on[4] ? "30" : "60"), "30 saves battery", v -> {
+            toggleOption(3);
+            showOptions("FPS: " + (on[4] ? "60" : "30"));   /* el foco, en la misma fila */
+        }));
         add(Ui.toggle(this, "Show FPS", "the frame counter, top right", on[0], v -> {
             toggleOption(0);
             showOptions("Show FPS");

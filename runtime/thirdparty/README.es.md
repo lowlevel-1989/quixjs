@@ -8,6 +8,7 @@ Codigo de otros proyectos, compilado con quixjs.
 |---------|------------|------------------------|
 | `tomlc17/` | tomlc17 (https://github.com/cktan/tomlc17) | lee todos los toml: la configuracion del juego (`core/config_loader.c`), las opciones del launcher (`launcher/settings.c`), `[hooks]`, `[symbols]`, logros y trucos |
 | `stb/stb_vorbis.c` | stb_vorbis (https://github.com/nothings/stb) | decodifica el ogg vorbis del audio mientras suena (`audio/vorbis.c`, `audio/mixer.c`) |
+| `minimp3/` | minimp3 (https://github.com/lieff/minimp3, CC0), commit [1428237](https://github.com/lieff/minimp3/tree/142823796ab8efa55e1bf11406028f3be77ecceb) | decodifica el mp3 del audio mientras suena (`audio/mp3.c`) |
 | `stb/stb_easy_font.h` | stb_easy_font (https://github.com/nothings/stb) | el texto del menu del launcher y de los avisos en pantalla (`launcher/ui.c`, `backend/toast.c`) |
 | `nestegg/` | nestegg de Mozilla (https://github.com/mozilla/nestegg) | lee archivos WebM para `<video>` (`video/video.c`); solo se compila con video |
 | `minimp4/` | minimp4 (https://github.com/lieff/minimp4, CC0) | lee archivos MP4 para `<video>` (`video/video.c`); solo se compila con video |
@@ -15,7 +16,7 @@ Codigo de otros proyectos, compilado con quixjs.
 | `webkit/` | JavaScriptCore, WTF y bmalloc de WebKit (https://github.com/WebKit/WebKit) | ejecuta el JavaScript del juego; se compila aparte con `tools/build-jsc.sh` ([README](webkit/README.es.md)) |
 | `webkit/unifdef/` | unifdef (https://dotat.at/prog/unifdef/) | una herramienta de la compilacion de WebKit, no va en el binario |
 
-tomlc17, stb, nestegg, minimp4 y las fuentes de FFmpeg no estan modificados. Los cambios en `webkit/` estan en
+tomlc17, stb, minimp3, nestegg, minimp4 y las fuentes de FFmpeg no estan modificados. Los cambios en `webkit/` estan en
 su [README](webkit/README.es.md).
 
 ## Bibliotecas del sistema

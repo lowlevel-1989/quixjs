@@ -24,7 +24,7 @@
 
 #include <stdbool.h>
 
-#define MAX_SCRIPT_FILES 64
+#define MAX_SCRIPT_FILES 256   // por lista (libs, includes): GDevelop trae ~120
 #define MAX_FONTS        16
 #define MAX_PATH_LEN 256
 
@@ -40,6 +40,10 @@ typedef struct {
   bool present_ahead; // una imagen de adelanto: la muestra otro thread (por defecto true)
   int  js_memory;     // MB de RAM que JavaScriptCore cree tener (0: la del aparato)
   int  low_memory_mb; // por debajo de esta RAM libre del sistema, GC completo (0: no)
+  bool lazy_images;   // PNG: decodificar al usarla (no al cargar) y soltarla al subirla a la GPU
+  int  scaling;       // [engine] scaling: 0 sharp (por defecto), 1 smooth, 2 pixel_perfect (backend.h)
+  int  quality;       // [engine] quality: 1 low, 2 medium, 3 high (0: sin la opcion); ver quality_scale
+  int  texture_budget; // MB de texturas de imagenes; por encima se sueltan las que no se usan (0: no)
 } EngineConfig;
 
 // [fonts] Familia = "ruta.ttf" (relativa a game_dir): como un @font-face del
@@ -50,9 +54,17 @@ typedef struct {
 } FontConfig;
 
 typedef struct {
+  // Con rom ([game] rom, runtime/rom): rom es el juego (un .zip o una carpeta,
+  // con su ruta desde aqui), rom_root la carpeta de dentro donde empieza
+  // ([game] game_dir) y game_dir pasa a ser la carpeta gamedata/ de quixjs
+  // junto al toml, donde se monta la rom y escribe el juego. Sin rom, game_dir
+  // es la carpeta del juego, como antes
   char game_dir[MAX_PATH_LEN];
-  char cache_dir[MAX_PATH_LEN];   // shaders (<cache_dir>/shaders) e imagenes reducidas
+  char rom[MAX_PATH_LEN];
+  char rom_root[MAX_PATH_LEN];
+  char cache_dir[MAX_PATH_LEN];   // cache/ junto al toml: shaders (<cache_dir>/shaders) e imagenes reducidas
   char version[32];               // la version del port o del juego ([game] version), informativa
+  char language[16];              // navigator.language ([game] language, por defecto "en")
   int width;
   int height;
   // imagenes grandes a menos resolucion (gfx/image_scale.h): image_scale
@@ -103,7 +115,11 @@ typedef struct {
   // boton se elige en Controls
   int keys_count;
   char key_button[8][48];   // el nombre de la accion
-  char key_code[8][24];     // su KeyboardEvent.code
+  char key_code[8][24];     // su KeyboardEvent.code ("quix:screenshot" y "quix:magnifier":
+                            // las de screenshot = true y magnifier = true)
+  // magnifier = true: Controls pide un boton suelto para la lupa (Select + L1
+  // funciona siempre, en todos los juegos)
+  int magnifier;
 
 } ControlsConfig;
 
@@ -117,6 +133,7 @@ typedef struct {
   char files[MAX_SAVE_PATTERNS][MAX_PATH_LEN];  // patrones relativos a dir
   int  files_count;
   char achievements[MAX_PATH_LEN];              // relativo a dir (con las partidas); "" = no se guardan
+  char local_storage[MAX_PATH_LEN];             // localStorage en disco, relativo a dir; "" = en memoria
 } SavesConfig;
 
 #define MAX_MODS 16
@@ -128,6 +145,16 @@ typedef struct {
   int  count;                      // mismo archivo, gana el ultimo
 } ModsConfig;
 
+// [html] elements: los elementos con id del <body> del index.html
+// ({ tag, id, type }, de --gen-config). quixjs no lee el HTML: cuando el
+// juego pide uno por id (getElementById) y aun no existe, lo crea en el body
+#define MAX_HTML_ELEMENTS 32
+typedef struct {
+  char tag[16];
+  char id[64];
+  char type[16];
+} HtmlElement;
+
 typedef struct {
   EngineConfig engine;
   LauncherConfig launcher;
@@ -138,6 +165,8 @@ typedef struct {
   ScriptConfig scripts;
   FontConfig fonts[MAX_FONTS];
   int fonts_count;
+  HtmlElement html[MAX_HTML_ELEMENTS];
+  int html_count;
 } Config;
 
 int config_load(Config* out, const char* filename);

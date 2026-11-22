@@ -1,0 +1,210 @@
+# port.toml: el port de L'Abbaye des Morts (version HTML5 de Lucera Project,
+# con Phaser) a quixjs.
+#
+# Es el archivo que describe el juego: quixjs -c port.toml. La primera parte
+# salio de quixjs --gen-config sobre el commit 21e1fc4 de
+# https://github.com/luceraproject/abbaye-des-morts, revisada a mano. El
+# juego es libre (GPL-2.0), pero no va en el port: el jugador lo baja de su
+# GitHub y copia su carpeta en gamedata/ (README.md).
+#
+# Los scripts son los <script> del index.html, en el mismo orden, sin Google
+# Analytics. El ultimo es entry.js, del port: el juego solo escucha el teclado,
+# y entry.js pulsa sus teclas con el mando.
+[engine]
+name    = "html5"
+nwjs    = false
+fps     = 60
+# 256x192 a una pantalla de 640x480 o 720x720: solo por 2x, 3x... (los
+# pixeles del juego, todos del mismo tamano)
+scaling   = "sharp"           # nitido a toda la pantalla (Options > Scaling)
+
+[game]
+title     = "L'Abbaye des Morts"
+version   = "0.1.0"           # la del port
+id        = "abbaye"
+# la rom: el zip del juego, tal cual se descarga de GitHub, junto a este
+# port.toml. game_dir: donde empieza el juego dentro de la rom (la carpeta del
+# zip de GitHub). Lo que el juego escribe (partidas) va a gamedata/, la
+# carpeta de quixjs junto a este port.toml
+rom       = "abbaye-des-morts-21e1fc42694a2c69078c6451ae8b6f8fb22dff99.zip"
+game_dir  = "abbaye-des-morts-21e1fc42694a2c69078c6451ae8b6f8fb22dff99"
+width     = 256               # 32x24 casillas de 8 pixeles (js/main.js)
+height    = 192
+developer = "Locomalito, Gryzor87 (HTML5: Lucera Project)"
+releasedate = "20140101T000000"
+genres    = ["platform"]
+mods      = ["achievements", "rumble"]   # mods/: achievements (la pausa muestra los
+                  # logros), rumble (vibra al morir)
+desc      = "L'Abbaye des Morts, the retro platformer by Locomalito, in its HTML5 version by Lucera Project, running on quixjs, a JS runtime in C with SDL2 and OpenGL ES 2."
+
+# la fuente del CSS (css/stylesheet.css)
+[fonts]
+"venice_classicmedium" = "css/veniceclassic-webfont.ttf"
+
+[scripts]
+libs     = [
+  "js/libs/phaser.js"
+]
+includes = [
+  "js/main.js",
+  "js/states/boot.js",
+  "js/states/loader.js",
+  "js/states/menu.js",
+  "js/states/game.js",
+  "js/states/sequence.js",
+  "js/manager/shoot_manager.js",
+  "js/manager/input_manager.js",
+  "js/manager/panel_manager.js",
+  "js/manager/scroll_manager.js",
+  "js/entities/jean.js",
+  "js/entities/steps.js",
+  "js/entities/door.js",
+  "js/entities/block.js",
+  "js/entities/shoot.js",
+  "js/entities/static_entity.js",
+  "js/entities/movable_entity.js",
+  "js/entities/shooter_entity.js",
+  "js/entities/action_entity.js",
+  "js/entities/ghost.js"
+]
+entry    = "../entry.js"   # games/abbaye/entry.js (en el zip, junto a port.toml)
+
+# los <div> del index.html que busca el juego: abbaye (donde Phaser pone su
+# canvas) y orientation (el aviso de girar el telefono)
+[html]
+elements = [
+  { tag = "div", id = "abbaye" },
+  { tag = "div", id = "orientation" },
+]
+
+[controls]
+gamepad = true
+# Select + R1: captura de pantalla; Select + L1: la lupa. Con true, Controls
+# pide tambien un boton suelto para cada una (el combo sigue)
+screenshot = true
+magnifier  = true
+vibration  = true   # el mod rumble
+
+# lo que hace cada boton (entry.js)
+[controls.buttons]
+dpleft  = "Left"
+dpright = "Right"
+dpup    = "Up"
+dpdown  = "Down"
+a       = "Jump"
+
+# ---------- los logros ----------
+# Se leen del juego (Abbaye.STATES.game es la partida; js/states/game.js):
+# las cruces y vidas de Jean, la sala (0 a 24, sus nombres en createRooms) y
+# la secuencia que corre (Abbaye.Sequence: 1 el final, 2 game over). La tecla
+# D del juego es su modo debug (sin dano y con las 12 cruces): con el, ningun
+# logro.
+[symbols]
+crosses  = "path:Abbaye.STATES.game.hero.numCross"
+hearts   = "path:Abbaye.STATES.game.hero.numHearts"
+room     = "path:Abbaye.STATES.game.currentRoomIndex"
+satan    = "path:Abbaye.STATES.game.satan.alive"
+state    = "path:Abbaye.game.state.current"
+sequence = "path:Abbaye.STATES.sequence.type"
+debug    = "path:Abbaye.STATES.game.debug"
+
+# Progression
+
+[[achievements]]
+id          = "first_cross"
+title       = "A Prayer of Hope"
+description = "Find your first cross"
+type        = "progression"
+conditions  = ["state == \"Game\"", "crosses >= 1", "debug == false"]
+
+[[achievements]]
+id          = "six_crosses"
+title       = "Half the Way"
+description = "Carry six crosses"
+type        = "progression"
+conditions  = ["state == \"Game\"", "crosses >= 6", "debug == false"]
+
+[[achievements]]
+id          = "twelve_crosses"
+title       = "Twelve Crosses"
+description = "Carry the twelve crosses against the devil"
+type        = "progression"
+conditions  = ["state == \"Game\"", "crosses >= 12", "debug == false"]
+# cada cruz que coges, un aviso con las que llevas: "3/12"
+progress    = "crosses"
+goal        = 12
+
+[[achievements]]
+id          = "satan_room"
+title       = "Satan !!!"
+description = "Stand before the devil"
+type        = "progression"
+conditions  = ["state == \"Game\"", "room == 24", "debug == false"]
+
+# Places
+
+[[achievements]]
+id          = "hangman_tree"
+title       = "Hangman Tree"
+description = "Reach the hangman tree"
+type        = "secondary"
+conditions  = ["state == \"Game\"", "room == 9", "debug == false"]
+
+[[achievements]]
+id          = "pestilent_beast"
+title       = "Pestilent Beast"
+description = "Reach the lair of the pestilent beast"
+type        = "secondary"
+conditions  = ["state == \"Game\"", "room == 10", "debug == false"]
+
+[[achievements]]
+id          = "lake_of_despair"
+title       = "Lake of Despair"
+description = "Reach the lake of despair"
+type        = "secondary"
+conditions  = ["state == \"Game\"", "room == 16", "debug == false"]
+
+[[achievements]]
+id          = "ashes_to_ashes"
+title       = "Ashes to Ashes"
+description = "Reach the last room before the devil"
+type        = "secondary"
+conditions  = ["state == \"Game\"", "room == 23", "debug == false"]
+
+[[achievements]]
+id          = "game_over"
+title       = "Your Doom Will Come"
+description = "Lose all your lives"
+type        = "secondary"
+conditions  = ["state == \"Sequence\"", "sequence == 2"]
+
+# Victory
+
+[[achievements]]
+id          = "satan_defeated"
+title       = "Twelve Against the Devil"
+description = "Defeat Satan"
+type        = "win_condition"
+conditions  = ["room == 24", "satan == false", "prev(satan) == true", "debug == false"]
+
+[[achievements]]
+id          = "satan_untouched"
+title       = "Unbroken Faith"
+description = "Defeat Satan with all nine lives"
+type        = "win_condition"
+conditions  = ["room == 24", "satan == false", "prev(satan) == true", "hearts == 9", "debug == false"]
+
+[[achievements]]
+id          = "the_end"
+title       = "Heresy!!!"
+description = "See the ending of Jean the Cathar"
+type        = "win_condition"
+conditions  = ["state == \"Sequence\"", "sequence == 1"]
+
+# ---------- PortMaster ----------
+[portmaster]
+script       = "Abbaye.sh"
+porter       = ["lowlevel.1989"]
+inst         = "Needs L'Abbaye des Morts (HTML5 version), free: open https://github.com/luceraproject/abbaye-des-morts/tree/21e1fc42694a2c69078c6451ae8b6f8fb22dff99, download it with Code, Download ZIP, and copy that zip, as it is, into ports/abbaye/, next to port.toml."
+store        = { name = "GitHub", url = "https://github.com/luceraproject/abbaye-des-morts" }
+availability = "free"

@@ -27,12 +27,17 @@ fps = 60
 title     = "Felvidek"
 version   = "0.1.0"           # la del port
 id        = "felvidek"
-game_dir  = "gamedata/www"    # la carpeta www/ del juego, copiada en gamedata/
-cache_dir = "cache/gamedata"
+# la rom: la carpeta www/ del juego comprimida en un .zip, junto a este
+# port.toml. game_dir: donde empieza el juego dentro de la rom (la carpeta
+# www/ de dentro). Lo que el juego escribe (partidas) va a gamedata/, la
+# carpeta de quixjs junto a este port.toml
+rom       = "www.zip"
+game_dir  = "www"
 # el juego cambia la pantalla a 960x720 (package.json dice 816x624)
 width     = 960
 height    = 720
-mods      = ["big-text"]   # mods/: big-text (el texto de las ventanas mas grande) viene activo
+mods      = ["big-text"]   # mods/: big-text (el texto de las ventanas mas grande) viene activo;
+                           # readable-font (fuente mas legible), apagado
 developer = "Jan Malík"
 genres    = ["rpg"]
 desc      = "Felvidek (RPG Maker MV) running on quixjs, a JS runtime in C with SDL2 and OpenGL ES 2."
@@ -71,7 +76,7 @@ entry    = "js/main.js"
 title        = "Felvidék"
 script       = "Felvidek.sh"
 porter       = ["lowlevel.1989"]
-inst         = "Needs Felvidek for Windows (GOG or Steam). Copy its folder www/ into ports/felvidek/gamedata/ (it must end up as gamedata/www/). Game.exe and the .dll files are not needed."
+inst         = "Needs Felvidek for Windows (GOG or Steam). Compress its folder www/ into www.zip (a zip without compression is best; a compressed one also works, the first start takes longer) and copy it into ports/felvidek/, next to port.toml."
 store        = { name = "GOG", url = "https://www.gog.com/game/felvidek" }
 availability = "paid"
 
@@ -82,6 +87,10 @@ engine = "rpgmaker-mv"
 
 [controls]
 gamepad = true
+# Select + R1: captura de pantalla; Select + L1: la lupa (cartas, notas). Con
+# true, Controls pide tambien un boton suelto para cada una (el combo sigue)
+screenshot = true
+magnifier  = true
 
 # los botones que usa el juego, con los nombres de su GamepadConfig: Controls
 # los pide por su nombre (y siempre las dos palancas)

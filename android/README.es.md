@@ -38,9 +38,9 @@ O copiar `quixjs.apk` al teléfono y abrirlo.
 
 1. Preparar el port en el PC, como en una portátil con PortMaster: la
    carpeta del port (por ejemplo `fearandhunger/`, con su `port.toml` y
-   `mods/`) con los archivos del juego dentro de `gamedata/` (donde diga el
-   README del port, por ejemplo `gamedata/www/`). Comprimir la carpeta
-   entera en un `.zip`.
+   `mods/`) con la rom del juego junto a `port.toml` (como diga el README
+   del port, por ejemplo `www.zip`). Comprimir la carpeta entera en un
+   `.zip`.
 2. "Import game" abre el selector de archivos: elegir ese `.zip`. Abrirlo
    con quixjs desde un gestor de archivos también lo importa. La app busca
    la carpeta con `port.toml` y la copia a la app, sin lo que Android no

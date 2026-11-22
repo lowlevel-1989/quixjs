@@ -28,7 +28,7 @@ audio en `audio/` y la ventana y la entrada en `backend/`.
 | `navigator.c`        | `navigator` y `getGamepads()` (4 posiciones, mapeo "standard") |
 | `gamepads.js`        | `getGamepads()` en JS, sobre el estado que `navigator.c` lee del backend |
 | `nwjs.c`             | modo nw.js: las nativas de `fs` |
-| `nwjs.js`            | el modo nw.js en JS: `require('fs')`, `path`, `events`, `os`, `nw.gui`, `process` |
+| `nwjs/`              | el modo nw.js en JS, un archivo por módulo de Node: `require('fs')`, `path`, `events`, `os`, `nw.gui`, `process`, greenworks ([README](nwjs/README.es.md)) |
 | `quix.c`             | el objeto `quix`: `exit`, `pressKey`, `frame`, `backend`, `fixedStep`, `registerFont`, `hasFont`, `version`, `frameTime`, `achievementUnlocked`, `achievements`, `achievementsIcon`, `isGpuCanvas`, `collectGarbage`, `gcPressure` |
 | `console.c`          | `console` (log, info, warn, error...) y `print` |
 | `polyfill.c`         | ejecuta al arrancar las APIs escritas en JS de `polyfill/` |
@@ -49,7 +49,7 @@ Va en C cuando:
 1. Toca algo nativo: la GPU (`webgl.c`, `canvas/2d`), archivos (`xhr.c`,
    `image.c`), el audio de SDL (`audio.c`), el decodificador de video
    (`video.c`), los mandos (`navigator.c`) o las fuentes TTF
-   (`quix.registerFont`).
+   (`quix.fonts.register`).
 2. Se llama muchas veces por frame: `drawImage`, `fillRect` o `drawElements`.
    Cada llamada de JS a C cuesta, pero hacer el trabajo en JS cuesta mucho
    más. Por eso los hooks de motor pasan a C cosas como el blur o el tint.

@@ -1,5 +1,5 @@
 // navigator.getGamepads() con el backend sdl y un mando virtual de SDL
-// (quix.pressPad): el estado se lee una vez por imagen y todas las lecturas
+// (quix.input.pressPad): el estado se lee una vez por imagen y todas las lecturas
 // de esa imagen lo ven igual; una pulsacion mas corta que una imagen (pulsar
 // y soltar entre dos) se ve en esa imagen, en todas sus lecturas, y no en la
 // siguiente.
@@ -22,7 +22,7 @@ function all(v) {
   return r;
 }
 
-var pad = quix.pressPad(A, 'press');
+var pad = quix.input.pressPad(A, 'press');
 if (pad < 0) {
   // backend dummy o SDL de antes de 2.0.14: sin mando de prueba
   T.ok(true, 'no test gamepad (' + quix.backend + '), skipped');
@@ -37,24 +37,24 @@ if (pad < 0) {
     },
     function () {
       T.deepEqual(reads(pad, A), all(false), 'and not in the next frame');
-      quix.pressPad(UP, 'down');
+      quix.input.pressPad(UP, 'down');
     },
     function () {
       T.deepEqual(reads(pad, UP), all(true), 'held: pressed');
     },
     function () {
       T.deepEqual(reads(pad, UP), all(true), 'still held the next frame');
-      quix.pressPad(UP, 'up');
+      quix.input.pressPad(UP, 'up');
     },
     function () {
       T.deepEqual(reads(pad, UP), all(false), 'released');
       // pulsar y soltar uno que ya estaba pulsado: tambien se ve una vez
-      quix.pressPad(UP, 'down');
+      quix.input.pressPad(UP, 'down');
     },
     function () {
       T.deepEqual(reads(pad, UP), all(true), 'held again');
-      quix.pressPad(UP, 'up');
-      quix.pressPad(A, 'press');
+      quix.input.pressPad(UP, 'up');
+      quix.input.pressPad(A, 'press');
     },
     function () {
       T.deepEqual(reads(pad, A), all(true), 'a second short press is seen too');

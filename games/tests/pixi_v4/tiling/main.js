@@ -3,7 +3,7 @@
 var app = new PIXI.Application(200, 200, T.pixiOptions({ backgroundColor: 0x000000 }));
 document.body.appendChild(app.view);
 
-var texture = PIXI.Texture.fromImage('../../assets/quad.png');   // 4x4: rojo verde / azul blanco
+var texture = PIXI.Texture.fromImage('assets/quad.png');   // 4x4: rojo verde / azul blanco
 var tiling = new PIXI.extras.TilingSprite(texture, 40, 40);
 app.stage.addChild(tiling);
 

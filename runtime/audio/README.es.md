@@ -9,8 +9,11 @@ mezcla en el thread de audio de SDL.
 
 | archivo      | de qué se encarga |
 |--------------|-------------------|
-| `mixer.h/.c` | clips (ogg comprimido), voces (play, set, stop, loop), el flujo PCM de un video, mezcla en el callback de audio de SDL |
-| `vorbis.c`   | compila stb_vorbis (`thirdparty/stb/`) aparte, solo con lectura desde memoria |
+| `mixer.h/.c` | clips (el archivo comprimido), voces (play, set, stop, loop), el flujo PCM de un video, mezcla en el callback de audio de SDL |
+| `decoder.h/.c` | un sonido desde memoria sin saber su formato: lo elige por sus primeros bytes y pasa a 1 o 2 canales |
+| `vorbis.c`   | ogg vorbis, con stb_vorbis (`thirdparty/stb/`) compilado aqui, solo con lectura desde memoria; los comentarios LOOPSTART / LOOPLENGTH |
+| `mp3.c`      | mp3, con minimp3 (`thirdparty/minimp3/`) |
+| `wav.c`      | wav: PCM de 8, 16, 24 o 32 bits, o float |
 
 ## Streaming
 
@@ -18,6 +21,10 @@ Un `AudioClip` es el ogg vorbis comprimido que da `decodeAudioData`; no se
 decodifica entero. Cada voz que suena tiene su propio decodificador y su
 posición, y decodifica mientras suena. Una música de 3 minutos ocupa sus
 ~3 MB, no ~30 MB de PCM.
+Una larga cargada desde su archivo (sin cifrar) ni se copia: se mapea
+(mmap), así sus páginas son del archivo y el kernel las puede soltar si falta
+memoria (Gunfield guarda cada música que ha sonado: 26 músicas, 91 MB). Una
+corta (hasta 3 s, los efectos) se decodifica entera al cargarla.
 
 ## El flujo de un video
 

@@ -144,11 +144,31 @@
     this.numberOfChannels = o.numberOfChannels || 2;
     this.duration = this.length / this.sampleRate;
   }
-  AudioBuffer.prototype.getChannelData = function () {
-    return new Float32Array(this.length);
+  // un buffer hecho por el juego (createBuffer): sus muestras se guardan y,
+  // al sonar, pasan al mezclador (A.fromPCM). Uno decodificado (_clip) no
+  // las tiene en JS: getChannelData da silencio
+  AudioBuffer.prototype.getChannelData = function (i) {
+    if (this._clip) return new Float32Array(this.length);
+    this._data = this._data || [];
+    if (!this._data[i]) this._data[i] = new Float32Array(this.length);
+    this._dirty = true;
+    return this._data[i];
   };
-  AudioBuffer.prototype.copyFromChannel = function () {};
-  AudioBuffer.prototype.copyToChannel = function () {};
+  AudioBuffer.prototype.copyFromChannel = function (dst, i, start) {
+    if (this._data && this._data[i]) dst.set(this._data[i].subarray(start || 0, (start || 0) + dst.length));
+  };
+  AudioBuffer.prototype.copyToChannel = function (src, i, start) {
+    this.getChannelData(i).set(src, start || 0);
+  };
+  // el clip del mezclador con lo que hay ahora en sus muestras
+  AudioBuffer.prototype._toClip = function () {
+    if (this._data && (this._dirty || !this._clip)) {
+      var l = this._data[0] || new Float32Array(this.length);
+      this._clip = A.fromPCM(l, this.numberOfChannels > 1 ? this._data[1] || l : null, this.sampleRate);
+      this._dirty = false;
+    }
+    return this._clip;
+  };
 
   function AudioBufferSourceNode(ctx) {
     AudioNode.call(this, ctx);
@@ -178,6 +198,7 @@
     this._state = 'playing';
     var b = this.buffer;
     var params = this._params();
+    if (b && b._toClip) b._toClip();
     if (b && b._clip)
       this._id = A.play(
         b._clip,
@@ -287,7 +308,7 @@
           resolve(b);
         } else {
           var e = new Error(
-            'EncodingError: unable to decode audio data (quixjs decodes ogg vorbis)'
+            'EncodingError: unable to decode audio data (quixjs decodes ogg vorbis, mp3 and wav)'
           );
           if (err) err(e);
           if (!err) reject(e);

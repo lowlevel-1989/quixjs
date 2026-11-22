@@ -18,7 +18,7 @@
 
 #pragma once
 
-// Las funciones nativas de RPG Maker MV (__quixEngine["rpgmaker-mv"])
+// Las funciones nativas de RPG Maker MV (quix.engine["rpgmaker-mv"])
 
 #include "js/js.h"
 

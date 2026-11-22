@@ -6,7 +6,7 @@ Todos los drivers tienen la misma interfaz (`GpuDriver`, en `../driver.h`) y
 cada uno la rellena en su archivo. El codigo comun no mira que driver hay:
 llama a los puntos de la interfaz en su sitio. `../driver.c` elige el driver
 al crear el contexto GL (`[gpu] driver: ...` en la salida,
-`quix.gpuDriver()` en JS).
+`quix.gpu.driver` en JS).
 
 ## Glosario
 

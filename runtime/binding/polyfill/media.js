@@ -1,11 +1,174 @@
 // <audio> / new Audio() y <video>. <audio>: de momento solo canPlayType
-// (los juegos lo usan para elegir el formato: quixjs decodifica ogg).
+// (los juegos lo usan para elegir el formato: quixjs decodifica ogg, mp3 y wav).
 // <video>: WebM (VP8/VP9 + Opus) y MP4 (H.264 + AAC) con __quixVideo
 // (runtime/video).
 (function (g) {
   function canPlayType(t) {
-    return /ogg|vorbis/i.test(String(t)) ? 'probably' : '';
+    t = String(t);
+    if (/opus|flac|webm|mp4|m4a|aac/i.test(t)) return '';
+    return /ogg|vorbis|mpeg|mp3|wav/i.test(t) ? 'probably' : '';
   }
+  function fireEvent(self, type) {
+    // dispatchEvent ya llama a on<type> despues de los listeners
+    var e = new Event(type);
+    if (self.dispatchEvent) self.dispatchEvent(e);
+    else if (typeof self['on' + type] === 'function') self['on' + type](e);
+  }
+
+  // <audio> / new Audio(): suena con el WebAudio de quixjs
+  // (runtime/binding/webaudio.js), un AudioContext para todos. Construct 2
+  // pone ahi su musica. El archivo se abre entero (quixLoadFile, en
+  // segundo plano) al poner src.
+  var shared = null;
+  function context() {
+    if (!shared && g.AudioContext) shared = new g.AudioContext();
+    return shared;
+  }
+  function audioElement(el) {
+    var src = '';
+    var buffer = null;
+    var source = null;
+    var gain = null;
+    var startedAt = 0; // ctx.currentTime al empezar a sonar
+    var offset = 0;    // segundos ya sonados al pausar
+    var volume = 1;
+    var muted = false;
+    var seq = 0;       // cada src nuevo: las cargas viejas no cuentan
+
+    function level() {
+      if (gain) gain.gain.value = muted ? 0 : volume;
+    }
+    function stopSource() {
+      if (!source) return;
+      source.onended = null;
+      try {
+        source.stop();
+      } catch (e) {}
+      source = null;
+    }
+    function position(self) {
+      var ctx = context();
+      if (!source || !ctx) return offset;
+      var t = offset + (ctx.currentTime - startedAt) * self.playbackRate;
+      var d = buffer ? buffer.duration : 0;
+      return self.loop && d > 0 ? t % d : Math.min(t, d || t);
+    }
+    function start(self) {
+      var ctx = context();
+      if (!ctx || !buffer) return;
+      stopSource();
+      if (!gain) {
+        gain = ctx.createGain();
+        gain.connect(ctx.destination);
+      }
+      level();
+      source = ctx.createBufferSource();
+      source.buffer = buffer;
+      source.loop = !!self.loop;
+      source.playbackRate.value = self.playbackRate;
+      source.connect(gain);
+      source.onended = function () {
+        source = null;
+        offset = 0;
+        self.paused = true;
+        self.ended = true;
+        fireEvent(self, 'ended');
+      };
+      startedAt = ctx.currentTime;
+      source.start(0, offset);
+    }
+    el.ended = false;
+    el.load = function () {
+      var self = this;
+      var ctx = context();
+      var mine = ++seq;
+      buffer = null;
+      stopSource();
+      offset = 0;
+      self.readyState = 0;
+      if (!src || !ctx || !ctx.quixLoadFile) return;
+      var ok = ctx.quixLoadFile(src, function (b) {
+        if (mine !== seq) return;
+        if (!b) {
+          fireEvent(self, 'error');
+          return;
+        }
+        buffer = b;
+        self.duration = b.duration;
+        self.readyState = 4;
+        fireEvent(self, 'loadedmetadata');
+        fireEvent(self, 'loadeddata');
+        fireEvent(self, 'canplay');
+        fireEvent(self, 'canplaythrough');
+        if (!self.paused) start(self);
+      });
+      if (ok === false) {
+        setTimeout(function () {
+          if (mine === seq) fireEvent(self, 'error');
+        }, 0);
+      }
+    };
+    el.play = function () {
+      if (!this.paused) return Promise.resolve();
+      this.paused = false;
+      this.ended = false;
+      if (!buffer && src && this.readyState === 0 && seq === 0) this.load();
+      if (buffer) start(this);
+      fireEvent(this, 'play');
+      fireEvent(this, 'playing');
+      return Promise.resolve();
+    };
+    el.pause = function () {
+      if (this.paused) return;
+      offset = position(this);
+      stopSource();
+      this.paused = true;
+      fireEvent(this, 'pause');
+    };
+    Object.defineProperty(el, 'src', {
+      configurable: true,
+      enumerable: true,
+      get: function () {
+        return src;
+      },
+      set: function (v) {
+        src = String(v);
+        // como preload="auto": empieza a cargarlo
+        this.load();
+      }
+    });
+    Object.defineProperty(el, 'currentTime', {
+      configurable: true,
+      get: function () {
+        return position(this);
+      },
+      set: function (v) {
+        offset = Math.max(0, Number(v) || 0);
+        if (source) start(this);
+      }
+    });
+    Object.defineProperty(el, 'volume', {
+      configurable: true,
+      get: function () {
+        return volume;
+      },
+      set: function (v) {
+        volume = Math.max(0, Math.min(1, Number(v) || 0));
+        level();
+      }
+    });
+    Object.defineProperty(el, 'muted', {
+      configurable: true,
+      get: function () {
+        return muted;
+      },
+      set: function (v) {
+        muted = !!v;
+        level();
+      }
+    });
+  }
+
   function Audio(src) {
     var el = g.document.createElement('audio');
     if (src !== undefined) el.src = src;
@@ -33,6 +196,7 @@
       };
       el.pause = function () {};
       el.load = function () {};
+      if (t === 'audio') audioElement(el);
       if (t === 'video') {
         // <video>: WebM (VP8/VP9 + Opus) y MP4 (H.264 + AAC) con __quixVideo.
         // Si no se puede reproducir, dice que cargo y que termino enseguida:

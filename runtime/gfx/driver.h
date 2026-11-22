@@ -40,7 +40,7 @@ typedef struct {
 } Presenter;
 
 typedef struct {
-  const char *name;            // "panfrost", "mali", "mali-g31" o "default" (quix.gpuDriver())
+  const char *name;            // "panfrost", "mali", "mali-g31" o "default" (quix.gpu.driver)
   // como espera el thread que presenta a que la GPU termine cada imagen
   // (drv_wait_gpu o drv_wait_cpu, drivers/common.h). NULL: este driver no
   // usa el thread (present_ahead), todo va por present

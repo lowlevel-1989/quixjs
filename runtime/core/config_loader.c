@@ -56,6 +56,29 @@ static void engine_apply(toml_datum_t t, EngineConfig *e) {
   if (v.type == TOML_BOOLEAN) e->webgl = v.u.boolean;
   v = toml_get(t, "low_memory_mb");
   if (v.type == TOML_INT64 && v.u.int64 >= 0 && v.u.int64 <= 4096) e->low_memory_mb = (int)v.u.int64;
+  v = toml_get(t, "lazy_images");
+  if (v.type == TOML_BOOLEAN) e->lazy_images = v.u.boolean;
+  // como se amplia a la pantalla; pixel_perfect = true es scaling =
+  // "pixel_perfect" (los ports de antes)
+  v = toml_get(t, "pixel_perfect");
+  if (v.type == TOML_BOOLEAN) e->scaling = v.u.boolean ? 2 : 0;
+  v = toml_get(t, "scaling");
+  if (v.type == TOML_STRING) {
+    if (!strcmp(v.u.s, "sharp")) e->scaling = 0;
+    else if (!strcmp(v.u.s, "smooth")) e->scaling = 1;
+    else if (!strcmp(v.u.s, "pixel_perfect")) e->scaling = 2;
+    else fprintf(stderr, "[engine] scaling: \"%s\"? sharp, smooth or pixel_perfect\n", v.u.s);
+  }
+  // la calidad de un juego 3D: cuantos pixeles dibuja (devicePixelRatio)
+  v = toml_get(t, "quality");
+  if (v.type == TOML_STRING) {
+    if (!strcmp(v.u.s, "low")) e->quality = 1;
+    else if (!strcmp(v.u.s, "medium")) e->quality = 2;
+    else if (!strcmp(v.u.s, "high")) e->quality = 3;
+    else fprintf(stderr, "[engine] quality: \"%s\"? low, medium or high\n", v.u.s);
+  }
+  v = toml_get(t, "texture_budget");
+  if (v.type == TOML_INT64 && v.u.int64 >= 0) e->texture_budget = (int)v.u.int64;
   v = toml_get(t, "js_memory");
   if (v.type == TOML_INT64 && v.u.int64 >= 32 && v.u.int64 <= 4096) e->js_memory = (int)v.u.int64;
 }
@@ -90,11 +113,34 @@ static void read_engine(toml_datum_t engine, EngineConfig *e) {
 // Save solo pasa partidas del mismo juego; sin id, el titulo) y mods (los
 // activos: mods/<nombre>/ junto al config, con las mismas rutas que dentro
 // de game_dir)
-static void read_game(toml_datum_t game, Config *out) {
+static void read_game(toml_datum_t game, Config *out, const char *filename) {
   if (game.type != TOML_TABLE) return;
   copy_str(out->game.game_dir, sizeof(out->game.game_dir), toml_get(game, "game_dir"));
-  copy_str(out->game.cache_dir, sizeof(out->game.cache_dir), toml_get(game, "cache_dir"));
+  copy_str(out->game.rom, sizeof(out->game.rom), toml_get(game, "rom"));
+  // [game] rom: el juego, junto al toml; game_dir, la carpeta de dentro; y
+  // lo de quixjs (donde se monta y escribe el juego), gamedata/ junto al toml
+  if (out->game.rom[0]) {
+    const char *slash = strrchr(filename, '/');
+    int dir = slash ? (int)(slash - filename) : 0;
+    char path[MAX_PATH_LEN * 2];
+    snprintf(out->game.rom_root, sizeof out->game.rom_root, "%s", out->game.game_dir);
+    if (out->game.rom[0] != '/' && dir) {
+      snprintf(path, sizeof path, "%.*s/%s", dir, filename, out->game.rom);
+      snprintf(out->game.rom, sizeof out->game.rom, "%s", path);
+    }
+    if (dir) snprintf(out->game.game_dir, sizeof out->game.game_dir, "%.*s/gamedata", dir, filename);
+    else snprintf(out->game.game_dir, sizeof out->game.game_dir, "gamedata");
+  }
+  // la cache de quixjs (shaders, imagenes reducidas): siempre cache/, junto
+  // al toml; el toml no la elige (el sandbox, runtime/core/sandbox.c) y el juego no
+  // puede escribir en ella (solo en la carpeta de las partidas)
+  if (toml_get(game, "cache_dir").type != TOML_UNKNOWN)
+    fprintf(stderr, "[game] cache_dir is no longer read: the cache is cache/ next to the toml\n");
+  const char *cslash = strrchr(filename, '/');
+  if (cslash) snprintf(out->game.cache_dir, sizeof out->game.cache_dir, "%.*s/cache", (int)(cslash - filename), filename);
+  else snprintf(out->game.cache_dir, sizeof out->game.cache_dir, "cache");
   copy_str(out->game.version, sizeof(out->game.version), toml_get(game, "version"));
+  copy_str(out->game.language, sizeof(out->game.language), toml_get(game, "language"));
   toml_datum_t width = toml_get(game, "width");
   if (width.type == TOML_INT64) out->game.width = (int)width.u.int64;
   toml_datum_t height = toml_get(game, "height");
@@ -119,7 +165,7 @@ static void read_game(toml_datum_t game, Config *out) {
     out->game.image_scale_dirs_count = 0;
     for (int i = 0; i < scale_dirs.u.arr.size && out->game.image_scale_dirs_count < 8; i++) {
       toml_datum_t d = scale_dirs.u.arr.elem[i];
-      if (d.type == TOML_STRING && d.u.s[0])
+      if (d.type == TOML_STRING)   // "" vale: todo el juego (gfx/image_scale.c)
         snprintf(out->game.image_scale_dirs[out->game.image_scale_dirs_count++],
                  sizeof(out->game.image_scale_dirs[0]), "%s", d.u.s);
     }
@@ -148,6 +194,8 @@ static int read_paths(toml_datum_t list, char **dst, int max) {
     toml_datum_t v = list.u.arr.elem[i];
     if (v.type == TOML_STRING) dst[n++] = strdup(v.u.s);
   }
+  if (list.u.arr.size > max)
+    fprintf(stderr, "[scripts] %d scripts, only the first %d are loaded\n", list.u.arr.size, max);
   return n;
 }
 
@@ -160,6 +208,24 @@ static void read_scripts(toml_datum_t scripts, ScriptConfig *s) {
   if (libs.type == TOML_ARRAY) s->libs_count = read_paths(libs, s->libs, MAX_SCRIPT_FILES);
   toml_datum_t includes = toml_get(scripts, "includes");
   if (includes.type == TOML_ARRAY) s->includes_count = read_paths(includes, s->includes, MAX_SCRIPT_FILES);
+}
+
+// [html] elements = [{ tag, id, type }, ...]
+static void read_html(toml_datum_t html, Config *out) {
+  out->html_count = 0;
+  if (html.type != TOML_TABLE) return;
+  toml_datum_t list = toml_get(html, "elements");
+  if (list.type != TOML_ARRAY) return;
+  for (int i = 0; i < list.u.arr.size && out->html_count < MAX_HTML_ELEMENTS; i++) {
+    toml_datum_t e = list.u.arr.elem[i];
+    if (e.type != TOML_TABLE) continue;
+    HtmlElement *h = &out->html[out->html_count];
+    memset(h, 0, sizeof(*h));
+    copy_str(h->tag, sizeof(h->tag), toml_get(e, "tag"));
+    copy_str(h->id, sizeof(h->id), toml_get(e, "id"));
+    copy_str(h->type, sizeof(h->type), toml_get(e, "type"));
+    if (h->tag[0] && h->id[0]) out->html_count++;
+  }
 }
 
 // [fonts]: familia = "ruta"
@@ -202,6 +268,7 @@ static void read_saves(toml_datum_t saves, Config *out) {
     }
   }
   copy_str(out->saves.achievements, sizeof(out->saves.achievements), toml_get(saves, "achievements"));
+  copy_str(out->saves.local_storage, sizeof(out->saves.local_storage), toml_get(saves, "local_storage"));
   toml_datum_t files = toml_get(saves, "files");
   if (files.type == TOML_ARRAY) {
     for (int i = 0; i < files.u.arr.size && out->saves.files_count < MAX_SAVE_PATTERNS; i++) {
@@ -218,6 +285,10 @@ static void read_controls(toml_datum_t controls, Config *out) {
   if (pad.type == TOML_BOOLEAN) out->controls.gamepad = pad.u.boolean;
   toml_datum_t vib = toml_get(controls, "vibration");
   if (vib.type == TOML_BOOLEAN) out->controls.vibration = vib.u.boolean;
+  toml_datum_t mag = toml_get(controls, "magnifier");
+  out->controls.magnifier = mag.type == TOML_BOOLEAN && mag.u.boolean;
+  toml_datum_t shot = toml_get(controls, "screenshot");
+  int screenshot_button = shot.type == TOML_BOOLEAN && shot.u.boolean;
   ControlsConfig *c = &out->controls;
   toml_datum_t keys = toml_get(controls, "keys");
   for (int i = 0; keys.type == TOML_TABLE && i < keys.u.tab.size && c->keys_count < 8; i++) {
@@ -231,6 +302,17 @@ static void read_controls(toml_datum_t controls, Config *out) {
     snprintf(c->key_button[c->keys_count], sizeof c->key_button[0], "%s", keys.u.tab.key[i]);
     snprintf(c->key_code[c->keys_count], sizeof c->key_code[0], "%s", code);
     c->keys_count++;
+  }
+  // screenshot = true y magnifier = true: Controls pide tambien un boton
+  // suelto para cada una (se puede saltar), como las de [controls.keys]; los
+  // combos (Select + R1, Select + L1) siguen siempre
+  if (screenshot_button && c->keys_count < 8) {
+    snprintf(c->key_button[c->keys_count], sizeof c->key_button[0], "Screenshot");
+    snprintf(c->key_code[c->keys_count++], sizeof c->key_code[0], "quix:screenshot");
+  }
+  if (c->magnifier && c->keys_count < 8) {
+    snprintf(c->key_button[c->keys_count], sizeof c->key_button[0], "Magnifier");
+    snprintf(c->key_code[c->keys_count++], sizeof c->key_code[0], "quix:magnifier");
   }
   toml_datum_t names = toml_get(controls, "buttons");
   if (names.type != TOML_TABLE) return;
@@ -255,9 +337,10 @@ int config_load(Config *out, const char *filename) {
 
   toml_datum_t top = result.toptab;
   read_engine(toml_get(top, "engine"), &out->engine);
-  read_game(toml_get(top, "game"), out);
+  read_game(toml_get(top, "game"), out, filename);
   read_scripts(toml_get(top, "scripts"), &out->scripts);
   read_fonts(toml_get(top, "fonts"), out);
+  read_html(toml_get(top, "html"), out);
   read_launcher(toml_get(top, "launcher"), &out->launcher);
   read_saves(toml_get(top, "saves"), out);   // despues de [game]: usa game_dir
   read_controls(toml_get(top, "controls"), out);

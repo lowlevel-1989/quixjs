@@ -38,7 +38,7 @@ function (original) {
         return false;
     }
   };
-  if (!__quixEngine.sameCode(original, MODEL['Game_Map.isAnyEventStartingQuick'])) return original;
+  if (!quix.engine.sameCode(original, MODEL['Game_Map.isAnyEventStartingQuick'])) return original;
   return function () {
     var fast = Game_Map.prototype.isAnyEventStarting;
     if (!fast || fast.__quixHook !== 'rpgmaker-mv/any-event-starting') return original.call(this);

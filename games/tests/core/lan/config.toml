@@ -3,13 +3,12 @@
 # cerrar
 [game]
 title     = "quixjs lan test"
-cache_dir = "cache/tests/core/lan"
-game_dir  = "games/tests/core/lan"
+rom       = "."
 width     = 64
 height    = 64
 id        = "quixjs-lan-test"
 
 [scripts]
 libs     = []
-includes = ["../../lib/assert.js"]
+includes = ["../lib/assert.js"]
 entry    = "main.js"

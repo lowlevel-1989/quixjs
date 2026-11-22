@@ -1305,7 +1305,7 @@ function startTests() {
   });
 
   T.test('rpgmaker-mv/lz-string-native', function () {
-    var E = __quixEngine['rpgmaker-mv'];
+    var E = quix.engine['rpgmaker-mv'];
     LZ_VECTORS.forEach(function (v, i) {
       T.equal(E.lzDecompressBase64(v[1]), v[0], 'native: vector ' + i);
     });
@@ -1643,9 +1643,9 @@ function startTests() {
   });
 
   T.test('rpgmaker/gc-on-transition', function () {
-    var collected = [], gc = quix.collectGarbage;
-    T.equal(typeof gc(), 'number', 'quix.collectGarbage returns how long it took (ms)');
-    quix.collectGarbage = function (kind) { collected.push(kind === 'due' ? 'due' : (scene && scene.created ? 'late' : 'full')); return gc(kind); };
+    var collected = [], gc = quix.memory.collect;
+    T.equal(typeof gc(), 'number', 'quix.memory.collect returns how long it took (ms)');
+    quix.memory.collect = function (kind) { collected.push(kind === 'due' ? 'due' : (scene && scene.created ? 'late' : 'full')); return gc(kind); };
     var scene = null;
     scene = new Scene_Map();
     T.equal(scene.create(), 'created', 'the original create runs and its result comes back');
@@ -1664,7 +1664,7 @@ function startTests() {
     T.deepEqual(collected, [], 'from the menu: no collection');
     SceneManager._previousClass = prevClass;
     if (!hadMenuBase) delete window.Scene_MenuBase;
-    quix.collectGarbage = gc;
+    quix.memory.collect = gc;
   });
 
   T.test('rpgmaker-mv/scene-release and battle-release', function () {
@@ -1697,13 +1697,13 @@ function startTests() {
 
   T.test('rpgmaker-mv/gc-when-still', function () {
     T.equal(Scene_Map.prototype.update.__quixHook, 'rpgmaker-mv/gc-when-still', 'installed');
-    T.equal(typeof quix.gcPressure(), 'number', 'quix.gcPressure gives a number');
-    var savedP = window.$gamePlayer, savedM = window.$gameMap, savedPressure = quix.gcPressure, savedGc = quix.collectGarbage;
+    T.equal(typeof quix.memory.pressure(), 'number', 'quix.memory.pressure gives a number');
+    var savedP = window.$gamePlayer, savedM = window.$gameMap, savedPressure = quix.memory.pressure, savedGc = quix.memory.collect;
     var moving = false, pressure = 0, collected = [];
     window.$gamePlayer = { isMoving: function () { return moving; } };
     window.$gameMap = { isScrolling: function () { return false; } };
-    quix.gcPressure = function () { return pressure; };
-    quix.collectGarbage = function (kind) { collected.push(kind); return 0; };
+    quix.memory.pressure = function () { return pressure; };
+    quix.memory.collect = function (kind) { collected.push(kind); return 0; };
     var scene = new Scene_Map(), i;
     T.equal(scene.update(), 'updated', 'the original update runs and its result comes back');
     for (i = 0; i < 40; i++) scene.update();
@@ -1719,8 +1719,8 @@ function startTests() {
     T.deepEqual(collected, ['due'], 'half a second still with half the margin used: the due collection');
     window.$gamePlayer = savedP;
     window.$gameMap = savedM;
-    quix.gcPressure = savedPressure;
-    quix.collectGarbage = savedGc;
+    quix.memory.pressure = savedPressure;
+    quix.memory.collect = savedGc;
   });
 
   T.test('rpgmaker-mv/button-events-keys', function () {
@@ -1867,11 +1867,11 @@ function startTests() {
       T.deepEqual(d[1].pages, plain[1].pages, 'and it comes back the same');
       T.deepEqual(d[5].pages, ['changed'], 'a value set by the game stays');
       T.ok(pages5.length === 1, 'objects already handed out are untouched');
-      var created = 0, gc = quix.collectGarbage;
-      quix.collectGarbage = function (kind) { if (kind !== 'due') created++; return 0; };
+      var created = 0, gc = quix.memory.collect;
+      quix.memory.collect = function (kind) { if (kind !== 'due') created++; return 0; };
       d[1].pages;
       new Scene_Map().create();
-      quix.collectGarbage = gc;
+      quix.memory.collect = gc;
       T.ok(typeof Object.getOwnPropertyDescriptor(d[1], 'pages').get === 'function' && created === 1, 'gc-on-transition trims before collecting');
     });
     DataManager.loadDataFile('$dataCommonEvents', 'CommonEvents.json');

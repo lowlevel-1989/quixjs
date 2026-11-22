@@ -36,6 +36,8 @@
 #include "webgl/uniforms.c"
 #include "webgl/buffers.c"
 #include "webgl/textures.c"
+#include "webgl/evict.c"
 #include "webgl/queries.c"
 #include "webgl/extensions.c"
+#include "webgl/webgl2.c"
 #include "webgl/api.c"

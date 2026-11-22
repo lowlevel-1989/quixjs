@@ -1,0 +1,727 @@
+# port.toml: el port de Super Smiling Dungeon (ChoKo, GDevelop 5) a quixjs.
+#
+# Es el archivo que describe el juego: quixjs -c port.toml. La primera parte
+# salio de quixjs --gen-config sobre su app/ (la version 1.2.5 de Steam),
+# revisada a mano. El juego no va en el port: el jugador copia su
+# resources/app.asar junto a este port.toml (README.md).
+#
+# Los scripts son los <script> del index.html, en el mismo orden. Despues van
+# los del port: entry.js (los logros de Steam), render-scale.js (dibujar a la
+# resolucion de la pantalla) y tutorial-fix.js (un fallo del tutorial que
+# llenaba la pantalla de casillas negras). El juego solo usa el raton: el mod controller lo
+# lleva con el mando.
+[engine]
+name    = "html5"
+pixi    = "7.4.2"
+nwjs    = true    # fs: el juego guarda su progreso en archivos (Documents de Electron: gamedata/)
+scaling = "sharp"
+# GDevelop carga todas sus imagenes al empezar: de cada una solo el tamano;
+# se decodifica al subirla a la GPU (cuando se dibuja) y se suelta de la CPU
+lazy_images = true
+# en una portatil, 30 imagenes por segundo: un ritmo estable (a 60 saltaba
+# entre 40 y 60); el juego mide el tiempo, no va mas lento
+fps     = 30
+
+# en el PC (el binario que no es el de PortMaster): 60
+[engine.pc]
+fps = 60
+
+[game]
+title     = "Super Smiling Dungeon"
+version   = "0.1.0"           # la del port
+id        = "supersmilingdungeon"
+# la rom: el app.asar del juego (resources/app.asar en su carpeta de Steam),
+# tal cual, junto a este port.toml. game_dir: donde empieza el juego dentro.
+# Lo que el juego escribe (partidas) va a gamedata/, la carpeta de quixjs
+rom       = "app.asar"
+game_dir  = "app"
+width     = 1280              # data.js: windowWidth y windowHeight
+height    = 950
+developer = "ChoKo"
+releasedate = "20250101T000000"
+genres    = ["rpg", "puzzle"]
+mods      = ["controller", "big-text", "achievements", "fast-text"]   # mods/: controller (jugar con mando), big-text (letra mas grande), achievements (logros en letra grande), fast-text (B completa el texto o pasa al siguiente)
+# 686 imagenes de 512 px o mas, ~2,2 GB decodificadas, y GDevelop las carga
+# todas al empezar: en una portatil, a la escala con la que el juego cabe en
+# la pantalla, guardadas reducidas en cache/images-<porcentaje>
+image_scale      = "auto"
+image_scale_dirs = [""]       # todas: GDevelop las deja en la raiz de app/
+image_scale_min  = 512
+# dibujar a la resolucion con la que se ve (render-scale.js): en una pantalla
+# de 720x720, a 720x534; en una igual o mas grande, como siempre
+render_scale     = "auto"
+desc      = "Super Smiling Dungeon, a dungeon card game by ChoKo made with GDevelop, running on quixjs, a JS runtime in C with SDL2 and OpenGL ES 2."
+
+# las partidas: localStorage y los archivos que guarda el juego con su
+# extension FileSystem (muertes, partida terminada...), en gamedata/
+[saves]
+local_storage = "localstorage.json"
+files         = ["localstorage.json", "SuperSmilingDungeon/Save/*"]
+
+[scripts]
+libs     = [
+  "libs/jshashtable.js"
+]
+includes = [
+  "logger.js",
+  "gd.js",
+  "libs/rbush.js",
+  "AsyncTasksManager.js",
+  "inputmanager.js",
+  "jsonmanager.js",
+  "Model3DManager.js",
+  "ResourceLoader.js",
+  "ResourceCache.js",
+  "timemanager.js",
+  "polygon.js",
+  "runtimeobject.js",
+  "profiler.js",
+  "RuntimeInstanceContainer.js",
+  "runtimescene.js",
+  "scenestack.js",
+  "force.js",
+  "RuntimeLayer.js",
+  "layer.js",
+  "RuntimeCustomObjectLayer.js",
+  "timer.js",
+  "runtimewatermark.js",
+  "runtimegame.js",
+  "variable.js",
+  "variablescontainer.js",
+  "oncetriggers.js",
+  "runtimebehavior.js",
+  "SpriteAnimator.js",
+  "spriteruntimeobject.js",
+  "affinetransformation.js",
+  "CustomRuntimeObjectInstanceContainer.js",
+  "CustomRuntimeObject.js",
+  "CustomRuntimeObject2D.js",
+  "indexeddb.js",
+  "events-tools/commontools.js",
+  "events-tools/variabletools.js",
+  "events-tools/runtimescenetools.js",
+  "events-tools/inputtools.js",
+  "events-tools/objecttools.js",
+  "events-tools/cameratools.js",
+  "events-tools/soundtools.js",
+  "events-tools/storagetools.js",
+  "events-tools/stringtools.js",
+  "events-tools/windowtools.js",
+  "events-tools/networktools.js",
+  "splash/gd-logo-light.js",
+  "pixi-renderers/pixi.js",
+  "pixi-renderers/pixi-filters-tools.js",
+  "pixi-renderers/runtimegame-pixi-renderer.js",
+  "pixi-renderers/runtimescene-pixi-renderer.js",
+  "pixi-renderers/layer-pixi-renderer.js",
+  "pixi-renderers/pixi-image-manager.js",
+  "pixi-renderers/pixi-bitmapfont-manager.js",
+  "pixi-renderers/spriteruntimeobject-pixi-renderer.js",
+  "pixi-renderers/CustomRuntimeObject2DPixiRenderer.js",
+  "pixi-renderers/DebuggerPixiRenderer.js",
+  "pixi-renderers/loadingscreen-pixi-renderer.js",
+  "pixi-renderers/pixi-effects-manager.js",
+  "howler-sound-manager/howler.min.js",
+  "howler-sound-manager/howler-sound-manager.js",
+  "fontfaceobserver-font-manager/fontfaceobserver.js",
+  "fontfaceobserver-font-manager/fontfaceobserver-font-manager.js",
+  "gdjs-evtsext__autotyping__text_autotyping.js",
+  "gdjs-evtsext__buttonstates__buttonfsm.js",
+  "gdjs-evtsext__buttonstates__buttonobjecteffecttween.js",
+  "gdjs-evtsext__health__health.js",
+  "gdjs-evtsext__shakeobject__shakeobject_positionangle.js",
+  "gdjs-evtsext__shakeobject__shakeobject_positionanglescale.js",
+  "gdjs-evtsext__threedflip__threedflip.js",
+  "Extensions/AdvancedWindow/electron-advancedwindowtools.js",
+  "Extensions/DebuggerTools/debuggertools.js",
+  "Extensions/FileSystem/filesystemtools.js",
+  "Extensions/PlatformBehavior/platformerobjectruntimebehavior.js",
+  "Extensions/PlatformBehavior/platformruntimebehavior.js",
+  "Extensions/PlatformBehavior/platformtools.js",
+  "Extensions/Steamworks/steamworkstools.js",
+  "Extensions/TextObject/textruntimeobject-pixi-renderer.js",
+  "Extensions/TextObject/textruntimeobject.js",
+  "Extensions/TweenBehavior/TweenManager.js",
+  "object-capabilities/AnimatableBehavior.js",
+  "object-capabilities/EffectBehavior.js",
+  "object-capabilities/FlippableBehavior.js",
+  "object-capabilities/OpacityBehavior.js",
+  "object-capabilities/ResizableBehavior.js",
+  "object-capabilities/ScalableBehavior.js",
+  "object-capabilities/TextContainerBehavior.js",
+  "Extensions/3D/DirectionalLight.js",
+  "Extensions/3D/HemisphereLight.js",
+  "code0.js",
+  "code1.js",
+  "code2.js",
+  "code3.js",
+  "code4.js",
+  "code5.js",
+  "code6.js",
+  "code7.js",
+  "code8.js",
+  "code9.js",
+  "code10.js",
+  "code11.js",
+  "code12.js",
+  "code13.js",
+  "code14.js",
+  "code15.js",
+  "code16.js",
+  "code17.js",
+  "code18.js",
+  "code19.js",
+  "code20.js",
+  "code21.js",
+  "code22.js",
+  "code23.js",
+  "code24.js",
+  "code25.js",
+  "code26.js",
+  "code27.js",
+  "code28.js",
+  "code29.js",
+  "code30.js",
+  "data.js",
+  "../entry.js",
+  "../render-scale.js",
+  "../tutorial-fix.js"
+]
+# el <script> del final del index.html: crea el juego y lo empieza
+entry    = "data:text/javascript,\n\n    (function() {\n        //Initialization\n        var game = new gdjs.RuntimeGame(gdjs.projectData, {});\n\n        //Create a renderer\n        game.getRenderer().createStandardCanvas(document.body);\n\n        //Bind keyboards/mouse/touch events\n        game.getRenderer().bindStandardEvents(game.getInputManager(), window, document);\n\n        //Load all assets and start the game\n        game.loadAllAssets(function() {\n            game.startGameLoop();\n        });\n    })();\n\n\t"
+
+[controls]
+gamepad = true                # lo lee el mod controller
+# Select + R1: captura de pantalla; Select + L1: la lupa. Con true, Controls
+# pide tambien un boton suelto para cada una (el combo sigue)
+screenshot = true
+magnifier  = true
+
+# lo que hace cada boton (mods/controller)
+[controls.buttons]
+dpup    = "Cursor up"
+dpdown  = "Cursor down"
+dpleft  = "Cursor left"
+dpright = "Cursor right"
+a       = "Click"
+b       = "Skip text"
+
+# ---------- logros ----------
+# Los de Steam: el juego los pide con gdjs.steamworks.claimAchievement(nombre)
+# y entry.js deja cada nombre en quix.steam.achievements (como el
+# greenworks de quixjs en Gunfield). Los nombres salen de su codigo (code*.js);
+# las descripciones, de su pantalla de logros (en ingles); los titulos, de su
+# pagina de Steam, que solo muestra 26 de 63: los que llevan * son propios.
+[symbols]
+a_tuto_fini                  = "path:quix.steam.achievements.ACHIEVEMENT_TUTO_FINI"
+a_6_kill                     = "path:quix.steam.achievements.ACHIEVEMENT_6_KILL"
+a_66_kill                    = "path:quix.steam.achievements.ACHIEVEMENT_66_KILL"
+a_666_kill                   = "path:quix.steam.achievements.ACHIEVEMENT_666_KILL"
+a_999_kill                   = "path:quix.steam.achievements.ACHIEVEMENT_999_KILL"
+a_10_potions                 = "path:quix.steam.achievements.ACHIEVEMENT_10_POTIONS"
+a_100_potions                = "path:quix.steam.achievements.ACHIEVEMENT_100_POTIONS"
+a_10_manapopo                = "path:quix.steam.achievements.ACHIEVEMENT_10_MANAPOPO"
+a_100_manapopo               = "path:quix.steam.achievements.ACHIEVEMENT_100_MANAPOPO"
+a_5_skill                    = "path:quix.steam.achievements.ACHIEVEMENT_5_SKILL"
+a_50_skill                   = "path:quix.steam.achievements.ACHIEVEMENT_50_SKILL"
+a_3_diamonds                 = "path:quix.steam.achievements.ACHIEVEMENT_3_DIAMONDS"
+a_10_diamonds                = "path:quix.steam.achievements.ACHIEVEMENT_10_DIAMONDS"
+a_1_gameover                 = "path:quix.steam.achievements.ACHIEVEMENT_1_GAMEOVER"
+a_10_gameover                = "path:quix.steam.achievements.ACHIEVEMENT_10_GAMEOVER"
+a_100_gameover               = "path:quix.steam.achievements.ACHIEVEMENT_100_GAMEOVER"
+a_5_trapped                  = "path:quix.steam.achievements.ACHIEVEMENT_5_TRAPPED"
+a_50_trapped                 = "path:quix.steam.achievements.ACHIEVEMENT_50_TRAPPED"
+a_200_stairs                 = "path:quix.steam.achievements.ACHIEVEMENT_200_STAIRS"
+a_500_stairs                 = "path:quix.steam.achievements.ACHIEVEMENT_500_STAIRS"
+a_1_wingame                  = "path:quix.steam.achievements.ACHIEVEMENT_1_WINGAME"
+a_5_wingame                  = "path:quix.steam.achievements.ACHIEVEMENT_5_WINGAME"
+a_100_armor                  = "path:quix.steam.achievements.ACHIEVEMENT_100_ARMOR"
+a_50_shop                    = "path:quix.steam.achievements.ACHIEVEMENT_50_SHOP"
+a_30_villager                = "path:quix.steam.achievements.ACHIEVEMENT_30_VILLAGER"
+a_30_vagabond                = "path:quix.steam.achievements.ACHIEVEMENT_30_VAGABOND"
+a_30_ninja                   = "path:quix.steam.achievements.ACHIEVEMENT_30_NINJA"
+a_30_knight                  = "path:quix.steam.achievements.ACHIEVEMENT_30_KNIGHT"
+a_30_witch                   = "path:quix.steam.achievements.ACHIEVEMENT_30_WITCH"
+a_30_seducteur               = "path:quix.steam.achievements.ACHIEVEMENT_30_SEDUCTEUR"
+a_30_danseuse                = "path:quix.steam.achievements.ACHIEVEMENT_30_DANSEUSE"
+a_30_skeleton                = "path:quix.steam.achievements.ACHIEVEMENT_30_SKELETON"
+a_10_chifoumi                = "path:quix.steam.achievements.ACHIEVEMENT_10_CHIFOUMI"
+a_25_goodchest               = "path:quix.steam.achievements.ACHIEVEMENT_25_GOODCHEST"
+a_50_goodchest               = "path:quix.steam.achievements.ACHIEVEMENT_50_GOODCHEST"
+a_3_miniboss                 = "path:quix.steam.achievements.ACHIEVEMENT_3_MINIBOSS"
+a_5_miniboss                 = "path:quix.steam.achievements.ACHIEVEMENT_5_MINIBOSS"
+a_5_fuiteminiboss            = "path:quix.steam.achievements.ACHIEVEMENT_5_FUITEMINIBOSS"
+a_1_bestiaire                = "path:quix.steam.achievements.ACHIEVEMENT_1_BESTIAIRE"
+a_10floorlost                = "path:quix.steam.achievements.ACHIEVEMENT_10FLOORLOST"
+a_credits                    = "path:quix.steam.achievements.ACHIEVEMENT_CREDITS"
+a_hardmode                   = "path:quix.steam.achievements.ACHIEVEMENT_HARDMODE"
+a_1_opendiceroom             = "path:quix.steam.achievements.ACHIEVEMENT_1_OPENDICEROOM"
+a_6_lancerdice               = "path:quix.steam.achievements.ACHIEVEMENT_6_LANCERDICE"
+a_15_visitdiceroom           = "path:quix.steam.achievements.ACHIEVEMENT_15_VISITDICEROOM"
+a_1_cursedplayer             = "path:quix.steam.achievements.ACHIEVEMENT_1_CURSEDPLAYER"
+a_1_glasses                  = "path:quix.steam.achievements.ACHIEVEMENT_1_GLASSES"
+a_1_killminiboss             = "path:quix.steam.achievements.ACHIEVEMENT_1_KILLMINIBOSS"
+a_2_killminiboss             = "path:quix.steam.achievements.ACHIEVEMENT_2_KILLMINIBOSS"
+a_3_killminiboss             = "path:quix.steam.achievements.ACHIEVEMENT_3_KILLMINIBOSS"
+a_4_killminiboss             = "path:quix.steam.achievements.ACHIEVEMENT_4_KILLMINIBOSS"
+a_5_killminiboss             = "path:quix.steam.achievements.ACHIEVEMENT_5_KILLMINIBOSS"
+a_6_killminiboss             = "path:quix.steam.achievements.ACHIEVEMENT_6_KILLMINIBOSS"
+a_7_killminiboss             = "path:quix.steam.achievements.ACHIEVEMENT_7_KILLMINIBOSS"
+a_8_killminiboss             = "path:quix.steam.achievements.ACHIEVEMENT_8_KILLMINIBOSS"
+a_9_killminiboss             = "path:quix.steam.achievements.ACHIEVEMENT_9_KILLMINIBOSS"
+a_10_killminiboss            = "path:quix.steam.achievements.ACHIEVEMENT_10_KILLMINIBOSS"
+a_11_killminiboss            = "path:quix.steam.achievements.ACHIEVEMENT_11_KILLMINIBOSS"
+a_12_killminiboss            = "path:quix.steam.achievements.ACHIEVEMENT_12_KILLMINIBOSS"
+a_13_killminiboss            = "path:quix.steam.achievements.ACHIEVEMENT_13_KILLMINIBOSS"
+a_14_killminiboss            = "path:quix.steam.achievements.ACHIEVEMENT_14_KILLMINIBOSS"
+a_15_killminiboss            = "path:quix.steam.achievements.ACHIEVEMENT_15_KILLMINIBOSS"
+a_16_killminiboss            = "path:quix.steam.achievements.ACHIEVEMENT_16_KILLMINIBOSS"
+
+[[achievements]]
+id          = "ACHIEVEMENT_TUTO_FINI"
+title       = "Ready"
+description = "Finish the tutorial"
+type        = "progression"
+conditions  = ["a_tuto_fini"]
+
+[[achievements]]
+id          = "ACHIEVEMENT_6_KILL"
+title       = "Newbie"
+description = "Kill 6 monsters"
+type        = "progression"
+conditions  = ["a_6_kill"]
+
+[[achievements]]
+id          = "ACHIEVEMENT_66_KILL"
+title       = "Fighter"
+description = "Kill 66 monsters"
+type        = "progression"
+conditions  = ["a_66_kill"]
+
+[[achievements]]
+id          = "ACHIEVEMENT_666_KILL"
+title       = "Diabolic"
+description = "Kill 666 monsters"
+type        = "progression"
+conditions  = ["a_666_kill"]
+
+[[achievements]]
+id          = "ACHIEVEMENT_999_KILL"
+title       = "Exterminator"
+description = "Kill 999 monsters"
+type        = "progression"
+conditions  = ["a_999_kill"]
+
+[[achievements]]
+id          = "ACHIEVEMENT_10_POTIONS"
+title       = "Healthy"
+description = "Pick up 10 life potions"
+type        = "secondary"
+conditions  = ["a_10_potions"]
+
+[[achievements]]
+id          = "ACHIEVEMENT_100_POTIONS"
+title       = "Life Manager"
+description = "Pick up 100 life potions"
+type        = "secondary"
+conditions  = ["a_100_potions"]
+
+[[achievements]]
+id          = "ACHIEVEMENT_10_MANAPOPO"
+title       = "Taster"
+description = "Pick up 10 mana flasks"
+type        = "secondary"
+conditions  = ["a_10_manapopo"]
+
+[[achievements]]
+id          = "ACHIEVEMENT_100_MANAPOPO"
+title       = "Mana manager"
+description = "Pick up 100 mana flasks"
+type        = "secondary"
+conditions  = ["a_100_manapopo"]
+
+[[achievements]]
+id          = "ACHIEVEMENT_5_SKILL"
+title       = "Skilled"
+description = "Use character skill 5 times"
+type        = "secondary"
+conditions  = ["a_5_skill"]
+
+[[achievements]]
+id          = "ACHIEVEMENT_50_SKILL"
+title       = "High skilled"
+description = "Use character skill 50 times"
+type        = "secondary"
+conditions  = ["a_50_skill"]
+
+[[achievements]]
+id          = "ACHIEVEMENT_3_DIAMONDS"
+title       = "Beautiful"
+description = "3 diamonds in inventory"
+type        = "secondary"
+conditions  = ["a_3_diamonds"]
+
+[[achievements]]
+id          = "ACHIEVEMENT_10_DIAMONDS"
+title       = "Shiny"
+description = "10 diamonds in inventory"
+type        = "secondary"
+conditions  = ["a_10_diamonds"]
+
+[[achievements]]
+id          = "ACHIEVEMENT_1_GAMEOVER"
+title       = "First try"
+description = "Lose 1 time"
+type        = "secondary"
+conditions  = ["a_1_gameover"]
+
+[[achievements]]
+id          = "ACHIEVEMENT_10_GAMEOVER"
+title       = "Brave"
+description = "Lose 10 times"
+type        = "secondary"
+conditions  = ["a_10_gameover"]
+
+[[achievements]]
+id          = "ACHIEVEMENT_100_GAMEOVER"
+title       = "Stubborn"
+description = "Lose 100 times"
+type        = "secondary"
+conditions  = ["a_100_gameover"]
+
+[[achievements]]
+id          = "ACHIEVEMENT_5_TRAPPED"
+title       = "Oops"
+description = "Trapped 5 times"
+type        = "secondary"
+conditions  = ["a_5_trapped"]
+
+[[achievements]]
+id          = "ACHIEVEMENT_50_TRAPPED"
+title       = "Clumsy"
+description = "Trapped 50 times"
+type        = "secondary"
+conditions  = ["a_50_trapped"]
+
+[[achievements]]
+id          = "ACHIEVEMENT_200_STAIRS"
+title       = "Runner"
+description = "Climb the stairs 200 times"
+type        = "progression"
+conditions  = ["a_200_stairs"]
+
+[[achievements]]
+id          = "ACHIEVEMENT_500_STAIRS"
+title       = "Marathon"
+description = "Climb the stairs 500 times"
+type        = "progression"
+conditions  = ["a_500_stairs"]
+
+[[achievements]]
+id          = "ACHIEVEMENT_1_WINGAME"
+title       = "Finisher"
+description = "Finish the game"
+type        = "win_condition"
+conditions  = ["a_1_wingame"]
+
+[[achievements]]
+id          = "ACHIEVEMENT_5_WINGAME"
+title       = "Veteran"
+description = "Finish the game 5 times"
+type        = "win_condition"
+conditions  = ["a_5_wingame"]
+
+[[achievements]]
+id          = "ACHIEVEMENT_100_ARMOR"
+title       = "The wall"
+description = "Pick up armor 100 times"
+type        = "secondary"
+conditions  = ["a_100_armor"]
+
+[[achievements]]
+id          = "ACHIEVEMENT_50_SHOP"
+title       = "Regular customer"
+description = "Visit the shop 50 times"
+type        = "secondary"
+conditions  = ["a_50_shop"]
+
+[[achievements]]
+id          = "ACHIEVEMENT_30_VILLAGER"
+title       = "Villager"
+description = "Play 30 times the villager hero"
+type        = "secondary"
+conditions  = ["a_30_villager"]
+
+[[achievements]]
+id          = "ACHIEVEMENT_30_VAGABOND"
+title       = "Wanderer"
+description = "Play 30 times the wanderer hero"
+type        = "secondary"
+conditions  = ["a_30_vagabond"]
+
+[[achievements]]
+id          = "ACHIEVEMENT_30_NINJA"
+title       = "Ninja"
+description = "Play 30 times the ninja hero"
+type        = "secondary"
+conditions  = ["a_30_ninja"]
+
+[[achievements]]
+id          = "ACHIEVEMENT_30_KNIGHT"
+title       = "Knight"
+description = "Play 30 times the knight hero"
+type        = "secondary"
+conditions  = ["a_30_knight"]
+
+[[achievements]]
+id          = "ACHIEVEMENT_30_WITCH"
+title       = "Witch"
+description = "Play 30 times the witch hero"
+type        = "secondary"
+conditions  = ["a_30_witch"]
+
+[[achievements]]
+id          = "ACHIEVEMENT_30_SEDUCTEUR"
+title       = "Seducer"
+description = "Play 30 times the seducer hero"
+type        = "secondary"
+conditions  = ["a_30_seducteur"]
+
+[[achievements]]
+id          = "ACHIEVEMENT_30_DANSEUSE"
+title       = "Dancer"
+description = "Play 30 times the dancer hero"
+type        = "secondary"
+conditions  = ["a_30_danseuse"]
+
+[[achievements]]
+id          = "ACHIEVEMENT_30_SKELETON"
+title       = "Secret hero"
+description = "Play 30 times the secret hero"
+type        = "secondary"
+conditions  = ["a_30_skeleton"]
+
+[[achievements]]
+id          = "ACHIEVEMENT_10_CHIFOUMI"
+title       = "Player"
+description = "Win 10 mini-games"
+type        = "secondary"
+conditions  = ["a_10_chifoumi"]
+
+[[achievements]]
+id          = "ACHIEVEMENT_25_GOODCHEST"
+title       = "Reward addict"
+description = "Open 25 favourable chests"
+type        = "secondary"
+conditions  = ["a_25_goodchest"]
+
+[[achievements]]
+id          = "ACHIEVEMENT_50_GOODCHEST"
+title       = "Chest Lover"
+description = "Open 50 favourable chests"
+type        = "secondary"
+conditions  = ["a_50_goodchest"]
+
+[[achievements]]
+id          = "ACHIEVEMENT_3_MINIBOSS"
+title       = "Slayer"
+description = "Beat 3 side bosses"
+type        = "progression"
+conditions  = ["a_3_miniboss"]
+
+[[achievements]]
+id          = "ACHIEVEMENT_5_MINIBOSS"
+title       = "Mega slayer"
+description = "Beat 5 side bosses"
+type        = "progression"
+conditions  = ["a_5_miniboss"]
+
+[[achievements]]
+id          = "ACHIEVEMENT_5_FUITEMINIBOSS"
+title       = "Scarecrow"
+description = "Scare away 5 side bosses"
+type        = "secondary"
+conditions  = ["a_5_fuiteminiboss"]
+
+[[achievements]]
+id          = "ACHIEVEMENT_1_BESTIAIRE"
+title       = "Collection"
+description = "Visit the bestiary"
+type        = "secondary"
+conditions  = ["a_1_bestiaire"]
+
+[[achievements]]
+id          = "ACHIEVEMENT_10FLOORLOST"
+title       = "Free fall"
+description = "Fall 10 times from a floor"
+type        = "secondary"
+conditions  = ["a_10floorlost"]
+
+[[achievements]]
+id          = "ACHIEVEMENT_CREDITS"
+title       = "Thank you"
+description = "Watch the credits"
+type        = "secondary"
+conditions  = ["a_credits"]
+
+[[achievements]]
+id          = "ACHIEVEMENT_HARDMODE"
+title       = "Hardcore"
+description = "Finish Hard mode"
+type        = "win_condition"
+conditions  = ["a_hardmode"]
+
+[[achievements]]
+id          = "ACHIEVEMENT_1_OPENDICEROOM"
+title       = "Game room"
+description = "Open the dice room"
+type        = "secondary"
+conditions  = ["a_1_opendiceroom"]
+
+[[achievements]]
+id          = "ACHIEVEMENT_6_LANCERDICE"
+title       = "Lucky six"
+description = "Roll a 6 with the dice"
+type        = "secondary"
+conditions  = ["a_6_lancerdice"]
+
+[[achievements]]
+id          = "ACHIEVEMENT_15_VISITDICEROOM"
+title       = "Gambler"
+description = "Visit the dice room 15 times"
+type        = "secondary"
+conditions  = ["a_15_visitdiceroom"]
+
+[[achievements]]
+id          = "ACHIEVEMENT_1_CURSEDPLAYER"
+title       = "Cursed"
+description = "Finish Cursed Dungeon mode"
+type        = "win_condition"
+conditions  = ["a_1_cursedplayer"]
+
+[[achievements]]
+id          = "ACHIEVEMENT_1_GLASSES"
+title       = "Clear sight"
+description = "Buy glasses"
+type        = "secondary"
+conditions  = ["a_1_glasses"]
+
+[[achievements]]
+id          = "ACHIEVEMENT_1_KILLMINIBOSS"
+title       = "Boss Hunter 1"
+description = "Beat optional boss 1"
+type        = "progression"
+conditions  = ["a_1_killminiboss"]
+
+[[achievements]]
+id          = "ACHIEVEMENT_2_KILLMINIBOSS"
+title       = "Boss Hunter 2"
+description = "Beat optional boss 2"
+type        = "progression"
+conditions  = ["a_2_killminiboss"]
+
+[[achievements]]
+id          = "ACHIEVEMENT_3_KILLMINIBOSS"
+title       = "Boss Hunter 3"
+description = "Beat optional boss 3"
+type        = "progression"
+conditions  = ["a_3_killminiboss"]
+
+[[achievements]]
+id          = "ACHIEVEMENT_4_KILLMINIBOSS"
+title       = "Boss Hunter 4"
+description = "Beat optional boss 4"
+type        = "progression"
+conditions  = ["a_4_killminiboss"]
+
+[[achievements]]
+id          = "ACHIEVEMENT_5_KILLMINIBOSS"
+title       = "Boss Hunter 5"
+description = "Beat optional boss 5"
+type        = "progression"
+conditions  = ["a_5_killminiboss"]
+
+[[achievements]]
+id          = "ACHIEVEMENT_6_KILLMINIBOSS"
+title       = "Boss Hunter 6"
+description = "Beat optional boss 6"
+type        = "progression"
+conditions  = ["a_6_killminiboss"]
+
+[[achievements]]
+id          = "ACHIEVEMENT_7_KILLMINIBOSS"
+title       = "Boss Hunter 7"
+description = "Beat optional boss 7"
+type        = "progression"
+conditions  = ["a_7_killminiboss"]
+
+[[achievements]]
+id          = "ACHIEVEMENT_8_KILLMINIBOSS"
+title       = "Boss Hunter 8"
+description = "Beat optional boss 8"
+type        = "progression"
+conditions  = ["a_8_killminiboss"]
+
+[[achievements]]
+id          = "ACHIEVEMENT_9_KILLMINIBOSS"
+title       = "Boss Hunter 9"
+description = "Beat optional boss 9"
+type        = "progression"
+conditions  = ["a_9_killminiboss"]
+
+[[achievements]]
+id          = "ACHIEVEMENT_10_KILLMINIBOSS"
+title       = "Boss Hunter 10"
+description = "Beat optional boss 10"
+type        = "progression"
+conditions  = ["a_10_killminiboss"]
+
+[[achievements]]
+id          = "ACHIEVEMENT_11_KILLMINIBOSS"
+title       = "Boss Hunter 11"
+description = "Beat optional boss 11"
+type        = "progression"
+conditions  = ["a_11_killminiboss"]
+
+[[achievements]]
+id          = "ACHIEVEMENT_12_KILLMINIBOSS"
+title       = "Boss Hunter 12"
+description = "Beat optional boss 12"
+type        = "progression"
+conditions  = ["a_12_killminiboss"]
+
+[[achievements]]
+id          = "ACHIEVEMENT_13_KILLMINIBOSS"
+title       = "Boss Hunter 13"
+description = "Beat optional boss 13"
+type        = "progression"
+conditions  = ["a_13_killminiboss"]
+
+[[achievements]]
+id          = "ACHIEVEMENT_14_KILLMINIBOSS"
+title       = "Boss Hunter 14"
+description = "Beat optional boss 14"
+type        = "progression"
+conditions  = ["a_14_killminiboss"]
+
+[[achievements]]
+id          = "ACHIEVEMENT_15_KILLMINIBOSS"
+title       = "Boss Hunter 15"
+description = "Beat optional boss 15"
+type        = "progression"
+conditions  = ["a_15_killminiboss"]
+
+[[achievements]]
+id          = "ACHIEVEMENT_16_KILLMINIBOSS"
+title       = "Boss Hunter 16"
+description = "Beat optional boss 16"
+type        = "progression"
+conditions  = ["a_16_killminiboss"]
+
+[portmaster]
+script       = "Super Smiling Dungeon.sh"
+porter       = ["lowlevel.1989"]
+inst         = "Needs Super Smiling Dungeon 1.2.5 (Steam). Copy resources/app.asar from its folder, as it is, into ports/supersmilingdungeon/, next to port.toml."
+store        = { name = "Steam", url = "https://store.steampowered.com/app/3539970/" }
+availability = "paid"
+
