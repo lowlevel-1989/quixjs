@@ -34,6 +34,8 @@ fi
 QUIXJS="./quixjs.$ARCH"
 
 echo "@TITLE@ port @PORT_VERSION@, quixjs $(cat VERSION 2>/dev/null): quixjs.$ARCH ($CFW_NAME)"
+# el dispositivo y el CFW en el log (lo de PortMaster: modelo, pantalla, RAM...)
+$controlfolder/device_info.txt 2> /dev/null
 $ESUDO chmod +x "$GAMEDIR/quixjs.$ARCH"
 
 # la fuente del launcher y las librerias que no todos los CFW traen

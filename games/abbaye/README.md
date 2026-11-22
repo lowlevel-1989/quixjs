@@ -93,6 +93,28 @@ To update the port, do step 2 again with the new zip. The game stays.
 Without PortMaster: unzip the zip into the ports folder. Then
 EmulationStation may not show the image of the port.
 
+## port.toml
+
+**port.toml** tells quixjs where the game is and where saves go. Paths are relative to the folder that holds port.toml.
+
+```toml
+rom      = "abbaye-des-morts-21e1fc42694a2c69078c6451ae8b6f8fb22dff99.zip"
+game_dir = "abbaye-des-morts-21e1fc42694a2c69078c6451ae8b6f8fb22dff99"
+```
+
+- `rom`: the zip downloaded from GitHub (Code, Download ZIP), placed as it is next to port.toml.
+- `game_dir`: the folder inside the zip where the game starts: GitHub puts everything inside a folder named after the repository and the commit.
+- Saves go to `gamedata/`, next to port.toml, so `abbaye-des-morts-21e1fc42694a2c69078c6451ae8b6f8fb22dff99.zip` is never modified.
+
+```
+port.toml
+abbaye-des-morts-21e1fc42694a2c69078c6451ae8b6f8fb22dff99.zip
+  abbaye-des-morts-21e1fc42694a2c69078c6451ae8b6f8fb22dff99/
+    js/
+    ...
+gamedata/
+```
+
 ## Android
 
 You need the game and two files from the releases of quixjs

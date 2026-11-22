@@ -137,6 +137,7 @@ CORE_SRCS = runtime/js/jsc.c \
 						runtime/video/video_mp4.c \
 						runtime/binding/video.c \
 						runtime/gfx/gpu2d.c \
+						runtime/gfx/gl_state.c \
 						runtime/platform/$(PLATFORM_OS)/platform.c \
 						runtime/core/main.c
 

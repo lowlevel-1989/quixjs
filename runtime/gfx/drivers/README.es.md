@@ -68,6 +68,7 @@ Lo que dicen nuestras consolas (de sus logs):
 | `thread_wait(fence)` | funcion: como espera ese thread a que la GPU termine cada imagen. Sin ella (`0`), el driver no usa el thread y todo va por `present` | `backend/sdl/thread.c`, el thread y `thread_start` |
 | `thread_max_fps` | numero: con mas `[engine] fps` el thread no se usa (`0`: sin limite) | `backend/sdl/thread.c`, `thread_start` |
 | `present(p, f)` | funcion: como se presenta una imagen sin ese thread (`present_ahead = false`, o si el compositor lo frena) | `backend/sdl/present.c`, `gpu_present()` |
+| `one_context` | 1: sin ese thread, la imagen se pone en pantalla con el contexto del juego, no con otro (la GPU lo hace en orden: no hay que esperar entre contextos) | `backend/sdl/present.c`, `one_context()` |
 
 `present` recibe la imagen (`GpuFrame`) y lo que el backend sabe hacer con
 ella (`Presenter`), explicados abajo.
@@ -92,6 +93,22 @@ Lo que elige cada driver, y por que (lo medido):
 | `thread_wait` | `drv_wait_gpu`: con `drv_wait_cpu`, en la RG CubeXX de ~70 a ~390 frames tardios en batalla | `drv_wait_cpu`: con `drv_wait_gpu`, los menus pestaneaban | ninguna (sin thread): con el, el juego esperaba ~16 ms por imagen; en el mapa de ~17 a ~27 fps | `drv_wait_gpu` |
 | `present` | `drv_present_previous`: en la RGB30 con panfrost, de 353 a 76 frames tardios en el mapa y de 940 a 194 en batalla | `drv_present_previous`: en la RGB30, de ~240 a ~60 en el mapa y de ~270 a ~85 en batalla | `drv_present_previous`, como mali | `drv_present_now` |
 | `thread_max_fps` | 0 (sin limite) | 30: a 60 fps con el thread cada imagen tardaba ~50 ms en verse (HexGL en la RGB30: ~18 fps; sin el thread, 60) | (sin thread) | 0 |
+| `one_context` | 0: usa el thread; sin el y con un contexto, en la RG CubeXX (Fear & Hunger a 60 fps) el mapa igual y la batalla peor (~1000 imagenes en 40 s frente a ~1400 con el thread) | 1: con dos contextos, a 60 fps las ventanas de Fear & Hunger pestaneaban (libmali mostraba la imagen sin terminar aunque se esperara su marca) | 1, como mali (RG35XX+ con muOS) | 0 |
+
+## Por que los fps deciden si se usa el thread (thread_max_fps)
+
+El thread muestra la imagen por adelantado: el juego le pasa la imagen N y
+sigue con la N+1, mientras el thread espera a que la GPU termine la N y al
+refresco de la pantalla para mostrarla. Para eso necesita tiempo libre entre
+imagen e imagen:
+
+- A 30 fps cada imagen esta en pantalla dos refrescos (33 ms). El thread
+  tiene un refresco entero de sobra para esperar a la GPU y mostrarla, y el
+  juego no lo nota.
+- A 60 fps cada imagen dura un solo refresco (16 ms), asi que no hay margen.
+  Cuando el thread todavia no ha mostrado la imagen N, el juego ya tiene
+  lista la N+1 y tiene que esperarlo. Con libmali esa espera se acumulaba
+  (unos 50 ms por imagen), y por eso HexGL bajaba a 18 fps.
 
 ## Como espera el thread a la GPU (thread_wait)
 

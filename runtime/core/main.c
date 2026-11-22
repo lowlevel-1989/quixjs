@@ -87,6 +87,8 @@ int main(int argc, char **argv) {
 
   // Select + R2 con --launcher: de vuelta al launcher
   int back = r->args.launcher && l->backend->back_to_menu && !r->app.exit_requested;
+  // la ventana nueva, como estaba esta (runtime/core/main/start.c)
+  if (back && l->backend->fullscreen) setenv("QUIXJS_FULLSCREEN", "1", 1);
   code = finish(r, l);                          // --hold, --screenshot, informes, liberar todo
   if (back) relaunch(argv);
   return code;

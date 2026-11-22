@@ -92,3 +92,25 @@ on Steam (https://store.steampowered.com/app/2305900/).
 
 To update the port, do step 2 again with the new zip. The game and your
 saves (`gamedata/AppData/Local/Gunfield/SaveGame/`) stay.
+
+## port.toml
+
+**port.toml** tells quixjs where the game is and where saves go. Paths are relative to the folder that holds port.toml.
+
+```toml
+rom      = "package.nw"
+game_dir = ""
+```
+
+- `rom`: the `package.nw` file of the game (a zip with its files), copied as it is next to port.toml.
+- `game_dir`: empty: the game starts at the root of package.nw, there is no folder inside.
+- Saves go to `gamedata/`, next to port.toml, so `package.nw` is never modified.
+
+```
+port.toml
+package.nw
+  c2runtime.js
+  data.js
+  ...
+gamedata/
+```

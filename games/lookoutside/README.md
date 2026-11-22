@@ -104,6 +104,29 @@ To update the port, do step 2 again with the new zip. The game and your saves
 
 Without PortMaster: unzip the zip into the ports folder.
 
+## port.toml
+
+**port.toml** tells quixjs where the game is and where saves go. Paths are relative to the folder that holds port.toml.
+
+```toml
+rom      = "Look Outside.zip"
+game_dir = "Look Outside"
+```
+
+- `rom`: the game folder (the one with `data/`, `js/` ...) zipped and placed next to port.toml.
+- `game_dir`: the folder inside the zip where the game starts. When you zip a folder on Windows, the folder itself ends up inside the zip, so this tells quixjs where to look.
+- Saves go to `gamedata/`, next to port.toml, so `Look Outside.zip` is never modified.
+
+```
+port.toml
+Look Outside.zip
+  Look Outside/
+    data/
+    js/
+    ...
+gamedata/
+```
+
 ## Android
 
 You need the game and two files from the releases of quixjs

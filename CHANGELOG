@@ -1,3 +1,11 @@
+0.5.2
+- added: el log de los ports trae el dispositivo y el CFW (device_info.txt de PortMaster)
+- added: README de los ports: que dicen rom y game_dir en port.toml y donde van las partidas
+- fixed: libmali sin el thread que presenta (RGB30 y RG35XX+ a 60 fps): las ventanas pestaneaban;
+  la imagen se pone en pantalla con el contexto del juego (drivers: one_context)
+- fixed: Select + R2 (volver al menu del port) quitaba la pantalla completa cuando la ponia el sistema
+  (ROCKNIX con sway)
+
 0.5.1
 - fixed: README de los ports: los pasos de Android con los nombres de la ultima version (VERSION)
 - added: README de Felvidek: pasos para Android

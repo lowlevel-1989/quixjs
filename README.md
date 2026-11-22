@@ -1,4 +1,4 @@
-# quixjs 0.5.1
+# quixjs 0.5.2
 
 English | [Español](README.es.md)
 

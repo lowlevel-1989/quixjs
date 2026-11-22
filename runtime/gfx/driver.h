@@ -51,6 +51,10 @@ typedef struct {
   // drv_present_previous...). Puede guardarse la imagen para mostrarla en la
   // siguiente llamada (solo esa: el backend reutiliza las demas)
   void      (*present)(const Presenter *p, GpuFrame *f);
+  // 1: sin el thread, la imagen se pone en pantalla con el contexto del
+  // juego (el de WebGL), no con otro: la GPU lo hace en orden y no hay que
+  // esperar entre contextos (libmali no lo respeta: ver drivers/README.md)
+  int         one_context;
 } GpuDriver;
 
 // Una vez, con el contexto GL ya actual (gl_init): mira GL_RENDERER y

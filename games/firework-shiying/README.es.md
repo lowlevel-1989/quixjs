@@ -101,6 +101,29 @@ partidas (`gamedata/www/save/`) se quedan.
 
 Sin PortMaster: descomprime el zip en la carpeta de ports.
 
+## port.toml
+
+**port.toml** le dice a quixjs dónde está el juego y dónde van las partidas. Las rutas son relativas a la carpeta que tiene port.toml.
+
+```toml
+rom      = "www.zip"
+game_dir = "www"
+```
+
+- `rom`: la carpeta `www/` del juego (la que tiene `data/`, `js/` ...) comprimida en un zip y puesta junto a port.toml.
+- `game_dir`: la carpeta dentro del zip donde empieza el juego. Al comprimir una carpeta en Windows, la propia carpeta queda dentro del zip, así que esto le dice a quixjs dónde mirar.
+- Las partidas van a `gamedata/`, junto a port.toml, así `www.zip` nunca se modifica.
+
+```
+port.toml
+www.zip
+  www/
+    data/
+    js/
+    ...
+gamedata/
+```
+
 ## Android
 
 Necesitas el juego y dos archivos de las releases de quixjs

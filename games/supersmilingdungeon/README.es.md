@@ -83,3 +83,25 @@ que puedes comprar en Steam (https://store.steampowered.com/app/3539970/).
 
 Para actualizar el port, repite el paso 2 con el zip nuevo. El juego y tus
 partidas (`gamedata/localstorage.json`) se quedan.
+
+## port.toml
+
+**port.toml** le dice a quixjs dónde está el juego y dónde van las partidas. Las rutas son relativas a la carpeta que tiene port.toml.
+
+```toml
+rom      = "app.asar"
+game_dir = "app"
+```
+
+- `rom`: el archivo `app.asar` del juego (en su carpeta `resources/`), copiado tal cual junto a port.toml.
+- `game_dir`: la carpeta dentro de app.asar donde empieza el juego.
+- Las partidas van a `gamedata/`, junto a port.toml, así `app.asar` nunca se modifica.
+
+```
+port.toml
+app.asar
+  app/
+    gd.js
+    ...
+gamedata/
+```

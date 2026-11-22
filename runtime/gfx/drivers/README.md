@@ -69,6 +69,7 @@ What our devices say (from their logs):
 | `thread_wait(fence)` | function: how that thread waits for the GPU to finish each frame. Without it (`0`), the driver does not use the thread and everything goes through `present` | `backend/sdl/thread.c`, the thread and `thread_start` |
 | `thread_max_fps` | number: with a higher `[engine] fps` the thread is not used (`0`: no limit) | `backend/sdl/thread.c`, `thread_start` |
 | `present(p, f)` | function: how a frame is presented without that thread (`present_ahead = false`, or if the compositor holds it back) | `backend/sdl/present.c`, `gpu_present()` |
+| `one_context` | 1: without that thread, the frame goes to the screen with the game's context, not another one (the GPU does it in order: no waiting between contexts) | `backend/sdl/present.c`, `one_context()` |
 
 `present` gets the frame (`GpuFrame`) and what the backend can do with it
 (`Presenter`), explained below.
@@ -93,6 +94,21 @@ What each driver picks, and why (what was measured):
 | `thread_wait` | `drv_wait_gpu`: with `drv_wait_cpu`, on the RG CubeXX from ~70 to ~390 late frames in battle | `drv_wait_cpu`: with `drv_wait_gpu`, the menus flickered | none (no thread): with it, the game waited ~16 ms per frame; on the map from ~17 to ~27 fps | `drv_wait_gpu` |
 | `present` | `drv_present_previous`: on the RGB30 with panfrost, from 353 to 76 late frames on the map and from 940 to 194 in battle | `drv_present_previous`: on the RGB30, from ~240 to ~60 on the map and from ~270 to ~85 in battle | `drv_present_previous`, like mali | `drv_present_now` |
 | `thread_max_fps` | 0 (no limit) | 30: at 60 fps with the thread each frame took ~50 ms to show (HexGL on the RGB30: ~18 fps; without the thread, 60) | (no thread) | 0 |
+| `one_context` | 0: it uses the thread; without it and with one context, on the RG CubeXX (Fear & Hunger at 60 fps) the map the same and battles worse (~1000 frames in 40 s against ~1400 with the thread) | 1: with two contexts, at 60 fps the windows of Fear & Hunger flickered (libmali showed the frame unfinished even after waiting for its fence) | 1, like mali (RG35XX+ with muOS) | 0 |
+
+## Why the fps decide whether the thread is used (thread_max_fps)
+
+The thread shows the frame ahead: the game hands it frame N and goes on with
+N+1, while the thread waits for the GPU to finish N and for the screen
+refresh to show it. For that it needs spare time between frames:
+
+- At 30 fps each frame stays on screen for two refreshes (33 ms). The thread
+  has a whole refresh to spare to wait for the GPU and show it, and the game
+  does not notice.
+- At 60 fps each frame lasts a single refresh (16 ms), so there is no room.
+  While the thread has not shown frame N yet, the game already has N+1 ready
+  and has to wait for it. With libmali that wait piled up (about 50 ms per
+  frame), which is why HexGL dropped to 18 fps.
 
 ## How the thread waits for the GPU (thread_wait)
 

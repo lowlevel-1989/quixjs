@@ -37,10 +37,31 @@ static void frame_wait(GpuFrame *g) {
   f->job.fence = NULL;
 }
 
+// Con el contexto del juego actual (gfx/driver.h, one_context): dibuja la
+// pantalla en el, guardando su estado y devolviendolo despues. 0 si ese
+// contexto no es el de la ventana (WebGL con su propia ventana oculta)
+static int one_context(SDLPlatformData *data) {
+  if (!gpu_driver()->one_context || !gl_available()) return 0;
+  gl_make_current();
+  return SDL_GL_GetCurrentWindow() == data->window;
+}
+
+static void draw_in_game_context(Backend *backend, SDLPlatformData *data, const PresentJob *j, int ww, int wh) {
+  GlState s;
+  gl_state_save(&s);
+  gl_state_plain();
+  draw_layers(backend, data, j->layers, j->n, ww, wh, 1);
+  gl_state_restore(&s);
+}
+
 static void frame_show(GpuFrame *g) {
   SdlFrame *f = (SdlFrame *)g;
-  draw_layers(f->backend, f->data, f->job.layers, f->job.n, f->job.ww, f->job.wh, 1);
-  f->data->shown_fence = gl_fence();
+  if (f->data->one) {
+    draw_in_game_context(f->backend, f->data, &f->job, f->job.ww, f->job.wh);
+  } else {
+    draw_layers(f->backend, f->data, f->job.layers, f->job.n, f->job.ww, f->job.wh, 1);
+    f->data->shown_fence = gl_fence();
+  }
   f->data->shown_job = f->job;
   f->data->have_shown = 1;
 }
@@ -55,6 +76,15 @@ static void sdl_repaint(Backend* backend) {
   if (!data || !data->gl || data->thr || !data->have_shown) return;
   SDL_Window *prev_win = SDL_GL_GetCurrentWindow();
   SDL_GLContext prev_ctx = SDL_GL_GetCurrentContext();
+  if (data->one && one_context(data)) {
+    PresentJob j = data->shown_job;
+    for (int i = 0; i < j.n; i++) j.layers[i].dirty = 0;
+    int ww, wh;
+    SDL_GL_GetDrawableSize(data->window, &ww, &wh);
+    draw_in_game_context(backend, data, &j, ww, wh);
+    if (prev_ctx) SDL_GL_MakeCurrent(prev_win, prev_ctx);
+    return;
+  }
   SDL_GL_MakeCurrent(data->window, data->gl);
   gl_fence_wait_cpu(data->shown_fence);   // lo anterior con esas texturas, ya hecho
   PresentJob j = data->shown_job;
@@ -160,13 +190,19 @@ static void sdl_present_layers(Backend* backend, const PresentLayer *layers, int
     // se puede mostrar mas tarde si todas sus capas son texturas entregadas
     f->base.later = backend->present_async;
     for (int i = 0; i < n; i++) if (!layers[i].gl_tex) f->base.later = 0;
-    // lo dibujado en el canvas WebGL (otro contexto), a la GPU
-    f->job.fence = gl_available() ? gl_fence() : NULL;
-    SDL_GL_MakeCurrent(data->window, data->gl);
-    // la textura que se mostro la ultima vez vuelve al juego: su dibujo en
-    // pantalla, terminado (es de hace una imagen: no se espera)
-    gl_fence_wait_cpu(data->shown_fence);
-    data->shown_fence = NULL;
+    data->one = one_context(data);
+    if (data->one) {
+      // la pantalla, con el contexto del juego: la GPU lo hace en orden
+      f->job.fence = NULL;
+    } else {
+      // lo dibujado en el canvas WebGL (otro contexto), a la GPU
+      f->job.fence = gl_available() ? gl_fence() : NULL;
+      SDL_GL_MakeCurrent(data->window, data->gl);
+      // la textura que se mostro la ultima vez vuelve al juego: su dibujo en
+      // pantalla, terminado (es de hace una imagen: no se espera)
+      gl_fence_wait_cpu(data->shown_fence);
+      data->shown_fence = NULL;
+    }
     gpu_present(&sdl_presenter, &f->base);   // cuando se ve: lo decide el driver
   }
 

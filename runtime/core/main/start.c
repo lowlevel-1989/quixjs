@@ -97,6 +97,12 @@ STEP int start_window(Run *r, Loop *l) {
   }
   l->backend = backend;
   backend->fullscreen = r->args.fullscreen;
+  // vuelta al launcher (Select + R2) desde una ventana a pantalla completa
+  // (runtime/core/main.c): la nueva, igual
+  if (getenv("QUIXJS_FULLSCREEN")) {
+    backend->fullscreen = 1;
+    unsetenv("QUIXJS_FULLSCREEN");
+  }
   backend->resizable = r->args.resizable;
   backend->no_vsync = !r->cfg.engine.vsync;
   backend->present_ahead = r->cfg.engine.present_ahead;

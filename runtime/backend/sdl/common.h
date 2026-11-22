@@ -31,6 +31,7 @@
 #include "core/trace.h"
 #include "gfx/font.h"
 #include "gfx/gl.h"
+#include "gfx/gl_state.h"
 #include "gfx/driver.h"
 #include "backend/sdl/backend.h"
 #include "backend/toast.h"
@@ -142,6 +143,7 @@ typedef struct SDLPlatformData {
   void               *shown_fence;
   PresentJob          shown_job;    // sin thread: la ultima mostrada (sdl_repaint)
   int                 have_shown;
+  int                 one;              // la ultima imagen, con el contexto del juego (present.c)
   int                 map_saved;   // Controls guardo una asignacion: se aplica en CAPTURE_STOP
   int                 job_pending;  // entregada y sin recoger
   int                 job_busy;     // el thread la esta mostrando

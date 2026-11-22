@@ -30,4 +30,7 @@ const GpuDriver gpu_driver_mali_g31 = {
   .thread_wait = 0,
   // la imagen anterior, como mali (drv_present_previous, common.c)
   .present = drv_present_previous,
+  // sin el thread, la pantalla con el contexto del juego: con dos, a 60 fps
+  // las ventanas de Fear & Hunger pestaneaban (la imagen salia sin terminar)
+  .one_context = 1,
 };

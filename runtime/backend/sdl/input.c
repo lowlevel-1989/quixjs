@@ -248,6 +248,9 @@ static void sdl_process_events(Backend* backend) {
         if (event.window.event == SDL_WINDOWEVENT_EXPOSED && data->frames_until_resizable == 0) {
           data->frames_until_resizable = RESIZABLE_DELAY;
         }
+        // a pantalla completa o no, la haya puesto quixjs o el sistema (en
+        // ROCKNIX, el script de PortMaster): Select + R2 la recrea igual
+        backend->fullscreen = (SDL_GetWindowFlags(data->window) & SDL_WINDOW_FULLSCREEN) != 0;
         break;
 
       case SDL_CONTROLLERBUTTONUP: {

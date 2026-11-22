@@ -22,6 +22,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "gl.h"
+#include "gl_state.h"
 #include "gpu2d.h"
 #include "shaders.h"   // runtime/shaders, generado por tools/embed_shaders.py
 
@@ -402,75 +403,6 @@ static void draw_pending(Gpu2D *g) {
 // CubeXX (panfrost), en Firework caminando, de ~680 a ~420 imagenes tardias
 // (45 ms o mas) por pasada de media, sin las tandas malas (3+3); Fear &
 // Hunger igual. QUIXJS_GPU2D_MAIN=0 vuelve al auxiliar.
-typedef struct {
-  GLint fb, vp[4], abuf, active, tex[2], prog, unpack;
-  GLint beq[2], bf[4];
-  GLboolean en[5], cmask[4];
-  GLfloat clear[4];
-  struct { GLint en, size, type, norm, stride, buf; void *ptr; } at[3];
-} SavedGL;
-
-static const GLenum caps[5] = { GL_SCISSOR_TEST, GL_DEPTH_TEST, GL_STENCIL_TEST, GL_CULL_FACE, GL_BLEND };
-
-static void save_gl(SavedGL *s) {
-  qgl.GetIntegerv(GL_FRAMEBUFFER_BINDING, &s->fb);
-  qgl.GetIntegerv(GL_VIEWPORT, s->vp);
-  qgl.GetIntegerv(GL_ARRAY_BUFFER_BINDING, &s->abuf);
-  qgl.GetIntegerv(GL_ACTIVE_TEXTURE, &s->active);
-  for (int i = 0; i < 2; i++) {
-    qgl.ActiveTexture(GL_TEXTURE0 + i);
-    qgl.GetIntegerv(GL_TEXTURE_BINDING_2D, &s->tex[i]);
-  }
-  qgl.GetIntegerv(GL_CURRENT_PROGRAM, &s->prog);
-  qgl.GetIntegerv(GL_UNPACK_ALIGNMENT, &s->unpack);
-  qgl.GetIntegerv(GL_BLEND_EQUATION_RGB, &s->beq[0]);
-  qgl.GetIntegerv(GL_BLEND_EQUATION_ALPHA, &s->beq[1]);
-  qgl.GetIntegerv(GL_BLEND_SRC_RGB, &s->bf[0]);
-  qgl.GetIntegerv(GL_BLEND_DST_RGB, &s->bf[1]);
-  qgl.GetIntegerv(GL_BLEND_SRC_ALPHA, &s->bf[2]);
-  qgl.GetIntegerv(GL_BLEND_DST_ALPHA, &s->bf[3]);
-  for (int i = 0; i < 5; i++) s->en[i] = qgl.IsEnabled(caps[i]);
-  qgl.GetBooleanv(GL_COLOR_WRITEMASK, s->cmask);
-  qgl.GetFloatv(GL_COLOR_CLEAR_VALUE, s->clear);
-  for (int a = 0; a < 3; a++) {
-    qgl.GetVertexAttribiv(a, GL_VERTEX_ATTRIB_ARRAY_ENABLED, &s->at[a].en);
-    qgl.GetVertexAttribiv(a, GL_VERTEX_ATTRIB_ARRAY_SIZE, &s->at[a].size);
-    qgl.GetVertexAttribiv(a, GL_VERTEX_ATTRIB_ARRAY_TYPE, &s->at[a].type);
-    qgl.GetVertexAttribiv(a, GL_VERTEX_ATTRIB_ARRAY_NORMALIZED, &s->at[a].norm);
-    qgl.GetVertexAttribiv(a, GL_VERTEX_ATTRIB_ARRAY_STRIDE, &s->at[a].stride);
-    qgl.GetVertexAttribiv(a, GL_VERTEX_ATTRIB_ARRAY_BUFFER_BINDING, &s->at[a].buf);
-    qgl.GetVertexAttribPointerv(a, GL_VERTEX_ATTRIB_ARRAY_POINTER, &s->at[a].ptr);
-  }
-}
-
-static void restore_gl(const SavedGL *s) {
-  for (int a = 0; a < 3; a++) {
-    qgl.BindBuffer(GL_ARRAY_BUFFER, s->at[a].buf);
-    if (s->at[a].buf || s->at[a].ptr)
-      qgl.VertexAttribPointer(a, s->at[a].size, s->at[a].type, (GLboolean)s->at[a].norm, s->at[a].stride, s->at[a].ptr);
-    if (s->at[a].en) qgl.EnableVertexAttribArray(a);
-    else qgl.DisableVertexAttribArray(a);
-  }
-  qgl.BindBuffer(GL_ARRAY_BUFFER, s->abuf);
-  qgl.BindFramebuffer(GL_FRAMEBUFFER, s->fb);
-  qgl.Viewport(s->vp[0], s->vp[1], s->vp[2], s->vp[3]);
-  for (int i = 0; i < 2; i++) {
-    qgl.ActiveTexture(GL_TEXTURE0 + i);
-    qgl.BindTexture(GL_TEXTURE_2D, s->tex[i]);
-  }
-  qgl.ActiveTexture(s->active);
-  qgl.UseProgram(s->prog);
-  qgl.PixelStorei(GL_UNPACK_ALIGNMENT, s->unpack);
-  qgl.BlendEquationSeparate(s->beq[0], s->beq[1]);
-  qgl.BlendFuncSeparate(s->bf[0], s->bf[1], s->bf[2], s->bf[3]);
-  for (int i = 0; i < 5; i++) {
-    if (s->en[i]) qgl.Enable(caps[i]);
-    else qgl.Disable(caps[i]);
-  }
-  qgl.ColorMask(s->cmask[0], s->cmask[1], s->cmask[2], s->cmask[3]);
-  qgl.ClearColor(s->clear[0], s->clear[1], s->clear[2], s->clear[3]);
-}
-
 static int main_ctx = -1;
 
 static int flush_main(Gpu2D *g) {
@@ -485,10 +417,10 @@ static int flush_main(Gpu2D *g) {
     if (!ok) return -1;
     g->mfbo_tex = g->tex;
   }
-  SavedGL sv;
-  save_gl(&sv);
+  GlState sv;
+  gl_state_save(&sv);
   draw_pending_to(g, g->mfbo);
-  restore_gl(&sv);
+  gl_state_restore(&sv);
   return 0;
 }
 

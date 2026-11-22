@@ -99,6 +99,29 @@ queda.
 Sin PortMaster: descomprime el zip en la carpeta de ports. Entonces
 EmulationStation puede no mostrar la imagen del port.
 
+## port.toml
+
+**port.toml** le dice a quixjs dónde está el juego y dónde van las partidas. Las rutas son relativas a la carpeta que tiene port.toml.
+
+```toml
+rom      = "HexGL-6addc95a2fce3bf05f4d751823cc054c61a16d68.zip"
+game_dir = "HexGL-6addc95a2fce3bf05f4d751823cc054c61a16d68"
+```
+
+- `rom`: el zip descargado de GitHub (Code, Download ZIP), puesto tal cual junto a port.toml.
+- `game_dir`: la carpeta dentro del zip donde empieza el juego: GitHub lo mete todo en una carpeta con el nombre del repositorio y del commit.
+- Las partidas van a `gamedata/`, junto a port.toml, así `HexGL-6addc95a2fce3bf05f4d751823cc054c61a16d68.zip` nunca se modifica.
+
+```
+port.toml
+HexGL-6addc95a2fce3bf05f4d751823cc054c61a16d68.zip
+  HexGL-6addc95a2fce3bf05f4d751823cc054c61a16d68/
+    bkcore/
+    css/
+    ...
+gamedata/
+```
+
 ## Android
 
 Necesitas el juego y dos archivos de las releases de quixjs

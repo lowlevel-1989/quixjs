@@ -33,4 +33,7 @@ const GpuDriver gpu_driver_mali = {
   // la CPU esperaba a la GPU 5,7 ms de media antes de cada refresco. En la
   // RGB30, de ~240 a ~60 frames tardios en el mapa y de ~270 a ~85 en batalla
   .present = drv_present_previous,
+  // sin el thread, la pantalla con el contexto del juego: con dos, a 60 fps
+  // las ventanas de Fear & Hunger pestaneaban (la imagen salia sin terminar)
+  .one_context = 1,
 };
