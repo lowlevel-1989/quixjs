@@ -13,25 +13,17 @@ urls and the test tools (`--script`, `--debug`).
 |-------------------|--------------|
 | `main.c`          | start, the `--launcher` menu before the game, main loop, input to KeyboardEvent, achievements checked each frame, composition of the screen (layers on the GPU or in memory), `--fps`, `--hold`, screenshot, exit code |
 | `app_context.h`   | `AppContext`: backend, config, frame counter and `quix.exit()` request, shared with the bindings |
-| `args.c`          | command line options (`-c`, `-b`, `--test`, `--frames`, `--script`, `--debug`, `--gen-config`, `--launcher`...) |
-| `config_loader.c` | reads the toml of the game (`[engine]` and `[engine.pc]` / `[engine.handheld]`, `[game]` with `title`, `id` and `mods`, `[scripts]`, `[fonts]`, `[launcher]`, `[saves]` with `dir` from `game_dir`, `[controls]`) with tomlc17; `[symbols]` and `[[achievements]]` are read by `achievements/`, `[hooks]` by `hooks/` |
-| `printer.c`       | prints the loaded config at start |
-| `gen_config.c`    | `--gen-config <folder or .html>`: looks at the game (nw.js `package.json`, `index.html` or the given `.html`, its CSS, `rpg_core.js` / `rmmz_core.js`, `pixi.js`) and writes a `config.toml` to stdout. An index file: its parts are in `gen_config/` (`manifest.c`, `html.c`, `engine.c`, `output.c`) |
-| `compiler.c`      | reads the scripts and checks their syntax; also loads the scripts added later (`<script src>`) |
-| `runner.c`        | runs each script in order |
+| `config/`        | the options and the toml of the game: read them, print them and write one with `--gen-config` ([README](config/README.md)) |
+| `scripts/`        | the scripts of the game, the ones of `[scripts]` in the toml (`libs`, `includes`, `entry`): `load.c` reads them and checks their syntax (also the ones added later, `<script src>`), `run.c` runs them in order |
 | `timer.c`         | clock (real or fixed), setTimeout / setInterval, requestAnimationFrame |
 | `keymap.c`        | KeyboardEvent.code -> key and keyCode, as a browser with a US keyboard; used by the sdl backend and `quix.input.pressKey()` |
-| `url.c`           | game urls to disk paths (`img/a.png?v=1`, `file://`, `http://localhost/`), data URIs, reading files |
-| `input_script.c`  | `--script <file>`: input script for tests, one action per line in a given frame (`press`, `down`, `up`, `shot`, `log`, `exit`) |
-| `debug_server.c`  | `--debug`: debug console on a Unix socket (`quixjs.sock`), used with `tools/console.py` |
-| `profiler.c`      | `--profile`: the sampling profiler of JavaScriptCore, a report every 10 s and on exit |
-| `profiler.js`     | the summary of the report in JS (groups the samples by function); in the binary through `tools/embed_js.py` |
+| `url/`            | game urls to disk paths (`img/a.png?v=1`, `file://`, `http://localhost/`) and data URIs (`url.c`), reading files (`read.c`), stat, list and map on disk or in the rom (`fs.c`) |
+| `debug/`         | the tools to test and measure quixjs: `--script`, `--debug`, `--profile`, the `mem` counters and `make TRACE=1` ([README](debug/README.md)) |
 | `dispatch.c`      | the JS does not talk to the hardware: it leaves a request in a channel and quixjs sends it to the device, at once if it is free or when it becomes free. Channels: `vibrate` (one at a time with a pause: on the RG CubeXX many in a row hung the console), `audio`, `lan` and `save` (these three always go at once: the game waits for their answer) |
 | `sandbox.c`       | the sandbox: read only inside the folder of the port; write only inside the saves folder |
 | `save.c`          | the files the game writes (saves, localStorage), through the `save` channel: to a temporary file that is renamed |
 | `watchdog.c`      | emergency exit: a thread reads the gamepads from the kernel; Select + Start quits when the loop is stuck more than 1 s |
 | `worker.c`        | a worker thread for loading in the background (decode images, read and decrypt sounds) |
-| `memstats.c`      | memory of canvases, images and WebGL textures, for the `mem` command |
 
 ## main()
 
@@ -108,19 +100,19 @@ it would not stop the page).
 
 ## Scripts
 
-`compiler.c` reads each script and checks its syntax (an error shows up when
+`scripts/load.c` reads each script and checks its syntax (an error shows up when
 the game starts, with the file and line); JavaScriptCore compiles it when it
 runs, and the code that runs most also to machine code (JIT). There is no
 cache: the first version of quixjs, on QuickJS, kept bytecode in its cache.
 Now the cache (`cache/`, next to the toml) keeps the WebGL programs already
-linked (`cache/shaders`, `gfx/shader_cache.c`).
+linked (`cache/shaders`, `gfx/gl/shader_cache.c`).
 
 ## Debug console
 
 The debug console is inherited from tamatama
-(https://github.com/lowlevel-1989/tamatama). quixjs listens on a Unix socket
+(https://github.com/lowlevel-1989/tamatama/tree/780b7e723f3dbe8a58bc54ed571f1518dac9191a). quixjs listens on a Unix socket
 and answers text commands between frames, when no JS is running (the safe
 point): `help`, `info`, `press/down/up KEY`, `shot FILE`, `eval JS`, `pause`,
 `resume`, `run N`, `prof start|stop|save`, `fps [N]`, `gc`, `mem`, `pacing`,
-`ach`, `ach reset`, `quit`. Each answer ends with a line `ok` or `err MESSAGE`.
+`ach`, `ach reset`, `state`, `state save N`, `state load N`, `quit`. Each answer ends with a line `ok` or `err MESSAGE`.
 While paused the window keeps answering and showing the last frame.

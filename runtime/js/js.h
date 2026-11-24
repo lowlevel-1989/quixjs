@@ -394,7 +394,7 @@ int JS_ObjectTypeCounts(JSRuntime *rt, char names[][48], double *counts, int max
 void JS_RunGC(JSRuntime *rt);
 
 // El sampling profiler de JavaScriptCore (un thread suyo toma una muestra
-// de la pila cada 10 ms, JSC_sampleInterval en core/main/start.c; runtime/core/profiler.c
+// de la pila cada 10 ms, JSC_sampleInterval en core/main/start.c; runtime/core/debug/profiler.c
 // lo resume). Las muestras se
 // recogen como el objeto de su JSON: { interval, traces: [{ timestamp,
 // frames: [{ name, sourceID, line, column, location }] }], sources: [{

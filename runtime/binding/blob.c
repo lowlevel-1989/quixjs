@@ -229,7 +229,7 @@ static const JSCFunctionListEntry js_blob_proto_funcs[] = {
 
 #define BLOB_PREFIX "blob:quix/"
 
-static JSValue js_createObjectURL(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+static JSValue js_blob_createObjectURL(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
   BlobData *b = argc > 0 ? JS_GetOpaque(argv[0], js_blob_class_id) : NULL;
   if (!b) return JS_ThrowTypeError(ctx, "createObjectURL: Blob required");
   if (urls_len == urls_cap) {
@@ -257,7 +257,7 @@ static int url_index(const char *url) {
   return -1;
 }
 
-static JSValue js_revokeObjectURL(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+static JSValue js_blob_revokeObjectURL(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
   if (argc < 1) return JS_UNDEFINED;
   const char *url = JS_ToCString(ctx, argv[0]);
   if (!url) return JS_EXCEPTION;
@@ -294,8 +294,8 @@ static JSValue js_url_ctor(JSContext *ctx, JSValueConst new_target, int argc, JS
 }
 
 static const JSCFunctionListEntry js_url_static_funcs[] = {
-  JS_CFUNC_DEF("createObjectURL", 1, js_createObjectURL),
-  JS_CFUNC_DEF("revokeObjectURL", 1, js_revokeObjectURL),
+  JS_CFUNC_DEF("createObjectURL", 1, js_blob_createObjectURL),
+  JS_CFUNC_DEF("revokeObjectURL", 1, js_blob_revokeObjectURL),
 };
 
 void js_api_add_blob(JSContext *ctx) {

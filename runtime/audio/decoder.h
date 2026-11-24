@@ -19,7 +19,8 @@
 
 // Un sonido comprimido (o PCM en un .wav), leido desde memoria: lo que usa el
 // mezclador sin saber el formato. El formato sale de los primeros bytes: ogg
-// vorbis (vorbis.c), mp3 (mp3.c) o wav (wav.c). Ver README.md.
+// vorbis (vorbis.c), mp3 (mp3.c), wav (wav.c) u Opus en WebM (webm.c). Ver
+// README.md.
 
 #include <stddef.h>
 #include <stdint.h>
@@ -55,4 +56,7 @@ typedef struct {
   void  (*close)(void *s);
 } DecoderKind;
 
-extern const DecoderKind vorbis_decoder, mp3_decoder, wav_decoder;
+extern const DecoderKind vorbis_decoder, mp3_decoder, wav_decoder, webm_decoder;
+
+// 1 si este binario decodifica Opus en WebM (webm.c: con libopus y nestegg)
+int decoder_has_webm(void);

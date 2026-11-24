@@ -24,15 +24,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "gfx/gl.h"
-#include "binding/image.h"
-#include "core/memstats.h"
+#include "gfx/gl/gl.h"
+#include "binding/image/image.h"
+#include "core/debug/memstats.h"
 #include "binding/webgl.h"
-#include "gfx/gpu2d.h"
-#include "gfx/shader_cache.h"
+#include "gfx/gl/gpu2d.h"
+#include "gfx/gl/shader_cache.h"
 #include "backend/backend.h"
-#include "binding/webgl_constants.h"
-#include "core/trace.h"
+#include "binding/webgl/constants/webgl1.h"
+#include "core/debug/trace.h"
 #include "core/app_context.h"
 #include "core/timer.h"
 

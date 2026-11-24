@@ -67,6 +67,8 @@ typedef struct {
 } GamepadState;
 
 // Una capa de la pantalla (un canvas del documento, de abajo a arriba)
+enum { WANT_STATE_SAVE = 1, WANT_STATE_LOAD, WANT_STATE_PREV, WANT_STATE_NEXT };
+
 typedef struct {
   const void    *key;          // identifica la capa entre frames (su canvas)
   unsigned       gl_tex;       // canvas WebGL: su textura (0 si es 2d)
@@ -91,6 +93,12 @@ typedef struct {
   int      locked;       // aun sin conseguir (el progreso, "3/12"): el
                          // distintivo hueco y el borde gris
   int      done, goal;   // goal > 0: una barra de progreso, done de goal
+  int      star;         // una estrella dorada despues del titulo (un logro
+                         // conseguido en hardcore)
+  char     group[16];    // un grupo ("savestate"): uno nuevo sustituye al de su
+                         // grupo que se ve o que espera, sin hacer cola
+  int      replaces;     // (lo pone la cola) sustituye al que se veia: no
+                         // vuelve a entrar desde la derecha
 } Toast;
 
 typedef struct {
@@ -144,15 +152,21 @@ struct Backend {
   int   back_to_menu;  // Select + R2: cerrar el juego y volver al launcher
   int   menu_back;     // Select + R2 permitido: el juego corre y se abrio desde el launcher
   int   want_screenshot; // Select + R1: el loop guarda una captura (y lo pone a 0)
+  // los savestates: Select + X guarda, Select + Y carga, Select + izquierda o
+  // derecha cambia de ranura; el loop lo hace entre dos frames
+  // (core/main/state.c) y lo pone a 0
+  int   want_state;      // WANT_STATE_SAVE, _LOAD, _PREV o _NEXT
   // La lupa, en todos los juegos: Select + L1 (o su boton de Controls, con
   // [controls] magnifier = true) abre un cuadro que se mueve con la cruceta
   // o las palancas y muestra ampliado lo que tiene debajo; R1 acerca, L1
   // aleja, A la vuelve al centro, Y la agranda, X la achica, B (o el combo)
   // la cierra; arriba a la izquierda, su icono. El juego no recibe el mando
-  // mientras
-  float magnify;       // 0: sin lupa; si no, cuanto amplia (2 a 6)
-  float mag_size;      // el tamano del cuadro: la parte del juego (1/3 a 1)
+  // mientras, salvo con la lupa fija (Start con ella abierta): se queda
+  // quieta y el mando es del juego; el combo la desfija
+  float magnify;       // 0: sin lupa; si no, cuanto amplia (1.25 a 6)
+  float mag_size;      // el tamano del cuadro: la parte del juego (1/3 a 1; 2, toda la pantalla)
   float mag_x, mag_y;  // el centro del cuadro (0 a 1 del juego)
+  int   mag_pinned;    // la lupa fija: el mando es del juego
   char  overlay[32];  // texto encima de la ventana, arriba a la derecha (--fps)
   // controller.map: las asignaciones del mando hechas en el launcher (lineas
   // de SDL_GAMECONTROLLERCONFIG, como las de PortMaster). Se fija antes de
@@ -234,7 +248,7 @@ int  backend_test_pad(Backend* backend, int button, int type);
 // mandos que puedan y, si ninguno, el aparato (platform_vibrate, el telefono
 // en Android, con la mayor de las dos). Sin vibrador, o con no_vibration,
 // no hace nada. Lo usan
-// navigator.vibrate y gamepad.vibrationActuator (runtime/binding/gamepads.js)
+// navigator.vibrate y gamepad.vibrationActuator (runtime/binding/navigator/gamepads.js)
 void backend_vibrate(Backend* backend, float strong, float weak, int ms);
 // La ventana a pantalla completa o no, ya (backend->fullscreen lo dice)
 void backend_set_fullscreen(Backend* backend, int on);

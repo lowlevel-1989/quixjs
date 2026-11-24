@@ -5,7 +5,7 @@
 Transfer Save: pasa las partidas de un juego a otro dispositivo de la misma
 red (un PC, una portátil), sin teclado y sin abrir puertos. Se abre desde el
 menú de `--launcher`. Viene de tamatama
-(https://github.com/lowlevel-1989/tamatama, `src/transfer`), que pasa un
+(https://github.com/lowlevel-1989/tamatama/tree/780b7e723f3dbe8a58bc54ed571f1518dac9191a, `src/transfer`), que pasa un
 fichero de 768 bytes; aquí son todos los ficheros de `[saves] files`, en un
 paquete que se manda por trozos.
 
@@ -29,14 +29,14 @@ La lógica, sin pantallas:
 | `net.c`       | el socket UDP, los anuncios y el formato de los paquetes |
 | `sender.c`    | el envío, con su estado |
 | `receiver.c`  | la recepción, con su estado |
-| `saves.c`     | busca, empaqueta, guarda (con backup) y restaura las partidas |
+| `saves/`      | las partidas: `saves.c` (qué es una partida y buscarlas), `pack.c` (empaquetarlas y guardar las que llegan) y `backup.c` (el backup, Restore Backup y Delete Save) |
 | `identity.c`  | el nombre (usuario@hostname (sistema)) y la firma de 4 caracteres, nueva cada vez que se abre Send Save o Receive Save |
 
-Y las pantallas, sobre `launcher/ui.c`:
+Y las pantallas, sobre `launcher/ui/`:
 
 | archivo      | de qué se encarga |
 |--------------|-------------------|
-| `transfer.c` | Transfer Save: Send Save, Receive Save y Restore Backup |
+| `transfer.c` | Transfer Save: Send Save, Receive Save, Restore Backup y Delete Save |
 
 ## El protocolo
 
@@ -88,6 +88,8 @@ dispositivos (las de invitados, algunas de hoteles).
 - Lo nuevo se escribe aparte (`<carpeta de partidas>/.quixjs/incoming`) y se
   cambia con rename. Las partidas que había pasan a
   `<carpeta de partidas>/.quixjs/backup`, y Restore Backup las vuelve a poner.
+- Delete Save tambien pasa las partidas a ese backup (el archivo de los
+  logros se queda): el juego empieza de cero y Restore Backup las devuelve.
 
 ## Pruebas
 

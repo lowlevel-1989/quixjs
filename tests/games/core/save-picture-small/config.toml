@@ -1,0 +1,14 @@
+[game]
+rom       = "."
+width     = 200
+height    = 120
+
+[scripts]
+libs     = ["../lib/pixi_v4/pixi.js"]
+includes = ["../lib/assert.js"]
+entry    = "main.js"
+
+# rpgmaker-mv/extra/render/save-picture-small: la foto para la partida (snapForSave), a
+# un cuarto de la resolucion y con lo que hay en pantalla
+[hooks]
+"SceneManager.snapForSave" = "rpgmaker-mv/extra/render/save-picture-small"

@@ -1,0 +1,11 @@
+# La lupa fija: Select + L1 la abre y Start la fija. Con el backend sdl
+# (args) y el mando virtual de SDL (quix.input.pressPad); sin ventana
+[game]
+rom       = "."
+width     = 64
+height    = 64
+
+[scripts]
+libs     = []
+includes = ["../lib/assert.js"]
+entry    = "main.js"

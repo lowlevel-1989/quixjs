@@ -17,7 +17,7 @@
  */
 
 // La rom: montarla en gamedata/ y pasar cada ruta del juego a la rom que toca
-// (rom_zip.c o rom_dir.c), sin saber de que tipo es. Ver rom.h.
+// (zip.c o dir.c), sin saber de que tipo es. Ver rom.h.
 
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE

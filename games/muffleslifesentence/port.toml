@@ -1,0 +1,91 @@
+# games/muffleslifesentence/port.toml: el port de Muffles' Life Sentence
+# (RPG Maker MV 1.6.1, BossyPino). La base ([engine], [game], [saves],
+# [fonts], [scripts]) salio de quixjs --gen-config sobre la demo de Steam
+# (app 3158960), revisada a mano. Sirve en cualquier sitio donde corre quixjs,
+# con el juego copiado junto a este toml. [portmaster] es lo que pide
+# PortMaster (make portmaster PORT=muffleslifesentence genera con ella su
+# port.json, su gameinfo.xml y el script .sh del port).
+
+[engine]
+name    = "rpgmaker-mv"
+version = "1.6.1"
+pixi    = "4.5.4"
+nwjs    = true   # package.json de nw.js: require('fs'), process...
+fps     = 30
+js_memory = 128
+
+[engine.pc]
+fps = 60
+
+[game]
+title     = "Muffles' Life Sentence"
+version   = "0.6.0"           # la del port
+id        = "muffleslifesentence"
+rom       = "www.zip"
+game_dir  = "www"
+width     = 1280   # package.json de www/
+height    = 720
+developer = "BossyPino"
+publisher = "Black Lantern Collective"
+releasedate = "20250307T000000"
+genres    = ["rpg", "adventure"]
+desc      = "A darkly comedic, story-driven RPG with deck-building card battles, set in a prison that remakes its inmates to match their crimes."
+
+# las partidas que pasa Transfer Save
+[saves]
+dir   = "save"
+files = ["*.rpgsave"]
+
+# fuentes de los @font-face de su CSS
+[fonts]
+"GameFont" = "fonts/Yesterday.ttf"
+
+# los <script> del index.html, en el mismo orden
+[scripts]
+libs     = [
+  "js/libs/pixi.js",
+  "js/libs/pixi-tilemap.js",
+  "js/libs/pixi-picture.js",
+  "js/libs/fpsmeter.js",
+  "js/libs/lz-string.js",
+  "js/libs/iphone-inline-video.browser.js"
+]
+includes = [
+  "js/rpg_core.js",
+  "js/rpg_managers.js",
+  "js/rpg_objects.js",
+  "js/rpg_scenes.js",
+  "js/rpg_sprites.js",
+  "js/rpg_windows.js",
+  "js/plugins.js"
+]
+entry    = "js/main.js"
+
+[portmaster]
+script       = "Muffles Life Sentence.sh"
+porter       = ["lowlevel.1989"]
+inst         = "Needs Muffles' Life Sentence for Windows (Steam). Compress its folder www/ into www.zip (a zip without compression is best; a compressed one also works, the first start takes longer) and copy it into ports/muffleslifesentence/, next to port.toml."
+store        = { name = "Steam", url = "https://store.steampowered.com/app/3145370/Muffles_Life_Sentence/" }
+availability = "paid"
+
+[hooks]
+engine = "rpgmaker-mv"
+
+# El mando: RPG Maker MV lo lee el mismo (Gamepad API). En el launcher,
+# Controls deja asignar todos los botones y las palancas (controller.map).
+[controls]
+gamepad = true
+screenshot = true
+magnifier  = true
+
+[controls.buttons]
+dpup    = "Move up"
+dpdown  = "Move down"
+dpleft  = "Move left"
+dpright = "Move right"
+a       = "OK / Talk"
+b       = "Cancel"
+x       = "Dash"
+y       = "Menu"
+l1      = "Previous (menu)"
+r1      = "Next (menu)"

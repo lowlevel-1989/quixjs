@@ -22,7 +22,7 @@ Mods (activos): [controller](mods/controller/README.es.md), [big-text](mods/big-
 |--|--|
 | Cruceta / palanca izquierda | Llevar el cursor al botón siguiente en esa dirección |
 | A | Pulsar donde está el cursor |
-| Select + L1 | Lupa: un cuadro que amplía; la cruceta o las palancas lo mueven, R1 / R2 acercan, L1 / L2 alejan, Y / X tamaño, A centra, B la cierra |
+| Select + L1 | Lupa: un cuadro que amplía; la cruceta o las palancas lo mueven, R1 / R2 acercan, L1 / L2 alejan, Y / X tamaño, A centra, Start la fija (el mando vuelve al juego) y la desfija, B la cierra |
 | Select + R1 | Captura de pantalla (en `screenshots/`) |
 | Select + R2 | Volver al menú del port |
 | Select + Start | Salir |
@@ -32,10 +32,10 @@ Mods (activos): [controller](mods/controller/README.es.md), [big-text](mods/big-
 ```
 git clone https://github.com/lowlevel-1989/quixjs.git
 cd quixjs
-make PLATFORM=portmaster PORT=supersmilingdungeon
+make portmaster PORT=supersmilingdungeon
 ```
 
-Crea `supersmilingdungeon.zip`.
+Construye `build/supersmilingdungeon.zip`.
 
 ## Instalar
 

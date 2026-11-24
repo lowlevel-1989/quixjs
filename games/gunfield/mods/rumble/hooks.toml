@@ -2,4 +2,4 @@
 [hooks]
 # el temblor de pantalla de Construct 2 (behavior ScrollTo): Shake(magnitud
 # en pixeles, duracion en segundos, modo)
-"cr.behaviors.scrollto.prototype.acts.Shake" = "rumble.js"
+"cr.behaviors.scrollto.prototype.acts.Shake" = "rumble"

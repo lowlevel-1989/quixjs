@@ -7,27 +7,51 @@ PortMaster.
 
 ```
 # Debian / Ubuntu / RetroPie
-sudo apt-get install build-essential python3 libsdl2-dev libsdl2-image-dev libsdl2-ttf-dev zlib1g-dev fonts-dejavu-core
+sudo apt-get install build-essential cmake ninja-build clang pkg-config python3 libicu-dev libsdl2-dev libsdl2-image-dev libsdl2-ttf-dev zlib1g-dev fonts-dejavu-core
 sudo apt-get install libvpx-dev libopus-dev   # opcional: video
 
 # Fedora
-sudo dnf install gcc make python3 SDL2-devel SDL2_image-devel SDL2_ttf-devel zlib-devel dejavu-sans-fonts
+sudo dnf install gcc make cmake ninja-build clang pkgconf python3 libicu-devel SDL2-devel SDL2_image-devel SDL2_ttf-devel zlib-devel dejavu-sans-fonts
 sudo dnf install libvpx-devel opus-devel      # opcional: video
 
 make                      # la primera vez compila tambien JavaScriptCore (tarda un rato)
 make test
 ```
 
+El `Makefile` solo deja los comandos cortos e iguales en todas las
+plataformas; por debajo es CMake (`CMakeLists.txt` y `cmake/`,
+[README](../cmake/README.es.md)):
+
+```
+make pc                      quixjs para el PC (build/quixjs); make, lo mismo
+make portmaster PORT=hexgl   el zip de un port (build/hexgl.zip); PORT=all, todos
+make android                 la app de Android (build/quixjs.apk)
+make <plataforma>-jsc        solo JavaScriptCore
+make <plataforma>-clean      limpiar una plataforma; make clean, todas
+make test                    los tests (en el PC)
+make bench                   el benchmark h5bench (en el PC)
+make release                 los archivos de una release (release/)
+```
+
+Opciones: `TRACE=1` (las medidas `[trace]`), `VIDEO=0` (sin video),
+`ABI=x86_64` (Android para el emulador del PC).
+
 JavaScriptCore (el motor de JavaScript de WebKit) es parte de quixjs: su
 codigo, con nuestros cambios para juegos, esta en `runtime/thirdparty/webkit`,
-y se compila como libreria estatica. `make` ejecuta `tools/build-jsc.sh host`
-si falta la libreria ([por que JavaScriptCore](javascript-engine.es.md)). En el
-PC usa el ICU del sistema (`libicu-dev` / `libicu-devel`).
+y se compila como libreria estatica, con clang, desde `cmake/jsc.cmake` (solo se
+rehace lo que cambio) ([por que JavaScriptCore](javascript-engine.es.md)). En el
+PC usa el ICU del sistema; para las portatiles y Android compila su propio ICU
+(y libc++ para las portatiles), que descarga en `obj/deps` la primera vez.
 
 No hace falta tener GLES instalado para compilar: las cabeceras de GL vienen con
 SDL2 y las funciones se cargan al arrancar. Python 3 mete los shaders de
-`runtime/shaders` en el binario. El video se compila si `pkg-config` encuentra
+`runtime/gfx/gl/shaders` en el binario. El video se compila si `pkg-config` encuentra
 libvpx y libopus; `make VIDEO=0` compila sin el.
+
+Lo construido va en `build/`: `build/quixjs`, los zips de los ports
+(`build/<PORT>.zip`) y la app de Android (`build/quixjs.apk`). Los objetos van en
+`obj/cmake/<plataforma>`, y lo descargado y JavaScriptCore en `obj/deps`, nunca
+junto al codigo; `make clean` borra `obj/cmake` y lo de `build/`, no `obj/deps`.
 
 ## Release
 
@@ -56,12 +80,12 @@ tools/release.sh --ports                # solo los ports (sin la app de Android 
 ## PortMaster
 
 ```
-make PLATFORM=portmaster                     # PORT=fearandhunger por defecto
-make PLATFORM=portmaster PORT=fearandhunger
-make PLATFORM=portmaster PORT=lookoutside   # cualquier port de games/ con [portmaster]
+make portmaster                     # PORT=fearandhunger por defecto
+make portmaster PORT=fearandhunger
+make portmaster PORT=lookoutside   # cualquier port de games/ con [portmaster]
 ```
 
-Construye `<PORT>.zip` (aqui `fearandhunger.zip`) para aarch64 con
+Construye `build/<PORT>.zip` (aqui `build/fearandhunger.zip`) para aarch64 con
 clang y lld. Enlaza contra Debian buster (glibc 2.28, SDL 2.0.9), lo bastante
 viejo para los sistemas de las portatiles; lo descarga en `obj/deps` la
 primera vez. El zip lleva:
@@ -77,7 +101,9 @@ ejecuta `quixjs -c port.toml`, que lee de ahi el juego.
 
 | archivo                | que hace |
 |------------------------|----------|
-| `portmaster/`          | lo de PortMaster: `portmaster.mk` (la construccion de `PLATFORM=portmaster`, la incluye el `Makefile`) y `portmaster.sh` (plantilla del script `.sh` del port) |
+| `cmake/portmaster.cmake` | la construccion de `make portmaster`: `quixjs.aarch64` y un target `port-<nombre>` por port; `cmake/toolchains/portmaster.cmake` descarga Debian buster con `tools/sysroot.py` |
+| `tools/port_zip.py`    | arma el port y lo comprime (`build/<PORT>.zip`) |
+| `portmaster/portmaster.sh` | plantilla del script `.sh` del port |
 | `tools/portmaster.py`  | genera el `.sh`, `port.json` y `gameinfo.xml` desde `games/<port>/port.toml` al construir el zip (no estan en el repositorio); `[portmaster] title`, si lo hay, es el nombre en PortMaster en vez de `[game] title` (`firework-shiying`: "Firework (Shiying Studio)") |
 | `games/<port>/`        | el port: `port.toml`, su `README.md` y `README.es.md` (plantilla de PortMaster: primero `## Notes`, `## Controls`, `## Compile`, despues como instalarlo), `gamedata/COPY_THE_GAME_HERE.txt`, `screenshot.jpg` (la imagen en EmulationStation, 640x480) y `cover.jpg` (la portada en PortMaster, menos de 100 KB) |
 
@@ -85,10 +111,12 @@ ejecuta `quixjs -c port.toml`, que lee de ahi el juego.
 
 Algunos archivos grandes estan partidos en una carpeta para que se puedan
 leer, pero se siguen compilando como uno: `runtime/js/jsc.c`,
-`runtime/binding/webgl.c`, `runtime/backend/sdl.c` y `runtime/core/main.c`.
-Cada uno es un archivo indice: solo hace `#include`, en orden, de las partes
-de la carpeta con su nombre (`jsc/`, `webgl/`, `sdl/`, `main/`), y el
-`Makefile` compila el archivo indice, no las partes.
+`runtime/binding/webgl.c`, `runtime/backend/sdl.c`, `runtime/core/main.c`,
+`runtime/gfx/soft/raster.c`, `runtime/gfx/gl/gpu2d.c`, `runtime/audio/mixer.c` y
+`runtime/binding/document.c`. Cada uno es un archivo indice: solo hace
+`#include`, en orden, de las partes de la carpeta con su nombre (`jsc/`,
+`webgl/`, `sdl/`...), y
+`cmake/sources.cmake` lista el archivo indice, no las partes.
 
 ```c
 // runtime/binding/webgl.c
@@ -102,21 +130,20 @@ Por que: son los caminos calientes de quixjs (cada llamada de JS a C, cada
 metodo de WebGL, cada imagen hasta la pantalla). El compilador solo puede
 meter una funcion pequena dentro de otra (inline) cuando las dos estan en el
 archivo que compila. Compiladas como archivos separados, las llamadas de JS a
-C eran ~4 % mas lentas; unidas asi, el compilador ve el mismo texto que con
-el archivo unico de antes y genera el mismo codigo (`webgl.o` y `sdl.o`
-son identicos byte a byte).
+C eran ~4 % mas lentas; unidas asi, el compilador ve todas las partes juntas,
+como con el archivo unico de antes, y no hay sobrecarga.
 
 Reglas:
 
 - Una parte nueva se agrega al archivo indice, despues de lo que usa.
 - Cada parte incluye la cabecera compartida de su carpeta (`#pragma once`),
   para que se pueda leer en el editor por separado.
-- El `.o` de un archivo indice se recompila si cambia una parte
-  (`INDEX_FILES` en el `Makefile`).
+- El `.o` de un archivo indice se recompila si cambia una parte (ninja
+  sabe que archivos incluye cada uno).
 - Cada carpeta tiene un README con sus partes y lo que tienen.
 
 El JS de quixjs (`runtime/binding/*.js`, `runtime/binding/polyfill/`,
-`runtime/core/profiler.js`) funciona parecido: se edita como `.js` y
+`runtime/core/debug/profiler.js`) funciona parecido: se edita como `.js` y
 `tools/embed_js.py` lo convierte en una cadena de C al compilar, asi quixjs
 sigue siendo un solo programa ([El JS dentro de quixjs](embedded-js.es.md)).
 

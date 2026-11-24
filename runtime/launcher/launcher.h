@@ -19,7 +19,7 @@
 #pragma once
 
 // --launcher: el launcher, el menu que sale antes de cargar el juego.
-// Heredado de tamatama (https://github.com/lowlevel-1989/tamatama,
+// Heredado de tamatama (https://github.com/lowlevel-1989/tamatama/tree/780b7e723f3dbe8a58bc54ed571f1518dac9191a,
 // src/shared/menu.c). Arriba el titulo del juego ([game] title; sin el, el
 // [engine] name) y debajo una firma pequena, quixjs. Opciones:
 //   Play            arranca el juego
@@ -32,7 +32,7 @@
 //   Exit
 
 #include "backend/backend.h"
-#include "core/config_loader.h"
+#include "core/config/loader.h"
 #include "settings.h"
 
 #define LAUNCHER_PLAY 1

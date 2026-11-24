@@ -179,6 +179,51 @@ static void back_to_menu(Backend* backend, SDLPlatformData* data) {
   backend->back_to_menu = 1;
 }
 
+// Los combos del sistema, por mando: Select + Start sale, Select + R1 hace
+// una captura, Select + L1 abre o cierra la lupa y Select + R2 vuelve al
+// launcher. Siempre con los botones fisicos (el mapeo de fabrica del mando,
+// mapper_base_pressed): lo asignado en Controls a un juego no los quita (el
+// lector de un juego en R2 no tapa Select + R2). Sin mapeo de fabrica, los
+// botones como los ve SDL. Cada uno al empezar a cumplirse
+static int combo_role(SDLPlatformData* data, int i, SDL_GameController *gc, const char *role, int button) {
+  int r = mapper_base_pressed(gc, role);
+  if (r >= 0) return r;
+  if (button == SDL_CONTROLLER_BUTTON_MAX) return SDL_GameControllerGetAxis(gc, SDL_CONTROLLER_AXIS_TRIGGERRIGHT) > 16000;
+  return data->held[i][button];
+}
+
+static void check_combos(Backend* backend, SDLPlatformData* data) {
+  static int was[GAMEPAD_MAX][8];
+  for (int i = 0; i < GAMEPAD_MAX; i++) {
+    SDL_GameController *gc = data->pads[i];
+    if (!gc) continue;
+    int back = combo_role(data, i, gc, "back", SDL_CONTROLLER_BUTTON_BACK);
+    int now[8] = {
+      back && combo_role(data, i, gc, "start", SDL_CONTROLLER_BUTTON_START),
+      back && combo_role(data, i, gc, "rightshoulder", SDL_CONTROLLER_BUTTON_RIGHTSHOULDER),
+      back && combo_role(data, i, gc, "leftshoulder", SDL_CONTROLLER_BUTTON_LEFTSHOULDER),
+      back && combo_role(data, i, gc, "righttrigger", SDL_CONTROLLER_BUTTON_MAX),
+      // los savestates (core/main/state.c)
+      back && combo_role(data, i, gc, "x", SDL_CONTROLLER_BUTTON_X),
+      back && combo_role(data, i, gc, "y", SDL_CONTROLLER_BUTTON_Y),
+      back && combo_role(data, i, gc, "dpleft", SDL_CONTROLLER_BUTTON_DPAD_LEFT),
+      back && combo_role(data, i, gc, "dpright", SDL_CONTROLLER_BUTTON_DPAD_RIGHT),
+    };
+    if (now[0] && !was[i][0]) {
+      printf("Select + Start: exit\n");
+      data->should_close = 1;
+    }
+    if (now[1] && !was[i][1]) backend->want_screenshot = 1;
+    if (now[2] && !was[i][2]) magnifier_toggle(backend);
+    if (now[3] && !was[i][3]) back_to_menu(backend, data);
+    if (now[4] && !was[i][4]) backend->want_state = WANT_STATE_SAVE;
+    if (now[5] && !was[i][5]) backend->want_state = WANT_STATE_LOAD;
+    if (now[6] && !was[i][6]) backend->want_state = WANT_STATE_PREV;
+    if (now[7] && !was[i][7]) backend->want_state = WANT_STATE_NEXT;
+    for (int k = 0; k < 8; k++) was[i][k] = now[k];
+  }
+}
+
 static void sdl_process_events(Backend* backend) {
   SDLPlatformData* data = (SDLPlatformData*)backend->platform_data;
   SDL_Event event;
@@ -206,38 +251,35 @@ static void sdl_process_events(Backend* backend) {
         break;
       }
 
-      // Select + Start a la vez: salir (en la portatil no hay ventana que cerrar)
+      // los combos del sistema van aparte (check_combos, con los botones
+      // fisicos); aqui, los botones de la lupa abierta
       case SDL_CONTROLLERBUTTONDOWN: {
         SDL_GameController *gc = SDL_GameControllerFromInstanceID(event.cbutton.which);
-        int quit = 0, b = event.cbutton.button;
+        int b = event.cbutton.button;
+        int was_open = backend->magnify > 1;
         for (int i = 0; i < GAMEPAD_MAX; i++) {
           if (gc && data->pads[i] == gc && b < SDL_CONTROLLER_BUTTON_MAX) {
-            Uint8 *held = data->held[i];
             data->latch[i][b] = 1;
-            held[b] = 1;
-            quit = held[SDL_CONTROLLER_BUTTON_BACK] && held[SDL_CONTROLLER_BUTTON_START];
-            // Select + R1: una captura de pantalla
-            if (held[SDL_CONTROLLER_BUTTON_BACK] && held[SDL_CONTROLLER_BUTTON_RIGHTSHOULDER] &&
-                (b == SDL_CONTROLLER_BUTTON_BACK || b == SDL_CONTROLLER_BUTTON_RIGHTSHOULDER))
-              backend->want_screenshot = 1;
-            // Select + L1: abrir o cerrar la lupa; abierta, sus botones
-            if (held[SDL_CONTROLLER_BUTTON_BACK] && held[SDL_CONTROLLER_BUTTON_LEFTSHOULDER] &&
-                (b == SDL_CONTROLLER_BUTTON_BACK || b == SDL_CONTROLLER_BUTTON_LEFTSHOULDER))
-              magnifier_toggle(backend);
-            else if (backend->magnify > 1)
-              magnifier_button(backend, b);
+            data->held[i][b] = 1;
           }
         }
-        if (quit) {
-          printf("Select + Start: exit\n");
-          data->should_close = 1;
-        }
-        // Select + R2 (en orden cualquiera): volver al launcher
-        if (b == SDL_CONTROLLER_BUTTON_BACK && gc &&
-            SDL_GameControllerGetAxis(gc, SDL_CONTROLLER_AXIS_TRIGGERRIGHT) > 16000)
-          back_to_menu(backend, data);
+        check_combos(backend, data);
+        // abierta antes de este boton y sin Select: sus botones (A, B, X, Y,
+        // R1, L1, Start); fija, ninguno (magnifier_button)
+        if (was_open && backend->magnify > 1 && b < SDL_CONTROLLER_BUTTON_MAX &&
+            b != SDL_CONTROLLER_BUTTON_BACK && !combo_role(data, 0, gc, "back", SDL_CONTROLLER_BUTTON_BACK))
+          magnifier_button(backend, b);
         break;
       }
+
+      // el mando crudo (un boton que Controls no asigno tambien cuenta para
+      // los combos)
+      case SDL_JOYBUTTONDOWN:
+      case SDL_JOYBUTTONUP:
+      case SDL_JOYAXISMOTION:
+      case SDL_JOYHATMOTION:
+        check_combos(backend, data);
+        break;
 
       case SDL_WINDOWEVENT:
         // Redimensionable solo cuando ya se ve: los gestores en mosaico dejan
@@ -260,6 +302,7 @@ static void sdl_process_events(Backend* backend) {
             data->held[i][event.cbutton.button] = 0;
           }
         }
+        check_combos(backend, data);
         break;
       }
 
@@ -272,12 +315,11 @@ static void sdl_process_events(Backend* backend) {
         for (int i = 0; i < GAMEPAD_MAX; i++) {
           if (!gc || data->pads[i] != gc) continue;
           int down = event.caxis.value > 16000;
-          if (down && !data->trigger_down[i][t]) {
-            if (t == 1 && data->held[i][SDL_CONTROLLER_BUTTON_BACK]) back_to_menu(backend, data);
-            else if (backend->magnify > 1) magnifier_zoom(backend, t == 1 ? 1 : -1);   // la lupa: R2 acerca, L2 aleja
-          }
+          if (down && !data->trigger_down[i][t] && !data->held[i][SDL_CONTROLLER_BUTTON_BACK] && backend->magnify > 1 && !backend->mag_pinned)
+            magnifier_zoom(backend, t == 1 ? 1 : -1);   // la lupa: R2 acerca, L2 aleja
           data->trigger_down[i][t] = down;
         }
+        check_combos(backend, data);
         break;
       }
 

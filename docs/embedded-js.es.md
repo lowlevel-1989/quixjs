@@ -11,25 +11,25 @@ que buscar en una portatil.
 
 ## El camino de un archivo
 
-Con `runtime/binding/gamepads.js` de ejemplo:
+Con `runtime/binding/navigator/gamepads.js` de ejemplo:
 
 ```
-runtime/binding/gamepads.js             el archivo que se edita
-        |  make: la regla del Makefile ejecuta tools/embed_js.py
+runtime/binding/navigator/gamepads.js             el archivo que se edita
+        |  make: cmake/generated.cmake ejecuta tools/embed_js.py
         v
-obj/gen/js_gamepads.h                   generado, no esta en el repositorio:
+obj/cmake/<plataforma>/gen/js_gamepads.h  generado, no esta en el repositorio:
                                         static const char GAMEPADS_JS[] = "...";
         |  #include "js_gamepads.h"      (el texto de gamepads.js, linea a linea)
         v
-runtime/binding/navigator.c             prepara lo que necesita el archivo y
+runtime/binding/navigator/navigator.c             prepara lo que necesita el archivo y
                                         ejecuta GAMEPADS_JS con JS_Eval, una vez al arrancar
 ```
 
-La regla del `Makefile`:
+Su linea en `cmake/generated.cmake`:
 
-```make
-obj/gen/js_gamepads.h: runtime/binding/gamepads.js tools/embed_js.py
-	python3 tools/embed_js.py $@ GAMEPADS_JS $<
+```cmake
+quix_embed(js_gamepads.h embed_js.py ARGS GAMEPADS_JS runtime/binding/navigator/gamepads.js
+  DEPENDS runtime/binding/navigator/gamepads.js)
 ```
 
 ## Como se ejecuta un archivo
@@ -72,14 +72,14 @@ cada `.c` dice junto a su `#include` de donde sale el `.h`.
 | archivo | lo ejecuta | cuando | recibe | deja |
 |---------|------------|--------|--------|------|
 | `runtime/binding/polyfill/*.js` | `runtime/binding/polyfill.c` (`js_api_add_polyfill`) | al arrancar, despues de las APIs en C | `globalThis` | las APIs del navegador (`localStorage`, `atob`, `FontFace`...) |
-| `runtime/binding/gamepads.js` | `runtime/binding/navigator.c` (`js_create_navigator`) | al arrancar | `__quixPads` | `navigator.getGamepads` |
-| `runtime/binding/webaudio.js` | `runtime/binding/audio.c` (`js_api_add_audio`) | al arrancar | `__quixAudio`, `__quixAudioDevice` | `AudioContext`...; `__quixAudioTick`, que llama `audio_tick` en cada frame |
+| `runtime/binding/navigator/gamepads.js` | `runtime/binding/navigator/navigator.c` (`js_create_navigator`) | al arrancar | `__quixPads` | `navigator.getGamepads` |
+| `runtime/binding/audio/webaudio.js` | `runtime/binding/audio/audio.c` (`js_api_add_audio`) | al arrancar | `__quixAudio`, `__quixAudioDevice` | `AudioContext`...; `__quixAudioTick`, que llama `audio_tick` en cada frame |
 | `runtime/binding/nwjs/*.js` | `runtime/binding/nwjs.c` (`js_api_add_nwjs`), en orden alfabético | al arrancar, solo con `[engine] nwjs = true` | `__quixNw` | `require`, `process`, `nw`, `quix.steam` ([README](../runtime/binding/nwjs/README.es.md)) |
-| `runtime/core/profiler.js` | `runtime/core/profiler.c` (`profiler_start`) | la primera vez que se empieza a medir | nada | `__quixProf`: `reset`, `add`, `addAlloc`, `frameTop`, `top`... que llama `profiler.c` |
-| `runtime/engines/same-code.js` | `runtime/engines/engine_api.c` (`engines_add_api`) | al arrancar, antes del juego | `quix.engine` | `quix.engine.sameCode`, que usan los hooks de motor |
+| `runtime/core/debug/profiler.js` | `runtime/core/debug/profiler.c` (`profiler_start`) | la primera vez que se empieza a medir | nada | `__quixProf`: `reset`, `add`, `addAlloc`, `frameTop`, `top`... que llama `profiler.c` |
+| `runtime/engines/same-code.js` | `runtime/engines/api.c` (`engines_add_api`) | al arrancar, antes del juego | `quix.engine` | `quix.engine.sameCode`, que usan los hooks de motor |
 
 El polyfill es una carpeta: `tools/embed_js.py` mete todos sus archivos en
-una tabla (`POLYFILLS[]`, en `obj/gen/polyfills.h`) y `polyfill.c` los
+una tabla (`POLYFILLS[]`, en el `polyfills.h` generado) y `polyfill.c` los
 ejecuta en orden ([README](../runtime/binding/polyfill/README.es.md)).
 
 ## Agregar un archivo
@@ -97,11 +97,11 @@ ejecuta en orden ([README](../runtime/binding/polyfill/README.es.md)).
    delete globalThis.__quixCosa;
    ```
 
-2. Agregar su regla al `Makefile` (junto a las otras, y a `GEN_JS`):
+2. Agregar su linea a `cmake/generated.cmake` (junto a las otras):
 
-   ```make
-   obj/gen/js_cosa.h: runtime/binding/cosa.js tools/embed_js.py
-   	python3 tools/embed_js.py $@ COSA_JS $<
+   ```cmake
+   quix_embed(js_cosa.h embed_js.py ARGS COSA_JS runtime/binding/cosa.js
+     DEPENDS runtime/binding/cosa.js)
    ```
 
 3. En el `.c`, el `#include` con su comentario, las globales temporales y el
@@ -109,7 +109,7 @@ ejecuta en orden ([README](../runtime/binding/polyfill/README.es.md)).
 
    ```c
    // cosa.js: tools/embed_js.py lo mete en el binario al compilar; js_cosa.h
-   // (en obj/gen/) define COSA_JS, su texto. Ver docs/embedded-js.md.
+   // (generado) define COSA_JS, su texto. Ver docs/embedded-js.md.
    #include "js_cosa.h"
    ...
    JS_SetPropertyStr(ctx, global, "__quixCosa", nativas);
@@ -124,8 +124,8 @@ ejecuta en orden ([README](../runtime/binding/polyfill/README.es.md)).
 
 - Los hooks de motor (`runtime/engines/<motor>/*.js`) van dentro del binario
   con otra herramienta, `tools/embed_engines.py`, y los ejecuta
-  `runtime/hooks/hooks.c` cuando el juego ya cargo; los modulos de
+  `runtime/game/hooks/hooks.c` cuando el juego ya cargo; los modulos de
   `runtime/engines/lib/` tambien, que se ejecutan cuando un hook los pide (`quix.engine.lib`)
   ([engines](../runtime/engines/README.es.md)).
-- Los shaders (`runtime/shaders/`) son GLSL, con `tools/embed_shaders.py`
-  ([shaders](../runtime/shaders/README.es.md)).
+- Los shaders (`runtime/gfx/gl/shaders/`) son GLSL, con `tools/embed_shaders.py`
+  ([shaders](../runtime/gfx/gl/shaders/README.es.md)).

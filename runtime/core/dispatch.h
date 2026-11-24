@@ -29,8 +29,8 @@
 // Los canales:
 //   vibrate  el mando (backend/backend.c): una cada vez y con pausa; en la RG
 //            CubeXX muchas seguidas colgaban la consola
-//   audio    el mezclador (binding/audio.c): play, set, stop
-//   lan      la red local (binding/lan.c): los envios
+//   audio    el mezclador (binding/audio/audio.c): play, set, stop
+//   lan      la red local (binding/quix/lan.c): los envios
 //   save     los archivos que escribe el juego (core/save.c): partidas,
 //            localStorage
 //   (la imagen ya la presenta un solo thread: backend/sdl/thread.c)

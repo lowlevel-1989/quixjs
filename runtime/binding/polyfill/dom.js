@@ -138,6 +138,34 @@
       delete this[camel(String(name))];
       return v;
     };
+    // font: la forma corta de CSS ("italic bold 28px/1.2 GameFont, serif"),
+    // repartida en fontStyle, fontVariant, fontWeight, fontSize, lineHeight y
+    // fontFamily, como en un navegador. Un plugin de fuentes (OpenTypePixelFont,
+    // Muffles' Life Sentence) la usa para leer el tamano y la familia de una
+    // fuente de canvas. Un valor que no es una fuente se ignora
+    var FONT = /^\s*((?:(?:normal|italic|oblique|small-caps|bold|bolder|lighter|[1-9]00)\s+)*)((?:\d*\.)?\d+(?:px|pt|em|rem|%|vw|vh)|xx-small|x-small|small|medium|large|x-large|xx-large|smaller|larger)(?:\s*\/\s*(\S+))?\s+(\S.*?)\s*$/i;
+    Object.defineProperty(S, 'font', {
+      configurable: true,
+      get: function () { return this.__quixFont || ''; },
+      set: function (v) {
+        var m = FONT.exec(String(v));
+        if (!m) return;
+        var style = 'normal', variant = 'normal', weight = 'normal';
+        m[1].split(/\s+/).forEach(function (w) {
+          var l = w.toLowerCase();
+          if (l === 'italic' || l === 'oblique') style = l;
+          else if (l === 'small-caps') variant = l;
+          else if (l && l !== 'normal') weight = l;
+        });
+        Object.defineProperty(this, '__quixFont', { value: String(v).trim(), writable: true, configurable: true });
+        this.fontStyle = style;
+        this.fontVariant = variant;
+        this.fontWeight = weight;
+        this.fontSize = m[2];
+        this.lineHeight = m[3] || 'normal';
+        this.fontFamily = m[4];
+      }
+    });
     [doc.body, doc.documentElement, doc.head].forEach(function (el) {
       if (el && el.style && !el.style.setProperty) Object.setPrototypeOf(el.style, S);
     });
@@ -332,4 +360,12 @@
 
   var root = doc.documentElement;
   if (root && !root.matches) root.matches = P.matches;
+
+  // HTMLScriptElement: Construct 3 pregunta "noModule" in su prototipo para
+  // saber si hay modulos (runtime/binding/module.c: los que usa, los de
+  // import "x")
+  if (!g.HTMLScriptElement) {
+    g.HTMLScriptElement = function HTMLScriptElement() {};
+    g.HTMLScriptElement.prototype.noModule = false;
+  }
 })(globalThis);

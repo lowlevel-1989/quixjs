@@ -5,76 +5,82 @@
 # la funcion es la de RPG Maker MV (o la del plugin que tratan); si no, dejan
 # la original. Los del final de la lista todavia no lo comprueban.
 # El juego manda: en su [hooks] puede poner otro en la misma ruta, o "off".
-# Lo que hace cada uno, en su archivo (runtime/engines/rpgmaker-mv/<hook>.js).
-# Hay hooks en esta carpeta que no estan aqui (refresh-if-changed,
-# terrax-lights-only, gc-when-still): un juego que los quiera los pone en su
-# [hooks].
+# Lo que hace cada uno, en su archivo (runtime/engines/rpgmaker-mv/hooks/<categoria>/<hook>.js).
+# Los hooks de hooks/extra/ no estan aqui (extra/render/terrax-lights-only...):
+# un juego que los quiera los pone en su [hooks].
 [hooks]
 # datos, imagenes, sonidos y partidas: en C, sin crear objetos de JS de mas
-"DataManager.loadDataFile" = "rpgmaker-mv/lazy-data"
-"Decrypter.decryptImg" = "rpgmaker-mv/decrypt-image-native"
-"WebAudio.prototype._load" = "rpgmaker-mv/load-audio-native"
-"LZString.decompressFromBase64" = "rpgmaker-mv/lz-string-native"
-"Bitmap.prototype.adjustTone" = "rpgmaker-mv/adjust-tone"
-"Bitmap.prototype.blur" = "rpgmaker-mv/blur-native"
+"DataManager.loadDataFile" = "rpgmaker-mv/load/lazy-data"
+"Decrypter.decryptImg" = "rpgmaker-mv/load/decrypt-image-native"
+"WebAudio.prototype._load" = "rpgmaker-mv/load/load-audio-native"
+"LZString.decompressFromBase64" = "rpgmaker-mv/load/lz-string-native"
+"Bitmap.prototype.adjustTone" = "rpgmaker-mv/render/adjust-tone"
+"Bitmap.prototype.blur" = "rpgmaker-mv/render/blur-native"
 # "Loading..." al cargar una partida o empezar una nueva; en un cambio de
 # mapa o al empezar una batalla, solo si tarda
-"DataManager.loadGame" = "rpgmaker-mv/loading-notice"
-"DataManager.setupNewGame" = "rpgmaker-mv/loading-notice"
-"Scene_Map.prototype.onMapLoaded" = "rpgmaker-mv/loading-notice"
-"Scene_Battle.prototype.createDisplayObjects" = "rpgmaker-mv/loading-notice"
-"Scene_Map.prototype.start" = "rpgmaker-mv/loading-notice"
-"Scene_Battle.prototype.start" = "rpgmaker-mv/loading-notice"
+"DataManager.loadGame" = "rpgmaker-mv/port/loading-notice"
+"DataManager.setupNewGame" = "rpgmaker-mv/port/loading-notice"
+"Scene_Map.prototype.onMapLoaded" = "rpgmaker-mv/port/loading-notice"
+"Scene_Battle.prototype.createDisplayObjects" = "rpgmaker-mv/port/loading-notice"
+"Scene_Map.prototype.start" = "rpgmaker-mv/port/loading-notice"
+"Scene_Battle.prototype.start" = "rpgmaker-mv/port/loading-notice"
+# y el arranque, mientras Scene_Boot no esta lista (sus fuentes, sus datos)
+"Scene_Boot.prototype.isReady" = "rpgmaker-mv/port/loading-notice"
 # el GC: cuando no se nota
-"Scene_Map.prototype.create" = "rpgmaker/gc-on-transition"
-"Scene_Battle.prototype.create" = "rpgmaker/gc-on-transition"
+"Scene_Map.prototype.create" = "rpgmaker/memory/gc-on-transition"
+"Scene_Battle.prototype.create" = "rpgmaker/memory/gc-on-transition"
 # al terminar una escena, soltar lo que la mantenia viva (PixiJS, variables
 # globales y, de una batalla, BattleManager)
-"Scene_Base.prototype.terminate" = "rpgmaker-mv/scene-release"
-"Scene_Battle.prototype.terminate" = "rpgmaker-mv/battle-release"
+"Scene_Base.prototype.terminate" = "rpgmaker-mv/memory/scene-release"
+"Scene_Battle.prototype.terminate" = "rpgmaker-mv/memory/battle-release"
 # dibujar a menos resolucion, solo con [game] render_scale (si no, nada)
-"Graphics._updateRenderer" = "rpgmaker-mv/render-scale"
+"Graphics._updateRenderer" = "rpgmaker-mv/render/render-scale"
 # el ritmo a 30 fps (TDDP_FluidTimestep o el de RPG Maker)
-"SceneManager.updateMain" = "rpgmaker-mv/fluid-timestep-cap"
+"SceneManager.updateMain" = "rpgmaker-mv/logic/fluid-timestep-cap"
 # eventos, interprete y personajes
-"Game_Interpreter.requestImages" = "rpgmaker-mv/request-images-once"
-"Game_Interpreter.prototype.update" = "rpgmaker-mv/interpreter-fast"
-"Game_Map.prototype.isAnyEventStarting" = "rpgmaker-mv/any-event-starting"
-"Game_Map.prototype.isAnyEventStartingQuick" = "rpgmaker-mv/any-event-starting-quick"
-"Game_Character.prototype.findDirectionTo" = "rpgmaker-mv/find-path-index"
-"Game_CommonEvent.prototype.update" = "rpgmaker-mv/pure-common-events"
-"Game_Event.prototype.updateParallel" = "rpgmaker-mv/pure-common-events"
-"Game_Actor.prototype.hasSkill" = "rpgmaker-mv/has-skill-fast"
-"Game_BattlerBase.prototype.traits" = "rpgmaker-mv/traits-cache"
-"Game_Follower.prototype.actor" = "rpgmaker-mv/party-member-fast"
-"Game_Party.prototype.leader" = "rpgmaker-mv/party-member-fast"
+"Game_Interpreter.requestImages" = "rpgmaker-mv/logic/request-images-once"
+"Game_Interpreter.prototype.update" = "rpgmaker-mv/logic/interpreter-fast"
+"Game_Map.prototype.isAnyEventStarting" = "rpgmaker-mv/logic/any-event-starting"
+"Game_Map.prototype.isAnyEventStartingQuick" = "rpgmaker-mv/logic/any-event-starting-quick"
+"Game_Character.prototype.findDirectionTo" = "rpgmaker-mv/logic/find-path-index"
+"Game_CommonEvent.prototype.update" = "rpgmaker-mv/logic/pure-common-events"
+"Game_Event.prototype.updateParallel" = "rpgmaker-mv/logic/pure-common-events"
+"Game_Actor.prototype.hasSkill" = "rpgmaker-mv/logic/has-skill-fast"
+"Game_BattlerBase.prototype.traits" = "rpgmaker-mv/logic/traits-cache"
+"Game_Follower.prototype.actor" = "rpgmaker-mv/logic/party-member-fast"
+"Game_Party.prototype.leader" = "rpgmaker-mv/logic/party-member-fast"
 # dibujo
-"Sprite.prototype.update" = "rpgmaker-mv/sprite-update-loop"
-"Tilemap.prototype._sortChildren" = "rpgmaker-mv/sort-if-needed"
-"Sprite.prototype._executeTint" = "rpgmaker-mv/tint-native"
+"Sprite.prototype.update" = "rpgmaker-mv/render/sprite-update-loop"
+"Tilemap.prototype._sortChildren" = "rpgmaker-mv/render/sort-if-needed"
+"Sprite.prototype._executeTint" = "rpgmaker-mv/render/tint-native"
 # los logros del port dentro del juego (una opcion del menu)
-"Scene_Menu.prototype.createCommandWindow" = "rpgmaker-mv/achievements-menu"
+"Scene_Menu.prototype.createCommandWindow" = "rpgmaker-mv/port/achievements-menu"
 # plugins muy usados
-"Scene_Map.prototype.updateButtonEvents" = "rpgmaker-mv/button-events-keys"
-"Window_EnemyVisualSelect.prototype.updateBattlerName" = "rpgmaker-mv/yep-enemy-name-refresh"
-"Window_EnemyVisualSelect.prototype.refresh" = "rpgmaker-mv/yep-enemy-select-refresh"
+"Scene_Map.prototype.updateButtonEvents" = "rpgmaker-mv/port/button-events-keys"
+"Window_EnemyVisualSelect.prototype.updateBattlerName" = "rpgmaker-mv/logic/yep-enemy-name-refresh"
+"Window_EnemyVisualSelect.prototype.refresh" = "rpgmaker-mv/logic/yep-enemy-select-refresh"
 # ventanas que se redibujan igual: no se tocan (ni se suben a la GPU)
-"Window_BattleEnemy.prototype.refresh" = "rpgmaker-mv/refresh-if-same-drawing"
-"Window_BattleStatus.prototype.refresh" = "rpgmaker-mv/refresh-if-same-drawing"
-"Game_Switches.prototype.value" = "rpgmaker-mv/olivia-meta-fast"
-"Game_Variables.prototype.value" = "rpgmaker-mv/olivia-meta-fast"
-"Game_Switches.prototype.setValue" = "rpgmaker-mv/olivia-meta-fast"
-"Game_Variables.prototype.setValue" = "rpgmaker-mv/olivia-meta-fast"
+"Window_BattleEnemy.prototype.refresh" = "rpgmaker-mv/logic/refresh-if-same-drawing"
+"Window_BattleStatus.prototype.refresh" = "rpgmaker-mv/logic/refresh-if-same-drawing"
+"Game_Switches.prototype.value" = "rpgmaker-mv/logic/olivia-meta-fast"
+"Game_Variables.prototype.value" = "rpgmaker-mv/logic/olivia-meta-fast"
+"Game_Switches.prototype.setValue" = "rpgmaker-mv/logic/olivia-meta-fast"
+"Game_Variables.prototype.setValue" = "rpgmaker-mv/logic/olivia-meta-fast"
 # Estos aun no comprueban que la funcion es la de RPG Maker MV (pendiente):
 # con un plugin que la cambie, el juego puede ponerlos a "off" en su [hooks]
-"Game_Interpreter.prototype.skipBranch" = "rpgmaker-mv/skip-branch-table"
-"Game_Event.prototype.update" = "rpgmaker-mv/event-idle-fast"
-"Game_Map.prototype.events" = "rpgmaker-mv/events-cached"
+"Game_Interpreter.prototype.skipBranch" = "rpgmaker-mv/logic/skip-branch-table"
+"Game_Event.prototype.update" = "rpgmaker-mv/logic/event-idle-fast"
+"Game_Map.prototype.events" = "rpgmaker-mv/logic/events-cache"
 # el mapa se refresca solo si los interruptores y variables cambian de verdad
-"Game_Map.prototype.refresh" = "rpgmaker-mv/refresh-on-net-change"
-"Sprite_Character.prototype.update" = "rpgmaker-mv/skip-hidden-sprites"
-"Tilemap.prototype.update" = "rpgmaker-mv/tilemap-sprites-once-per-frame"
-"WindowLayer.prototype.renderWebGL" = "rpgmaker-mv/windowlayer-skip-empty"
+"Game_Map.prototype.refresh" = "rpgmaker-mv/logic/refresh-on-net-change"
+"Sprite_Character.prototype.update" = "rpgmaker-mv/render/skip-hidden-sprites"
+"Tilemap.prototype.update" = "rpgmaker-mv/render/tilemap-sprites-once-per-frame"
+"WindowLayer.prototype.renderWebGL" = "rpgmaker-mv/render/skip-empty-windowlayer"
 # PENDIENTE: en la GPU Mali deja lineas finas entre columnas de tiles en
 # algunas capas (en PC no)
-"Spriteset_Base.prototype.updateToneChanger" = "rpgmaker-mv/tone-filter-when-needed"
+"Spriteset_Base.prototype.updateToneChanger" = "rpgmaker-mv/render/tone-filter-when-needed"
+# la partida para los trucos (quix.playthrough, runtime/game/cheats): empezar,
+# guardar y cargar
+"DataManager.createGameObjects" = "rpgmaker/port/playthrough-new"
+"DataManager.makeSaveContents" = "rpgmaker/port/playthrough-save"
+"DataManager.extractSaveContents" = "rpgmaker/port/playthrough-load"

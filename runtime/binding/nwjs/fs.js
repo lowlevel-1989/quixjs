@@ -13,11 +13,17 @@
   function encOf(o) {
     return typeof o === 'string' ? o : (o && o.encoding) || null;
   }
+  // --trace-saves: quien lee y escribe las partidas ([saves] files)
+  function trace(op, p) {
+    var q = globalThis.quix;
+    if (q && q.tracingSaves && q.saves.isSave(N.abs(p))) q.traceSave(op, N.abs(p));
+  }
   var fs = {
     existsSync: function (p) {
       return N.fsn.exists(N.abs(p));
     },
     readFileSync: function (p, o) {
+      trace('read', p);
       var enc = encOf(o);
       if (enc && enc !== 'base64') {
         var t = N.fsn.readText(N.abs(p));
@@ -30,6 +36,7 @@
       return enc === 'base64' ? buf.toString('base64') : buf;
     },
     writeFileSync: function (p, data, o) {
+      trace('write', p);
       if (typeof data !== 'string' && !(data instanceof ArrayBuffer) && !ArrayBuffer.isView(data))
         data = String(data);
       if (!N.fsn.write(N.abs(p), data, false)) throw fsError('EACCES', 'open', p);
@@ -50,6 +57,7 @@
       if (!N.fsn.rmdir(N.abs(p))) throw fsError('ENOENT', 'rmdir', p);
     },
     renameSync: function (a, b) {
+      trace('write', b);
       if (!N.fsn.rename(N.abs(a), N.abs(b))) throw fsError('ENOENT', 'rename', a);
     },
     copyFileSync: function (a, b) {

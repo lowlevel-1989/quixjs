@@ -3,6 +3,6 @@
 scripts = ["levels.js"]   # los dos niveles y como se aplican
 
 [hooks]
-"PortMenu.items"      = "options.js"   # las dos opciones del menu
-"bkcore.Audio.play"   = "sounds.js"    # empieza un sonido (lo pone a 1)
-"bkcore.Audio.volume" = "sounds.js"    # el juego cambia el volumen de uno
+"PortMenu.items"      = "options"   # las dos opciones del menu
+"bkcore.Audio.play"   = "sounds"    # empieza un sonido (lo pone a 1)
+"bkcore.Audio.volume" = "sounds"    # el juego cambia el volumen de uno

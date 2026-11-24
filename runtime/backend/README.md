@@ -25,7 +25,7 @@ out and turns them into KeyboardEvent. `quix.input.pressKey()` uses the same que
   changed, a WebGL canvas goes straight (it shares textures with the WebGL
   context). All the layers are scaled to the rectangle of the first one (the
   game canvas), keeping the aspect ratio with black bars. A visible `<video>`
-  is one more layer, on top. The shaders are in `runtime/shaders/present.*`.
+  is one more layer, on top. The shaders are in `runtime/gfx/gl/shaders/present.*`.
 - Keys: the SDL scancode becomes a KeyboardEvent.code and `core/keymap.c`
   gives its key and keyCode.
 - Gamepads: up to 4 with SDL_GameController, given to `navigator.getGamepads()`

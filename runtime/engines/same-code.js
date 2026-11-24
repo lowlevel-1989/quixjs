@@ -2,12 +2,12 @@
 // original?", para los hooks de motor.
 //
 // El flujo:
-//   1. Al arrancar, runtime/engines/engine_api.c crea la variable global quix.engine y,
+//   1. Al arrancar, runtime/engines/api.c crea la variable global quix.engine y,
 //      justo despues, ejecuta este archivo una vez (tools/embed_js.py lo
 //      mete en el binario al compilar).
 //   2. Este archivo agrega quix.engine.sameCode (abajo, al final:
 //      "})(quix.engine);" es la llamada).
-//   3. Al cargar el juego, runtime/hooks/hooks.c instala cada hook, y el hook la usa:
+//   3. Al cargar el juego, runtime/game/hooks/hooks.c instala cada hook, y el hook la usa:
 //        var sameCode = quix.engine.sameCode;
 //        if (!sameCode(original, MODEL['Game_Event.isStarting'])) return original;
 //

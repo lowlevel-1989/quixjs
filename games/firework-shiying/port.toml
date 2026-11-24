@@ -4,7 +4,7 @@
 # ([engine], [game], [saves], [fonts], [scripts]) salio de quixjs
 # --gen-config sobre Firework 1.0.4 (GOG), revisada a mano; despues, los
 # hooks. Sirve en cualquier sitio donde corre quixjs, con el juego copiado en
-# gamedata/. [portmaster] es lo que pide PortMaster (make PLATFORM=portmaster
+# gamedata/. [portmaster] es lo que pide PortMaster (make portmaster
 # PORT=firework-shiying genera con ella su port.json, su gameinfo.xml y el
 # script .sh del port).
 #
@@ -29,7 +29,7 @@ fps = 60
 
 [game]
 title     = "Firework"
-version   = "0.1.0"           # la del port
+version   = "1.0.0"           # la del port
 id        = "firework"
 # la rom: la carpeta www/ del juego comprimida en un .zip, junto a este
 # port.toml. game_dir: donde empieza el juego dentro de la rom (la carpeta
@@ -41,7 +41,7 @@ game_dir  = "www"
 # 816x624
 width     = 1280
 height    = 720
-mods      = ["fast-start", "big-text", "run", "delete-save", "achievements"]
+mods      = ["fast-start", "big-text", "readable-font", "run", "delete-save", "achievements"]
 developer = "Shiying Studio"
 publisher = "Shiying Studio"
 releasedate = "20210203T000000"   # el 3 de febrero de 2021, en Steam
@@ -55,7 +55,7 @@ desc      = "A Chinese horror adventure: a police officer investigates a family'
 image_scale      = "auto"
 image_scale_dirs = ["img/pictures", "img/parallaxes", "img/titles1", "img/titles2", "img/fogs"]
 # El juego se dibuja a la resolucion con la que se ve en la pantalla (hook
-# rpgmaker-mv/render-scale): en una de 720x720, a 720x405. La GPU pinta ~10
+# rpgmaker-mv/render/render-scale): en una de 720x720, a 720x405. La GPU pinta ~10
 # capas de pantalla completa por imagen; asi, un tercio de los pixeles. En
 # una pantalla igual o mas grande que 1280x720 no cambia nada.
 render_scale     = "auto"
@@ -115,12 +115,14 @@ availability = "paid"
 #   - el tilemap no borra su textura antes de subir cada tileset (no se ve)
 [hooks]
 engine = "rpgmaker-mv"
-"Spriteset_Map.prototype.createLightmask" = "rpgmaker-mv/terrax-mask-scale"
-"Spriteset_Map.prototype.update" = "rpgmaker-mv/terrax-lights-only"
-"Spriteset_Map.prototype.createBlackMask" = "rpgmaker-mv/black-mask-once"
-"SceneManager.snapForSave" = "rpgmaker-mv/save-picture-small"
-"SceneManager.snapForBackground" = "rpgmaker-mv/transfer-no-snap"
-"Spriteset_Map.prototype.createTilemap" = "rpgmaker-mv/tilemap-no-clear"
+# los savestates (Select + X guarda, Select + Y carga): probados en este juego
+"Scene_Boot.prototype.start" = "rpgmaker/extra/port/savestate"
+"Spriteset_Map.prototype.createLightmask" = "rpgmaker-mv/extra/render/terrax-mask-scale"
+"Spriteset_Map.prototype.update" = "rpgmaker-mv/extra/render/terrax-lights-only"
+"Spriteset_Map.prototype.createBlackMask" = "rpgmaker-mv/extra/render/black-mask-once"
+"SceneManager.snapForSave" = "rpgmaker-mv/extra/render/save-picture-small"
+"SceneManager.snapForBackground" = "rpgmaker-mv/extra/render/transfer-no-snap"
+"Spriteset_Map.prototype.createTilemap" = "rpgmaker-mv/extra/render/tilemap-no-clear"
 
 [controls]
 gamepad = true
@@ -131,7 +133,7 @@ magnifier  = true
 
 # los botones que usa el juego, con los nombres de su pantalla de controles
 # (img/titles2/Splash_4): correr esta apagado en casi todos los mapas y no
-# usa L1 ni R1. Controls los pide por su nombre (y siempre las dos palancas)
+# usa L1 ni R1. Controls (que pide todos los botones) los muestra con su nombre
 [controls.buttons]
 dpup    = "Move up"
 dpdown  = "Move down"

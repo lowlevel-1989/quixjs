@@ -3,13 +3,13 @@
 [English](README.md) | Español
 
 Lo que quixjs necesita del sistema operativo, detras de una sola cabecera
-(`platform.h`). Cada carpeta la implementa y el `Makefile` compila una
-(`PLATFORM_OS`):
+(`platform.h`). Cada carpeta la implementa y cada plataforma compila una
+(`cmake/sources.cmake`):
 
 | carpeta  | para |
 |----------|------|
 | `linux/` | el PC y las portatiles (glibc) |
-| `android/` | la app de Android (bionic, `make PLATFORM=android`); `launcher.c` es el JNI de su menu y de Transfer Save |
+| `android/` | la app de Android (bionic, `make android`); el JNI de sus pantallas: `game.c` (abrir el juego), `menu.c` (el menu de un juego), `transfer.c` (Transfer Save) y `pad.c` (el mando) |
 
 Otro sistema (Android...) agrega su carpeta y el resto de quixjs sigue igual.
 La ventana, el GL, la entrada y la salida de audio son del backend

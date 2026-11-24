@@ -4,25 +4,29 @@
 
 Dibujo sin JS. El canvas 2d de `binding/canvas/2d/` dibuja aquí por software
 sobre una `Surface` RGBA en memoria, igual con el backend sdl que con el dummy.
-`gl.c` es el contexto OpenGL ES 2.0 que usan WebGL (`binding/webgl.c`) y el
-backend sdl para presentar el frame. `gpu2d.c` dibuja un canvas 2d en la GPU
+`gl/gl.c` es el contexto OpenGL ES 2.0 que usan WebGL (`binding/webgl.c`) y el
+backend sdl para presentar el frame. `gl/gpu2d.c` dibuja un canvas 2d en la GPU
 cuando lo pide un hook `gpu-canvas`.
+
+Dos carpetas: `soft/`, el dibujo por software en memoria, y `gl/`, el dibujo
+en la GPU con OpenGL ES (con sus drivers y sus shaders).
 
 | archivo          | de qué se encarga |
 |------------------|-------------------|
-| `surface.h/.c`   | superficie RGBA (sin premultiplicar, mismo orden que ImageData), matriz afín, mezcla de los modos de `globalCompositeOperation` |
-| `color.c`        | colores CSS: `#rgb`, `rgb()`, `hsl()`, nombres...; se escriben como el navegador (`#rrggbb` o `rgba(...)`) |
-| `paint.c`        | lo que va en fillStyle / strokeStyle: color, gradiente lineal y radial, patrón; se muestrea por pixel |
-| `raster.c`       | paths, relleno (nonzero / evenodd), trazo, máscaras de cobertura (también para `clip()`), fillRect, clearRect, drawImage |
-| `image_loader.c` | decodifica imágenes (PNG, JPG...) con SDL_image y guarda PNG para las capturas |
-| `font.c`         | fuentes TrueType con SDL_ttf: familias registradas, valor CSS de `font`, medir y dibujar texto; un thread a la vez (el juego y los avisos encima de el, que dibuja el thread que presenta) |
-| `gl.h/.c`        | contexto OpenGL ES 2.0 para WebGL (ventana oculta de SDL, u offscreen sin ventana); funciones cargadas con `SDL_GL_GetProcAddress`; un segundo contexto que comparte texturas (`gl_aux_begin` / `gl_aux_end`) para `gpu2d.c` |
-| `gl_state.h/.c`  | el estado de OpenGL del contexto de WebGL guardado y devuelto: `gpu2d.c` y la pantalla con libmali (drivers, `one_context`) dibujan en ese contexto sin que el juego lo note |
-| `gpu2d.h/.c`     | canvas 2d dibujado en la GPU (hook `gpu-canvas`): fillRect, clearRect, fill y stroke con color o gradiente; lo demás vuelve a la CPU; un repintado entero igual al anterior (una máscara de luces con las luces y la pantalla quietas) no se vuelve a dibujar; pinta en el contexto de WebGL, guardando y devolviendo su estado (`QUIXJS_GPU2D_MAIN=0`: el contexto auxiliar) |
-| `shader_cache.h/.c` | los programas de WebGL ya enlazados, guardados en `cache/shaders` (junto al toml) (`GL_OES_get_program_binary`): la siguiente vez se cargan en unos ms en vez de compilarlos; si el driver ya no acepta uno, se enlaza y se guarda de nuevo |
-| `driver.h/.c`    | que driver de OpenGL ES se usa (panfrost, mali o default), leido una vez de `GL_RENDERER` y `GL_VERSION`; el resto del codigo pregunta a `gpu_driver()` en vez de mirar el nombre |
-| `drivers/*.c`    | un archivo por driver con lo que quixjs hace distinto con el, y por que (lo medido) |
-| `gl_funcs.h`     | lista de funciones de GLES 2.0, generada por `tools/gen_gl.py` (no editar a mano) |
+| `soft/surface.h/.c`   | superficie RGBA (sin premultiplicar, mismo orden que ImageData), matriz afín, mezcla de los modos de `globalCompositeOperation` |
+| `soft/color.c`        | colores CSS: `#rgb`, `rgb()`, `hsl()`, nombres...; se escriben como el navegador (`#rrggbb` o `rgba(...)`) |
+| `soft/paint.c`        | lo que va en fillStyle / strokeStyle: color, gradiente lineal y radial, patrón; se muestrea por pixel |
+| `soft/raster.c`       | paths, relleno (nonzero / evenodd), trazo, máscaras de cobertura (también para `clip()`), fillRect, clearRect, drawImage; archivo índice de `soft/raster/` ([README](soft/raster/README.es.md)) |
+| `soft/image_loader.c` | decodifica imágenes (PNG, JPG...) con SDL_image y guarda PNG para las capturas |
+| `soft/font.c`         | fuentes TrueType con SDL_ttf: familias registradas, valor CSS de `font`, medir y dibujar texto; un thread a la vez (el juego y los avisos encima de el, que dibuja el thread que presenta) |
+| `gl/gl.h/.c`        | contexto OpenGL ES 2.0 para WebGL (ventana oculta de SDL, u offscreen sin ventana); funciones cargadas con `SDL_GL_GetProcAddress`; un segundo contexto que comparte texturas (`gl_aux_begin` / `gl_aux_end`) para `gpu2d.c` |
+| `gl/state.h/.c`  | el estado de OpenGL del contexto de WebGL guardado y devuelto: `gpu2d.c` y la pantalla con libmali (drivers, `one_context`) dibujan en ese contexto sin que el juego lo note |
+| `gl/gpu2d.h/.c`     | canvas 2d dibujado en la GPU (hook `gpu-canvas`): fillRect, clearRect, fill y stroke con color o gradiente; lo demás vuelve a la CPU; un repintado entero igual al anterior (una máscara de luces con las luces y la pantalla quietas) no se vuelve a dibujar; pinta en el contexto de WebGL, guardando y devolviendo su estado (`QUIXJS_GPU2D_MAIN=0`: el contexto auxiliar); archivo índice de `gl/gpu2d/` ([README](gl/gpu2d/README.es.md)) |
+| `gl/shader_cache.h/.c` | los programas de WebGL ya enlazados, guardados en `cache/shaders` (junto al toml) (`GL_OES_get_program_binary`): la siguiente vez se cargan en unos ms en vez de compilarlos; si el driver ya no acepta uno, se enlaza y se guarda de nuevo |
+| `gl/driver.h/.c`    | que driver de OpenGL ES se usa (panfrost, mali o default), leido una vez de `GL_RENDERER` y `GL_VERSION`; el resto del codigo pregunta a `gpu_driver_get()` en vez de mirar el nombre |
+| `gl/drivers/*.c`    | un archivo por driver con lo que quixjs hace distinto con el, y por que (lo medido) |
+| `gl/funcs/gl2.h`     | lista de funciones de GLES 2.0, generada por `tools/gen_gl.py` (no editar a mano) |
+| `gl/shaders/`    | los shaders GLSL de `gpu2d.c` y de presentar, metidos en el binario al compilar ([README](gl/shaders/README.es.md)) |
 
 ## Sin antialiasing
 
@@ -56,8 +60,8 @@ comparte texturas con él: un canvas WebGL se muestra sin leerlo de la GPU.
 
 ## Canvas 2d en la GPU
 
-`gpu2d.c` dibuja los canvas que marca un hook `gpu-canvas`
-([hooks](../hooks/README.es.md)): las máscaras de luces de RPG Maker, que se
+`gl/gpu2d.c` dibuja los canvas que marca un hook `gpu-canvas`
+([hooks](../game/hooks/README.es.md)): las máscaras de luces de RPG Maker, que se
 repintan enteras en cada actualización, son el dibujo por software más caro
 en una portátil.
 
@@ -77,7 +81,7 @@ en una portátil.
   xor y screen.
 - Un programa de shaders por pintura (color, lineal, radial) y con o sin
   máscara: sin ramas en el fragment shader. Los shaders están en
-  [shaders](../shaders/README.es.md).
+  [shaders](../gfx/gl/shaders/README.es.md).
 - Todo lo demás (clip, patrones, otros modos, texto, imágenes,
   getImageData...) lee el canvas y el canvas se queda en la CPU.
 - `texImage2D` de WebGL con ese canvas lo copia en la GPU con
@@ -95,4 +99,4 @@ fuentes habituales de Linux (DejaVu, Noto, Liberation).
 
 ## Drivers
 
-Lo que quixjs hace distinto con cada driver de OpenGL ES: [drivers](drivers/README.es.md).
+Lo que quixjs hace distinto con cada driver de OpenGL ES: [drivers](gl/drivers/README.es.md).

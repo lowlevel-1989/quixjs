@@ -2,7 +2,7 @@
 
 [English](README.md) | Español
 
-La app de Android de quixjs: `quixjs.apk`, para teléfonos y tablets arm64
+La app de Android de quixjs: `build/quixjs.apk`, para teléfonos y tablets arm64
 con Android 9 o más nuevo. Juega cualquier port de quixjs (juegos de RPG
 Maker MV y MZ...) con los archivos de tu copia. La app no trae juegos ni
 ports. El juego se juega con mando.
@@ -13,26 +13,24 @@ Hace falta el SDK de Android (`ANDROID_HOME`, por defecto `~/Android/Sdk`)
 con un NDK, unas build-tools y una plataforma, y un JDK. Sin Gradle.
 
     sdkmanager "ndk;28.2.13676358" "platforms;android-34" "build-tools;36.1.0"
-    make PLATFORM=android
+    make android
 
-La primera vez descarga SDL2, SDL2_ttf y SDL2_image en `android/deps/` y
-construye JavaScriptCore para Android (`tools/build-jsc.sh android-arm64`,
-tarda, solo una vez). Sale `quixjs.apk`, firmado con la clave de depuración
+La primera vez descarga SDL2, SDL2_ttf y SDL2_image en `obj/deps/android/` y
+construye JavaScriptCore para Android (`make android-jsc`, tarda, solo una vez). Sale `build/quixjs.apk`, firmado con la clave de depuración
 (`~/.android/debug.keystore`; si no existe, se crea).
 
 Para el emulador de Android del PC (x86_64), solo para probar: el build de
 arm64 no corre ahí (la traducción ARM del emulador se para en algunas
-instrucciones de JavaScriptCore). Se construye una vez JavaScriptCore para
-x86_64 y un `.apk` de x86_64:
+instrucciones de JavaScriptCore). Un `.apk` de x86_64, `build/quixjs-x86_64.apk`
+(la primera vez construye también JavaScriptCore para x86_64):
 
-    tools/build-jsc.sh android-x86_64
-    make PLATFORM=android ABI=x86_64
+    make android ABI=x86_64
 
 ## Instalar
 
-    adb install -r quixjs.apk
+    adb install -r build/quixjs.apk
 
-O copiar `quixjs.apk` al teléfono y abrirlo.
+O copiar `build/quixjs.apk` al teléfono y abrirlo.
 
 ## Uso
 
@@ -73,7 +71,12 @@ O copiar `quixjs.apk` al teléfono y abrirlo.
    Lo que se cambia se guarda en `quixjs-settings.toml`, en la carpeta del
    juego, el mismo archivo que en una portátil.
 4. En el juego: el mando. Select + Start, o el botón (o el gesto) Atrás
-   del teléfono dos veces, cierran el juego y vuelven a su menú.
+   del teléfono dos veces, cierran el juego y vuelven a su menú. Los
+   combos son los de una portátil: Select + R1 hace una captura (también
+   en la galería) y Select + L1 abre la lupa (Start la fija y la desfija;
+   fija, el mando vuelve al juego); en los juegos que los tienen, Select + X
+   guarda un savestate, Select + Y lo carga y Select + izquierda / derecha
+   cambia de ranura.
 
 Las pantallas de la app se usan con el touch o con el mando, con la misma
 asignación que el juego (`controller.map`): arriba y abajo mueven, a o
@@ -87,12 +90,16 @@ las borra. Los mensajes de quixjs van a logcat (`adb logcat -s quixjs`) y a
 
 | archivo | qué es |
 |---------|--------|
-| `android.mk` | `make PLATFORM=android`: dependencias, librerías nativas, Java, recursos y el `.apk` firmado |
-| `CMakeLists.txt` | la parte nativa con el NDK: SDL2, SDL2_ttf, SDL2_image y `libquixjs.so` |
+| `../cmake/android/native.cmake` | `make android`, la parte nativa con el NDK: SDL2, SDL2_ttf, SDL2_image y `libquixjs.so` |
+| `../cmake/android/apk.cmake` | el Java, los recursos, los assets y el `.apk` firmado |
 | `AndroidManifest.xml` | las actividades y los permisos (la red local, para Transfer Save; el vibrador, cuando el mando no vibra) |
-| `java/.../MainActivity.java` | la lista de juegos, importar y las licencias |
-| `java/.../GameMenuActivity.java` | el menú de un juego (`runtime/platform/android/launcher.c` por JNI) |
-| `java/.../TransferActivity.java` | Transfer Save (`runtime/transfer` por JNI) |
+| `java/.../MainActivity.java` | la lista de juegos y las licencias |
+| `java/.../Importer.java` | importar un `.zip`: un port, o un mod para un juego importado |
+| `java/.../Files.java` | leer, copiar y borrar archivos; los valores sencillos de un `port.toml` |
+| `java/.../GameMenuActivity.java` | el menú de un juego: la portada y lo que comparten sus pantallas (`runtime/platform/android/menu.c` por JNI) |
+| `java/.../Menu*.java` | las pantallas del menú: `MenuAchievements`, `MenuMods` (y Delete mods), `MenuOptions`, `MenuCheats` y `MenuControls` |
+| `java/.../TransferActivity.java` | Transfer Save: la portada, Restore Backup y Delete Save (`runtime/platform/android/transfer.c` por JNI) |
+| `java/.../TransferSend.java`, `TransferReceive.java` | Send Save y Receive Save |
 | `java/.../GameActivity.java` | el juego: SDL con quixjs, derecho en el juego |
 | `java/.../Ui.java` | los colores y las filas que comparten las pantallas |
 | `java/.../Pad.java` | el mando en las pantallas, con la asignación de `controller.map` |

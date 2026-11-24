@@ -11,13 +11,14 @@ toml que describe cada juego, los ports y los mods, los controles, y el objeto
 ```
 Usage: quixjs [options]
 Options:
-  -c, --config <path>    Path to config.toml file (default: config.toml)
+  -c, --config <path>    The toml of the game (required)
       --gen-config <dir|.html> Print a config.toml for the game and exit
   -b, --backend <type>   Select backend: sdl or dummy (default: sdl)
       --fullscreen       Fullscreen, keeping the aspect ratio (black bars)
       --resizable        Resizable from the start (a tiling WM tiles it)
       --frames <n>       Exit after n frames
       --fixed-step       Fixed clock: each frame advances 1000/60 ms
+      --trace-saves      Log which functions of the game save and load (to hook them)
       --screenshot <png> Save the last frame as PNG on exit
       --script <file>    Input script: keys and screenshots at given frames
       --debug[=sock]     Debug console on a Unix socket (tools/console.py)
@@ -39,17 +40,17 @@ Ejemplos:
 
 ```
 # un config.toml para un juego, y jugar
-./quixjs --gen-config ~/juegos/mijuego > mijuego.toml
-./quixjs -c mijuego.toml
+./build/quixjs --gen-config ~/juegos/mijuego > mijuego.toml
+./build/quixjs -c mijuego.toml
 
 # como en una portatil: primero el menu, pantalla completa
-./quixjs -c mijuego.toml --launcher --fullscreen
+./build/quixjs -c mijuego.toml --launcher --fullscreen
 
 # 120 frames sin ventana y una captura del ultimo
-./quixjs -b dummy --fixed-step --frames 120 --screenshot out.png -c games/tests/canvas/rect/config.toml
+./build/quixjs -b dummy --fixed-step --frames 120 --screenshot out.png -c tests/games/canvas/rect/config.toml
 
 # un test en una ventana, con los frames por segundo
-./quixjs --test -b sdl --fps -c games/tests/pixi_v4_webgl/sprite/config.toml
+./build/quixjs --test -b sdl --fps -c tests/games/pixi_v4_webgl/sprite/config.toml
 ```
 
 Las opciones de pruebas (`--frames`, `--fixed-step`, `--script`, `--debug`,
@@ -73,7 +74,7 @@ el, un juego no acaba nunca. Se usa junto a `--screenshot` (para ver como
 queda el frame `n`) o a `--fps` (para medir un tramo fijo).
 
 ```
-$ ./quixjs -c mijuego.toml --frames 120
+$ ./build/quixjs -c mijuego.toml --frames 120
 ...
 Frame limit reached (120)
 ```
@@ -98,11 +99,11 @@ Un juego que escribe cuanto tiempo paso en el frame 60, con el reloj real y
 con el fijo:
 
 ```
-$ ./quixjs -b dummy -c mijuego.toml --frames 120
+$ ./build/quixjs -b dummy -c mijuego.toml --frames 120
 frame 60: performance.now avanzo 983.6 ms      (cambia en cada corrida)
 [perf] whole session: 60.5 fps, 120 frames ...
 
-$ ./quixjs -b dummy -c mijuego.toml --frames 120 --fixed-step
+$ ./build/quixjs -b dummy -c mijuego.toml --frames 120 --fixed-step
 frame 60: performance.now avanzo 983.3 ms      (siempre 59 x 16,67 ms)
 [perf] whole session: 13093.6 fps, 120 frames ...
 ```
@@ -115,7 +116,7 @@ comprobar que un cambio no rompe como se ve un juego, se compara el PNG de
 antes y el de despues. Sin ventana (`-b dummy`) tambien funciona.
 
 ```
-$ ./quixjs -b dummy --fixed-step --frames 300 --screenshot titulo.png -c mijuego.toml
+$ ./build/quixjs -b dummy --fixed-step --frames 300 --screenshot titulo.png -c mijuego.toml
 ...
 Screenshot saved: titulo.png
 ```
@@ -138,7 +139,7 @@ igual. La sintaxis completa esta en [tests](tests.es.md#--script).
 ```
 
 ```
-$ ./quixjs -b dummy --fixed-step --script partida.keys -c mijuego.toml
+$ ./build/quixjs -b dummy --fixed-step --script partida.keys -c mijuego.toml
 [script] frame 110: shot menu.png
 [script] frame 120: menu abierto
 [script] frame 130: exit 0
@@ -154,7 +155,7 @@ esta corriendo: el estado de una escena, una variable, por que algo no sale.
 Todos los comandos estan en [tests](tests.es.md#consola-de-debug).
 
 ```
-terminal 1 $ ./quixjs --debug -c mijuego.toml
+terminal 1 $ ./build/quixjs --debug -c mijuego.toml
 
 terminal 2 $ python3 tools/console.py info
 frame 312
@@ -176,7 +177,7 @@ frame de cada parte. Sirve para ver donde se va el tiempo cuando un juego va
 lento: en el JS del juego (`js`) o en dibujarlo (`present`).
 
 ```
-$ ./quixjs -c mijuego.toml --fps
+$ ./build/quixjs -c mijuego.toml --fps
 FPS: 60.0 (worst 17 ms; js 0.2 ms, present 2.6 ms, timers 0.0 ms, events 0.0 ms, idle 13.9 ms, rest 0.0 ms)
 ...
 FPS: 60.0 (average of 130 frames)
@@ -205,7 +206,7 @@ segundo puede de verdad. Con `--debug`, el comando `fps N` lo cambia mientras
 corre el juego.
 
 ```
-$ ./quixjs -c mijuego.toml --fps --frame-rate=30
+$ ./build/quixjs -c mijuego.toml --fps --frame-rate=30
 FPS: 30.0 (worst 34 ms; js 0.2 ms, present 33.1 ms, ...)
 ```
 
@@ -231,17 +232,17 @@ test, que si no se cierra enseguida. Con `--fps`, durante esa pausa la ventana
 ensena la media de toda la corrida.
 
 ```
-./quixjs --test -b sdl --hold 3000 -c games/tests/canvas/rect/config.toml
+./build/quixjs --test -b sdl --hold 3000 -c tests/games/canvas/rect/config.toml
 ```
 
 ### --test
 
-`--test` es el modo de los tests de `games/tests`: `-b dummy`, `--fixed-step`
+`--test` es el modo de los tests de `tests/games`: `-b dummy`, `--fixed-step`
 y como mucho 600 frames. El juego tiene que llamar a `quix.exit(code)` cuando
 termina; si no lo hace nunca, quixjs sale con codigo `3`:
 
 ```
-$ ./quixjs --test -c mijuego.toml
+$ ./build/quixjs --test -c mijuego.toml
 Frame limit reached (600)
 TEST TIMEOUT: quix.exit() was not called after 600 frames
 $ echo $?
@@ -253,7 +254,7 @@ velocidad del juego. `make test` corre cada test con `--test`
 ([tests](tests.es.md)).
 
 ```
-./quixjs --test -b sdl --fps -c games/tests/pixi_v4_webgl/sprite/config.toml
+./build/quixjs --test -b sdl --fps -c tests/games/pixi_v4_webgl/sprite/config.toml
 ```
 
 ## --gen-config
@@ -286,8 +287,8 @@ El titulo de la ventana es `quixjs | <[game] title>`; si el juego pone
 
 ## config.toml
 
-Cada seccion del toml de un juego, con valores de ejemplo. `config.toml` es
-el nombre por defecto; `-c` elige otro archivo (un port usa `port.toml`).
+Cada seccion del toml de un juego, con valores de ejemplo. Se pasa con
+`-c`, que es obligatorio (un port usa `port.toml`).
 
 ```toml
 [engine]
@@ -326,7 +327,7 @@ mods      = []                # mods activos (ver Mods)
 image_scale      = "auto"                  # o un numero entre 0 y 1 (por defecto: no)
 image_scale_dirs = ["img/pictures"]        # desde game_dir ("": todo; sin carpetas: ninguna)
 image_scale_min  = 512                     # solo las de un lado de al menos esto (px)
-# opcional (RPG Maker MV): dibujar a menos resolucion; la logica sigue en width x height
+# opcional (RPG Maker MV, Construct 3): dibujar a menos resolucion; la logica sigue en width x height
 render_scale     = "auto"                  # o un numero entre 0 y 1 (por defecto: no)
 
 [scripts]
@@ -371,7 +372,7 @@ vibration = true              # el juego (o un mod suyo) vibra: Options > Vibrat
 screenshot = true             # opcional: Controls pide tambien un boton suelto para la captura
 magnifier = true              # opcional: y otro para la lupa
 
-[controls.buttons]            # opcional: Controls los pide por su nombre (y siempre lo del menu y las palancas)
+[controls.buttons]            # opcional: el nombre con que Controls muestra estos botones ("Dash (X)")
 a = "Confirm"                 # nombres de SDL: a b x y start back dpup dpdown dpleft dpright
 b = "Cancel"                  # leftshoulder rightshoulder lefttrigger righttrigger
                               # leftstick rightstick (o select, l1, r1, l2, r2, l3, r3)
@@ -412,7 +413,7 @@ Steam. Cada logro que el juego consigue queda en
 `[fonts]` es para los `@font-face` del CSS del juego, que quixjs no lee (salvo
 `fonts/gamefont.css`, ver Fuentes). `[symbols]`
 y `[[achievements]]` son los logros de un port; su formato esta en
-[runtime/achievements](../runtime/achievements/README.es.md). Transfer Save esta en
+[runtime/game/achievements](../runtime/game/achievements/README.es.md). Transfer Save esta en
 [runtime/transfer](../runtime/transfer/README.es.md) y el menu en
 [runtime/launcher](../runtime/launcher/README.es.md).
 
@@ -421,17 +422,25 @@ y `[[achievements]]` son los logros de un port; su formato esta en
 nada y Options no tiene Vibration.
 La lupa, en todos los juegos, es para el texto que en una pantalla pequeña no
 se lee (una carta, una nota): Select + L1 abre un cuadro que muestra
-ampliado lo que tiene debajo (lo que hay bajo su centro). Se abre en el
+ampliado lo que tiene debajo (lo que hay bajo su centro). La primera vez se abre en el
 centro; la cruceta o las palancas lo mueven libremente (puede salirse de la
-pantalla), R1 o R2 acercan, L1 o L2 alejan (x2 a x6), Y lo agranda y X lo achica, A lo
-vuelve al centro, y B o Select + L1 lo cierran. Mientras esta abierto, un
-icono arriba a la izquierda lo indica y el juego no recibe el mando. La
+pantalla), R1 o R2 acercan, L1 o L2 alejan (x1.25 a x6), Y lo agranda y X lo achica (un tercio, la mitad, dos tercios, todo el juego o toda la pantalla), A lo
+vuelve al centro, y B o Select + L1 lo cierran. Al volver a abrirlo tiene
+el zoom, el tamano y la posicion de la ultima vez (mientras el juego sigue
+abierto; al empezar, x2, la mitad de la pantalla y en el centro). Mientras esta abierto, un
+icono arriba a la izquierda lo indica y el juego no recibe el mando. Start
+la fija: se queda donde esta, con su tamano y su zoom, y el mando vuelve al
+juego menos Start (el icono lleva un candado al lado); Start otra vez, o
+Select + L1, la desfija, para moverla otra vez, y Select + L1 otra vez la
+cierra. La
 captura (Select + R1) tambien funciona en todos los juegos. `screenshot =
 true` y `magnifier = true` solo hacen que Controls pida ademas un boton
 suelto para cada una (se puede saltar); los combos funcionan siempre.
-`[controls.buttons]` da a cada boton el nombre de lo que hace en el juego, y
-Controls los pide (con Start, Select, la cruceta, A, B y las dos palancas siempre) por ese
-nombre. `[controls.keys]` es para lo que el juego solo escucha en el teclado
+Controls pide siempre todos los botones del mando, en el orden del mando
+estandar (Start, Select, la cruceta, A, B, X, Y, L1, R1, L2, R2...), y despues
+las dos palancas: los combos de quixjs usan esos botones, y en algunas
+consolas estan en otro orden. `[controls.buttons]` da a un boton el nombre de
+lo que hace en el juego, y Controls lo muestra con ese nombre ("Dash (X)"). `[controls.keys]` es para lo que el juego solo escucha en el teclado
 (la antorcha de Fear & Hunger es la T): cada accion tiene un nombre y una
 tecla, y Controls pide un boton para ella (se puede saltar); ese boton pulsa
 despues la tecla. La tecla se escribe como en el teclado: una letra (`T`), un
@@ -454,7 +463,7 @@ pesado) usa el tiempo que dejaron las anteriores, asi que el jugador no la ve
 tarde. Cuesta una imagen mas entre pulsar un boton y verlo (33 ms a 30 fps).
 
 Solo funciona con los drivers que lo permiten (todos los de ahora, ver
-[drivers](../runtime/gfx/drivers/README.es.md)), los refrescos de la pantalla
+[drivers](../runtime/gfx/gl/drivers/README.es.md)), los refrescos de la pantalla
 (DRM) y EGL con `EGL_KHR_surfaceless_context`. Si no, o con
 `present_ahead = false`, el loop principal presenta cada imagen cuando esta
 lista. Si el compositor frena el thread (cada cambio de imagen tarda mas de
@@ -484,18 +493,20 @@ salir. La caché de quixjs va siempre en `cache/`, junto al toml.
 clave es la ruta de la funcion desde `window`; el valor es `"gpu-canvas"` (los
 canvas creados dentro dibujan en la GPU), `"skip"` (la funcion no hace nada),
 `"once-per-frame"` (solo corre la primera llamada de cada imagen) o un hook de
-motor (`"rpgmaker-mv/skip-branch-table"`). `engine = "rpgmaker-mv"` en
+motor (`"rpgmaker-mv/logic/skip-branch-table"`). `engine = "rpgmaker-mv"` en
 `[hooks]` pone los hooks de ese motor (`runtime/engines/rpgmaker-mv/hooks.toml`);
 los del `[hooks]` del juego mandan, y `"off"` quita uno. Cada hook se
 pone en cuanto existe su funcion, asi que tambien vale con plugins que se cargan
-despues. Mas: [runtime/hooks](../runtime/hooks/README.es.md).
+despues. Mas: [runtime/game/hooks](../runtime/game/hooks/README.es.md).
 
 ## Ports: port.toml
 
 Un port (`games/<port>/port.toml`) es un toml como cualquier otro, el unico
 archivo que describe el juego: `quixjs -c port.toml`. Se hace con `quixjs
 --gen-config` sobre el juego y se revisa a mano; el juego va en `gamedata/`
-(la copia del usuario). Lo que un port suele agregar:
+(la copia del usuario). Los archivos de la carpeta de un port (`entry.js`,
+`scripts/`, `hooks/`, `mods/`, las imagenes): [games/README.es.md](../games/README.es.md#la-forma-de-un-port).
+Lo que un port suele agregar:
 
 - en `[game]`: `title`, `version` (la version del port: subirla con cada
   cambio del port), `id` (Transfer Save solo entre el mismo juego),
@@ -559,7 +570,7 @@ ports/fearandhunger/
 ```
 
 Un mod tambien puede traer hooks, en un `hooks.toml` de su carpeta: ver
-[runtime/hooks](../runtime/hooks/README.es.md).
+[runtime/game/hooks](../runtime/game/hooks/README.es.md).
 
 ## Que se ve en pantalla
 
@@ -597,6 +608,18 @@ redimensionable desde el principio y `--fullscreen` usa toda la pantalla.
 - **Captura de pantalla**: Select + R1, siempre. Con `[controls] screenshot =
   true`, Controls pide tambien un botón suelto para ella (se puede saltar). Va a `screenshots/`, junto al toml del
   juego (en Android, tambien a la galeria, Pictures/quixjs), con un aviso.
+- **Savestates** (experimentales, en fase temprana): Select + X guarda el juego en ese momento, Select + Y lo
+  vuelve a cargar y Select + izquierda / derecha cambia de ranura (1 a 4),
+  cada uno con un aviso. Si el juego no deja en ese momento (un evento, un
+  dialogo, una batalla...), la peticion espera y se hace en cuanto es seguro,
+  con su aviso; solo espera una a la vez, otra se descarta. Solo en los ports que los activan con un hook en su
+  `[hooks]`, una vez probados en ese juego (`rpgmaker/extra/port/savestate`:
+  en el mapa, sin un dialogo ni un evento en marcha y con el control del
+  jugador; `construct3/extra/port/savestate`: en una partida; o uno propio del
+  port, como L'Abbaye des Morts), y no en modo hardcore; en los demas el aviso
+  dice que no estan soportados; cargar uno quita los logros hardcore a esa partida. Las ranuras
+  van a `.quixjs/states/` en la carpeta de las partidas (Transfer Save no las
+  lleva).
 - **Salir**: Select + Start a la vez en un mando, o cerrar la ventana.
 - **Volver al menú** (`--launcher`): Select + R2 en el juego. Select + Start
   sale: en PortMaster, gptokeyb lo usa para cerrar el juego.
@@ -608,8 +631,8 @@ redimensionable desde el principio y `--fullscreen` usa toda la pantalla.
 
 `<video>` reproduce archivos WebM con video VP8 o VP9 y audio Opus (los "Play
 Movie" de RPG Maker MV) y MP4 con video H.264 y audio AAC (Felvidék); un MP4
-mas ancho que 1280 se ve a la mitad. Hace falta quixjs compilado con libvpx y libopus: el
-`Makefile` las busca con `pkg-config`, y `make VIDEO=0` compila sin video. Sin
+mas ancho que 1280 se ve a la mitad. Hace falta quixjs compilado con libvpx y libopus: la
+compilación las busca con `pkg-config`, y `make VIDEO=0` compila sin video. Sin
 video, o con un archivo que no puede reproducir, el `<video>` lanza
 `loadeddata` y `ended` enseguida, asi el juego sigue. La app de Android
 reproduce MP4 (no WebM: no lleva libvpx ni libopus). Mas:
@@ -640,7 +663,7 @@ hace un navegador con las fuentes del sistema. Los textos solo ASCII no se
 miran.
 
 ```
-QUIXJS_FONT=/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf ./quixjs -c ...
+QUIXJS_FONT=/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf ./build/quixjs -c ...
 ```
 
 ## Variables de entorno
@@ -663,10 +686,10 @@ Solo existe en quixjs (`typeof quix !== 'undefined'`).
 | `quix.backend` | `"sdl"` o `"dummy"` |
 | `quix.fixedStep` | `true` con el reloj fijo (`--fixed-step`, `--test` sin `-b sdl`) |
 | `quix.version` | version del runtime |
-| `quix.loading(on[, ms])` | el aviso de carga ("Loading..." abajo a la derecha): `true` al empezar a cargar, `false` al terminar (se quita cuando las imágenes van normales, como mucho a los 30 s). Con `ms`, solo sale si el juego se para más de esos ms sin mostrar una imagen. Lo usa el hook `rpgmaker-mv/loading-notice` |
+| `quix.loading(on[, ms])` | el aviso de carga ("Loading..." abajo a la derecha): `true` al empezar a cargar, `false` al terminar (se quita cuando las imágenes van normales, como mucho a los 30 s). Con `ms`, solo sale si el juego se para más de esos ms sin mostrar una imagen. Lo usa el hook `rpgmaker-mv/port/loading-notice` |
 | `quix.input.pressKey(code, t)` | mete una tecla en la cola de entrada: `t` es `"down"`, `"up"` o `"press"` (por defecto) |
 | `quix.input.pressPad(b, t)` | el boton `b` (mapeo standard) de un mando de prueba (virtual de SDL, solo backend sdl): `t` es `"down"`, `"up"` o `"press"`; devuelve su posicion en `getGamepads()` o -1 |
-| `quix.gpu.driver` | el driver de OpenGL ES: `"panfrost"`, `"mali"`, `"mali-g31"` o `"default"` (`null` sin WebGL); ver [gfx](../runtime/gfx/drivers/README.es.md) |
+| `quix.gpu.driver` | el driver de OpenGL ES: `"panfrost"`, `"mali"`, `"mali-g31"` o `"default"` (`null` sin WebGL); ver [gfx](../runtime/gfx/gl/drivers/README.es.md) |
 | `quix.gpu.renderScale` | la escala con la que se dibuja el juego (`[game] render_scale`; 1 sin ella) |
 | `quix.gpu.isCanvas(canvas)` | `true` si ese canvas dibuja en la GPU (hook `gpu-canvas`) |
 | `quix.gpu.scope(+1 / -1)` | los canvas que se crean entre +1 y -1 dibujan en la GPU |
@@ -676,9 +699,10 @@ Solo existe en quixjs (`typeof quix !== 'undefined'`).
 | `quix.fonts.register(f, url o bytes)` | registra una fuente: un archivo o sus bytes (lo usan FontFace y @font-face) |
 | `quix.fonts.has(f)` | `true` si la familia esta registrada |
 | `quix.storage.read()` / `quix.storage.write(json)` | el `localStorage` en disco (`[saves] local_storage`) |
-| `quix.achievements.list()` | los logros (id, title, description, type, color, unlocked) |
+| `quix.achievements.list()` | los logros (id, title, description, type, color, unlocked, hardcore) |
 | `quix.achievements.unlocked(id)` | `true` si el logro del toml esta conseguido |
 | `quix.achievements.icon` | `[achievements_menu] icon` (0 si no hay) |
-| `quix.steam` | `achievements` y `stats`: lo que el juego pide a Steam (greenworks, el `entry.js` de un port); los `[symbols]` lo leen: `"path:quix.steam.achievements.ID"` |
+| `quix.steam` | `achievements` y `stats`: lo que el juego pide a Steam (greenworks, o un script del port como `supersmilingdungeon/scripts/steam-achievements.js`); los `[symbols]` lo leen: `"path:quix.steam.achievements.ID"` |
 | `quix.engine` | las funciones nativas de cada motor (`quix.engine["rpgmaker-mv"]`), para los hooks |
+| `quix.state` | los savestates: `register({can, save, load})` (el motor, desde un hook; `can(load)`: si ahora puede guardar, o cargar), `save(ranura)` / `load(ranura)` (`"saved"`, `"loaded"`, `"busy"`, `"empty"`, `"none"`, `"off"` o `"error"`), `slots` (`[{slot, time}]`, time 0: vacia), `slot` (la elegida) y `available`; los eventos `quixstatesave` / `quixstateload` llevan `detail.mod` para los mods |
 | `quix.lan` | la red local para juegos: `open()`, `peers()`, `send(texto[, id])`, `receive()`, `close()`, `id`, `name`; ver [lan](../runtime/lan/README.es.md) |

@@ -8,24 +8,25 @@ are not part of the runtime.
 | file         | what it does |
 |--------------|--------------|
 | `console.py` | client of the debug console (`quixjs --debug`): interactive with history and completion, or one command per call |
-| `portmaster.py` | makes the files PortMaster asks for from `games/<port>/port.toml`: the `.sh` script of the port (from `portmaster/portmaster.sh`), `port.json` and `gameinfo.xml`; it merges `[portmaster]` (PortMaster only) over `[game]` (`title`, `id`, `developer`, `genres`, `desc`): `[portmaster]` wins when both have a key; used by `make PLATFORM=portmaster` |
-| `build-jsc.sh` | builds JavaScriptCore as a static library, for the PC (`host`) or for the handhelds against Debian buster (aarch64, armhf), with libc++ and ICU; `make` runs it when it is missing |
-| `embed_engines.py` | puts the hooks of `runtime/engines/<engine>/*.js` (and its `hooks.toml`) in the binary, in `obj/gen/engines.h`; run by the `Makefile` ([engines](../runtime/engines/README.md)) |
-| `embed_js.py` | puts the JS of quixjs (`runtime/binding/*.js`, `polyfill/`, `core/profiler.js`, `engines/same-code.js`) in the binary as C strings, in `obj/gen/`; run by the `Makefile`. Why: the JS is edited as JS and quixjs stays a single program ([the JS inside quixjs](../docs/embedded-js.md)) |
-| `embed_shaders.py` | turns `runtime/shaders/*.vert` and `*.frag` into C strings in `obj/gen/shaders.h`; run by the `Makefile` before compiling ([shaders](../runtime/shaders/README.md)) |
+| `portmaster.py` | makes the files PortMaster asks for from `games/<port>/port.toml`: the `.sh` script of the port (from `portmaster/portmaster.sh`), `port.json` and `gameinfo.xml`; it merges `[portmaster]` (PortMaster only) over `[game]` (`title`, `id`, `developer`, `genres`, `desc`): `[portmaster]` wins when both have a key; used by `make portmaster` |
+| `sysroot.py` | downloads the Debian buster the handhelds are built against (`obj/deps/sysroot-arm64`), checking each package with its sha256; `make portmaster` runs it the first time |
+| `port_zip.py` | puts a port together and zips it (`build/<PORT>.zip`); `make portmaster` runs it |
+| `embed_engines.py` | puts the hooks of `runtime/engines/<engine>/*.js` (and its `hooks.toml`) in the binary, in `obj/cmake/<platform>/gen/engines.h`; run by `cmake/generated.cmake` ([engines](../runtime/engines/README.md)) |
+| `embed_js.py` | puts the JS of quixjs (`runtime/binding/*.js`, `polyfill/`, `core/debug/profiler.js`, `engines/same-code.js`) in the binary as C strings, in `obj/cmake/<platform>/gen/`; run by `cmake/generated.cmake`. Why: the JS is edited as JS and quixjs stays a single program ([the JS inside quixjs](../docs/embedded-js.md)) |
+| `embed_shaders.py` | turns `runtime/gfx/gl/shaders/*.vert` and `*.frag` into C strings in `obj/cmake/<platform>/gen/shaders.h`; run by `cmake/generated.cmake` before compiling ([shaders](../runtime/gfx/gl/shaders/README.md)) |
 | `h5bench.sh` | `make bench`: runs h5bench (JavaScript, WebGL, canvas 2d, memory) with quixjs, results in `results/h5bench/` ([benchmark](../docs/benchmark.md)) |
 | `rpgmaker_mv_model.py` | gets an original function of a RPG Maker MV game (or MZ: `rmmz_*.js` and its PixiJS), as it is, for the `MODEL` of a hook ([Adding a hook](../runtime/engines/rpgmaker-mv/README.md#adding-a-hook)) |
-| `gen_gl.py`  | generates `runtime/gfx/gl_funcs.h` (OpenGL ES 2.0 functions) and `runtime/binding/webgl_constants.h` (WebGL 1 constants) from the GLES2 header of SDL2 |
+| `gen_gl.py`  | generates `runtime/gfx/gl/funcs/gl2.h` (OpenGL ES 2.0 functions) and `runtime/binding/webgl/constants/webgl1.h` (WebGL 1 constants) from the GLES2 header of SDL2 |
 
 ## console.py
 
 The debug console is inherited from tamatama
-(https://github.com/lowlevel-1989/tamatama). It talks to `quixjs.sock`, which
+(https://github.com/lowlevel-1989/tamatama/tree/780b7e723f3dbe8a58bc54ed571f1518dac9191a). It talks to `quixjs.sock`, which
 quixjs creates in the folder where it runs, with the text commands of
-`runtime/core/debug_server.c`.
+`runtime/core/debug/debug_server/debug_server.c`.
 
 ```
-Terminal 1:  ./quixjs --debug -c game/config.toml
+Terminal 1:  ./build/quixjs --debug -c game/config.toml
 Terminal 2:  python3 tools/console.py
 ```
 

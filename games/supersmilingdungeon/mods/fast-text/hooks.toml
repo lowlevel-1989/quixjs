@@ -2,6 +2,6 @@
 # hace subir la historia mas rapido
 scripts = ["pad.js"]
 [hooks]
-"gdjs.evtsExt__AutoTyping__Text_AutoTyping.Text_AutoTyping.prototype.doStepPostEvents" = "skip.js"
-"gdjs.evtsExt__AutoTyping__Text_AutoTyping.Text_AutoTyping.prototype.doStepPreEvents"  = "skip.js"
-"gdjs.RuntimeObject.prototype.addPolarForce" = "scroll.js"
+"gdjs.evtsExt__AutoTyping__Text_AutoTyping.Text_AutoTyping.prototype.doStepPostEvents" = "skip"
+"gdjs.evtsExt__AutoTyping__Text_AutoTyping.Text_AutoTyping.prototype.doStepPreEvents"  = "skip"
+"gdjs.RuntimeObject.prototype.addPolarForce" = "scroll"

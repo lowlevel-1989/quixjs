@@ -62,7 +62,7 @@ static void draw_layers(Backend* backend, SDLPlatformData* data, const PresentLa
     int passes = backend->magnify > 1 ? 2 : 1;
     for (int pass = 0; pass < passes; pass++) {
     if (pass == 1) {
-      magnifier_lens(backend, &dx, &dy, &dw, &dh, wh);
+      magnifier_lens(backend, &dx, &dy, &dw, &dh, ww, wh);
     }
     for (int i = 0; i < n; i++) {
       const PresentLayer *l = &layers[i];
@@ -111,7 +111,7 @@ static void draw_layers(Backend* backend, SDLPlatformData* data, const PresentLa
     }
     qgl.Disable(GL_SCISSOR_TEST);
     qgl.Disable(GL_BLEND);
-    if (backend->magnify > 1) magnifier_icon(wh);
+    if (backend->magnify > 1) magnifier_icon(backend, wh);
   }
   // texturas de canvas que ya no estan en pantalla
   for (int k = 0; k < 8; k++) {

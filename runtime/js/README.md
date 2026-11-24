@@ -5,7 +5,7 @@ English | [Español](README.es.md)
 The engine layer: the only place of quixjs that knows the JavaScript engine.
 The bindings (`binding/`), the hooks and the rest of the runtime use `js.h`;
 `jsc/` implements it on top of the C API of JavaScriptCore (WebKit),
-built by us as a static library (`tools/build-jsc.sh`).
+built by us as a static library (`cmake/jsc.cmake`).
 
 | file       | what it does |
 |------------|--------------|
@@ -29,7 +29,7 @@ class objects are JSC objects made with a `JSClassRef` whose private data says
 which C function to call or which C pointer they carry.
 
 The files of `jsc/` are compiled together, as one: `jsc.c` is an index file
-that only includes them, and the `Makefile` compiles `jsc.c`. That way the
+that only includes them, and only `jsc.c` is compiled. That way the
 compiler puts the small functions of one file inside another (inline), as
 when it was a single file. Compiled apart, the calls from JS to C were ~4 %
 slower. A new file in `jsc/` is added to `jsc.c`. Each file includes `jsc.h`,

@@ -6,10 +6,10 @@
 # resources/app.asar junto a este port.toml (README.md).
 #
 # Los scripts son los <script> del index.html, en el mismo orden. Despues van
-# los del port: entry.js (los logros de Steam), render-scale.js (dibujar a la
-# resolucion de la pantalla) y tutorial-fix.js (un fallo del tutorial que
-# llenaba la pantalla de casillas negras). El juego solo usa el raton: el mod controller lo
-# lleva con el mando.
+# los del port, en scripts/: steam-achievements.js (los logros de Steam),
+# render-scale.js (dibujar a la resolucion de la pantalla) y tutorial-fix.js
+# (un fallo del tutorial que llenaba la pantalla de casillas negras). El
+# juego solo usa el raton: el mod controller lo lleva con el mando.
 [engine]
 name    = "html5"
 pixi    = "7.4.2"
@@ -28,7 +28,7 @@ fps = 60
 
 [game]
 title     = "Super Smiling Dungeon"
-version   = "0.1.0"           # la del port
+version   = "1.0.0"           # la del port
 id        = "supersmilingdungeon"
 # la rom: el app.asar del juego (resources/app.asar en su carpeta de Steam),
 # tal cual, junto a este port.toml. game_dir: donde empieza el juego dentro.
@@ -48,7 +48,7 @@ mods      = ["controller", "big-text", "achievements", "fast-text"]   # mods/: c
 image_scale      = "auto"
 image_scale_dirs = [""]       # todas: GDevelop las deja en la raiz de app/
 image_scale_min  = 512
-# dibujar a la resolucion con la que se ve (render-scale.js): en una pantalla
+# dibujar a la resolucion con la que se ve (scripts/render-scale.js): en una pantalla
 # de 720x720, a 720x534; en una igual o mas grande, como siempre
 render_scale     = "auto"
 desc      = "A dungeon card game: pick a hero and fight your way down floor by floor, choosing which card to take from each row of monsters, potions and treasures."
@@ -184,9 +184,9 @@ includes = [
   "code29.js",
   "code30.js",
   "data.js",
-  "../entry.js",
-  "../render-scale.js",
-  "../tutorial-fix.js"
+  "../scripts/steam-achievements.js",
+  "../scripts/render-scale.js",
+  "../scripts/tutorial-fix.js"
 ]
 # el <script> del final del index.html: crea el juego y lo empieza
 entry    = "data:text/javascript,\n\n    (function() {\n        //Initialization\n        var game = new gdjs.RuntimeGame(gdjs.projectData, {});\n\n        //Create a renderer\n        game.getRenderer().createStandardCanvas(document.body);\n\n        //Bind keyboards/mouse/touch events\n        game.getRenderer().bindStandardEvents(game.getInputManager(), window, document);\n\n        //Load all assets and start the game\n        game.loadAllAssets(function() {\n            game.startGameLoop();\n        });\n    })();\n\n\t"
@@ -209,7 +209,7 @@ b       = "Skip text"
 
 # ---------- logros ----------
 # Los de Steam: el juego los pide con gdjs.steamworks.claimAchievement(nombre)
-# y entry.js deja cada nombre en quix.steam.achievements (como el
+# y scripts/steam-achievements.js deja cada nombre en quix.steam.achievements (como el
 # greenworks de quixjs en Gunfield). Los nombres salen de su codigo (code*.js);
 # las descripciones, de su pantalla de logros (en ingles); los titulos, de su
 # pagina de Steam, que solo muestra 26 de 63: los que llevan * son propios.
@@ -726,3 +726,9 @@ inst         = "Needs Super Smiling Dungeon 1.2.5 (Steam). Copy resources/app.as
 store        = { name = "Steam", url = "https://store.steampowered.com/app/3539970/" }
 availability = "paid"
 
+
+# la partida para los trucos (quix.playthrough): una run empieza al bajar al
+# primer piso (hooks/playthrough-new.js)
+[hooks]
+"gdjs.SceneStack.prototype.push"    = "hooks/playthrough-new"
+"gdjs.SceneStack.prototype.replace" = "hooks/playthrough-new"

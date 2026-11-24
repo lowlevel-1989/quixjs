@@ -23,7 +23,7 @@
 // JS_GetContextOpaque(ctx).
 
 #include "backend/backend.h"
-#include "core/config_loader.h"
+#include "core/config/loader.h"
 
 typedef struct {
     Backend* backend;

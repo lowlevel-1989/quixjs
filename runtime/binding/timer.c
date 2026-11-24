@@ -22,7 +22,7 @@
 #include "core/timer.h"
 #include "timer.h"
 
-static JSValue js_requestAnimationFrame(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+static JSValue js_timer_requestAnimationFrame(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
   if (argc < 1 || !JS_IsFunction(ctx, argv[0]))
     return JS_ThrowTypeError(ctx, "callback must be a function");
 
@@ -31,7 +31,7 @@ static JSValue js_requestAnimationFrame(JSContext *ctx, JSValueConst this_val, i
   return JS_NewInt32(ctx, id);
 }
 
-static JSValue js_cancelAnimationFrame(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+static JSValue js_timer_cancelAnimationFrame(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
   int id = 0;
   if (argc < 1 || JS_ToInt32(ctx, &id, argv[0])) return JS_UNDEFINED;
   timer_cancel_animation_frame(ctx, id);
@@ -39,7 +39,7 @@ static JSValue js_cancelAnimationFrame(JSContext *ctx, JSValueConst this_val, in
 }
 
 // magic 0: setTimeout, 1: setInterval
-static JSValue js_setTimer(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv, int magic) {
+static JSValue js_timer_setTimer(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv, int magic) {
   if (argc < 1 || !JS_IsFunction(ctx, argv[0]))
     return JS_ThrowTypeError(ctx, "callback must be a function");
 
@@ -52,7 +52,7 @@ static JSValue js_setTimer(JSContext *ctx, JSValueConst this_val, int argc, JSVa
   return JS_NewInt32(ctx, id);
 }
 
-static JSValue js_clearTimer(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+static JSValue js_timer_clearTimer(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
   int id = 0;
   if (argc < 1 || JS_ToInt32(ctx, &id, argv[0])) return JS_UNDEFINED;
   timer_clear(ctx, id);
@@ -64,12 +64,12 @@ static JSValue js_performance_now(JSContext *ctx, JSValueConst this_val, int arg
 }
 
 static const JSCFunctionListEntry js_timer_funcs[] = {
-  JS_CFUNC_MAGIC_DEF("setTimeout",  2, js_setTimer, 0),
-  JS_CFUNC_MAGIC_DEF("setInterval", 2, js_setTimer, 1),
-  JS_CFUNC_DEF("clearTimeout",  1, js_clearTimer),
-  JS_CFUNC_DEF("clearInterval", 1, js_clearTimer),
-  JS_CFUNC_DEF("requestAnimationFrame", 1, js_requestAnimationFrame),
-  JS_CFUNC_DEF("cancelAnimationFrame",  1, js_cancelAnimationFrame),
+  JS_CFUNC_MAGIC_DEF("setTimeout",  2, js_timer_setTimer, 0),
+  JS_CFUNC_MAGIC_DEF("setInterval", 2, js_timer_setTimer, 1),
+  JS_CFUNC_DEF("clearTimeout",  1, js_timer_clearTimer),
+  JS_CFUNC_DEF("clearInterval", 1, js_timer_clearTimer),
+  JS_CFUNC_DEF("requestAnimationFrame", 1, js_timer_requestAnimationFrame),
+  JS_CFUNC_DEF("cancelAnimationFrame",  1, js_timer_cancelAnimationFrame),
 };
 
 static const JSCFunctionListEntry js_performance_funcs[] = {

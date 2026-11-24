@@ -25,6 +25,9 @@
 #include <stddef.h>
 
 void mapper_load(const char *path);         // controller.map, antes de SDL_Init
+// un boton del mapeo de fabrica (sin lo de Controls), del mando crudo: 1, 0 o
+// -1 si no se sabe. Para los combos del sistema (input.c)
+int  mapper_base_pressed(SDL_GameController *gc, const char *role);
 void mapper_reload(const char *path);       // despues de guardar (CAPTURE_STOP)
 int  mapper_from_file(SDL_JoystickGUID guid); // ese mando tiene linea en controller.map?
 void mapper_event(const SDL_Event *e);      // cada evento, mientras se asigna

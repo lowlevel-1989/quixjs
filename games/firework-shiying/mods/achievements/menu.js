@@ -3,7 +3,7 @@
 // "Achievements" al menu de RPG Maker no le sirve. Aqui, una 5a fila debajo,
 // dibujada con el mismo estilo (un degradado gris a verde con la letra negra;
 // elegida, verde con la letra blanca), que abre la lista de los logros del
-// port (runtime/engines/lib/rpgmaker-achievements.js).
+// port (runtime/engines/rpgmaker-mv/lib/achievements.js).
 //
 // Un archivo para los cuatro hooks: path dice cual se esta instalando.
 function (original, path) {
@@ -51,6 +51,6 @@ function (original, path) {
   return function () {
     if (this._index !== ROW) return original.apply(this, arguments);
     SoundManager.playOk();
-    SceneManager.push(quix.engine.lib('rpgmaker-achievements').Scene);
+    SceneManager.push(quix.engine.lib('rpgmaker-mv/achievements').Scene);
   };
 }

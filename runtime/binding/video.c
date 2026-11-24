@@ -21,7 +21,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "core/app_context.h"
-#include "core/url.h"
+#include "core/url/url.h"
 #include "audio/mixer.h"
 #include "video/video.h"
 #include "video.h"

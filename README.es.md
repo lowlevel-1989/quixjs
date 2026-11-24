@@ -1,4 +1,4 @@
-# quixjs 0.5.3
+# quixjs 0.6.0
 
 [English](README.md) | Español
 
@@ -33,11 +33,11 @@ juego no van incluidos: el jugador los copia de su propia copia.
 
 ```
 make
-./quixjs --gen-config ruta/al/juego > mijuego.toml   # describir el juego
-./quixjs -c mijuego.toml --launcher                   # jugar (con el menu antes)
+./build/quixjs --gen-config ruta/al/juego > mijuego.toml   # describir el juego
+./build/quixjs -c mijuego.toml --launcher                   # jugar (con el menu antes)
 ```
 
-Cada juego se describe con un solo toml (`config.toml` por defecto; un port
+Cada juego se describe con un solo toml, que se pasa con `-c` (un port
 usa `port.toml`): su carpeta, su tamano, sus scripts, sus hooks (cambios a
 funciones del juego) y sus logros. Las opciones y el toml:
 [docs/usage.es.md](docs/usage.es.md).
@@ -54,6 +54,7 @@ Usar un archivo toml para configurar cada juego esta inspirado en bogodroid
 | [Que soporta](docs/features.es.md) | lo que soporta quixjs |
 | [Compatibilidad](docs/compatibility.es.md) | que APIs del navegador funcionan y cuales no |
 | [Tests](docs/tests.es.md) | los juegos de test, `--script` y la consola de debug |
+| [Encontrar el guardado](docs/trace-saves.es.md) | `--trace-saves`: dónde guarda un juego y dónde van los hooks de playthrough |
 | [Motor de JavaScript](docs/javascript-engine.es.md) | por que JavaScriptCore |
 | [Benchmark](docs/benchmark.es.md) | h5bench (`make bench`) y como perfilar un juego |
 | [Codigo](runtime/README.es.md) | que hace cada carpeta y archivo del runtime |

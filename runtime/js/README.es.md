@@ -5,7 +5,7 @@
 La capa de motor: el único sitio de quixjs que conoce el motor de JavaScript.
 Los bindings (`binding/`), los hooks y el resto del runtime usan `js.h`;
 `jsc/` lo implementa sobre la API en C de JavaScriptCore (WebKit),
-compilado por nosotros como librería estática (`tools/build-jsc.sh`).
+compilado por nosotros como librería estática (`cmake/jsc.cmake`).
 
 | archivo    | qué hace |
 |------------|----------|
@@ -30,7 +30,7 @@ de C y los objetos de las clases son objetos de JSC creados con una
 llevan.
 
 Los archivos de `jsc/` se compilan juntos, como uno solo: `jsc.c` es un
-archivo indice que solo los incluye, y el `Makefile` compila `jsc.c`. Así el
+archivo indice que solo los incluye, y solo se compila `jsc.c`. Así el
 compilador mete dentro (inline) las funciones pequeñas de un archivo en otro,
 igual que cuando era un solo archivo. Compilados aparte, las llamadas de JS a
 C eran ~4 % más lentas. Un archivo nuevo en `jsc/` se agrega a `jsc.c`. Cada

@@ -18,7 +18,7 @@
 
 // Un .asar (el archivo de Electron con el juego: resources/app.asar) como un
 // zip sin comprimir: el mismo indice de archivos (ZipEntry), asi lo lee todo
-// lo de zip.c y rom_zip.c (pread, mmap, FILE*).
+// lo de zip.c y rom/zip.c (pread, mmap, FILE*).
 //
 // Formato: 4 bytes (4), 4 bytes (el tamano de la cabecera), 4 bytes, 4 bytes
 // (el largo del JSON) y el JSON: {"files": {nombre: {"files": {...}} para una

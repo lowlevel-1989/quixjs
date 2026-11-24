@@ -1,0 +1,168 @@
+/*
+ * quixjs - A lightweight JS runtime using SDL2 and JavaScriptCore
+ * Copyright (C) 2025  Vinicio Valbuena (lowlevel.1989)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
+// Lee los scripts del juego y comprueba su sintaxis. Ver load.h.
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include "js/js.h"
+#include "core/config/loader.h"
+#include "load.h"
+#include "core/url/url.h"
+#include "backend/backend.h"
+
+// El archivo entero, terminado en 0 (NULL si no existe)
+// (en disco o en la rom: url_read_file)
+static char *read_file(const char *path, size_t *plen) {
+  return (char *)url_read_file(path, plen);
+}
+
+// Lee rel_path (de game_dir) y comprueba su sintaxis: 0 bien, -1 no se puede
+// leer, -2 error de sintaxis (ya escrito). Con url_resolve, como todo lo que
+// carga el juego: si un mod activo trae el script, el del mod
+// import.meta en un script (un bundle de Vite para un <script type=module>):
+// en un script clasico es un error de sintaxis. Los modulos (import/export)
+// no se cargan, pero un bundle de un solo archivo solo lo usa para
+// import.meta.url (new URL("sonido.mp3", import.meta.url)): se cambia por un
+// objeto con la direccion del script. Devuelve src o una copia cambiada.
+static char *import_meta(char *src, size_t *len, const char *rel_path) {
+  static const char key[] = "import.meta";
+  size_t klen = sizeof(key) - 1, count = 0;
+  for (char *p = src; (p = strstr(p, key)) != NULL; p += klen) count++;
+  if (!count) return src;
+  char rep[1200];
+  snprintf(rep, sizeof rep, "({url:new URL(\"%s\",location.href).href})", rel_path);
+  size_t rlen = strlen(rep);
+  char *out = malloc(*len + count * rlen + 1);
+  if (!out) return src;
+  char *o = out, *from = src, *p;
+  while ((p = strstr(from, key)) != NULL) {
+    memcpy(o, from, (size_t)(p - from));
+    o += p - from;
+    memcpy(o, rep, rlen);
+    o += rlen;
+    from = p + klen;
+  }
+  size_t rest = strlen(from);
+  memcpy(o, from, rest + 1);
+  *len = (size_t)(o - out) + rest;
+  free(src);
+  return out;
+}
+
+int scripts_read_file(const char *game_dir, const char *rel_path, char **out_src, size_t *out_len, char **out_path) {
+  char path[1024];
+  size_t len = 0;
+  char *src;
+  if (strncmp(rel_path, "data:", 5) == 0) {
+    // un <script> escrito dentro del HTML (--gen-config lo guarda asi)
+    src = (char *)url_decode_data(rel_path, &len);
+    snprintf(path, sizeof(path), "inline script");
+    printf("Loading: inline script (%zu bytes)\n", len);
+  } else {
+    // fuera del port (el sandbox, runtime/core/sandbox.c) no se lee: un
+    // "../../otro/x.js" en [scripts] o en un <script src>
+    if (url_resolve(game_dir, rel_path, path, sizeof(path)) != URL_FILE) {
+      fprintf(stderr, "Error: cannot read %s\n", rel_path);
+      return -1;
+    }
+    printf("Loading: %s\n", path);
+    src = read_file(path, &len);
+  }
+  if (!src) {
+    fprintf(stderr, "Error: cannot read %s\n", path);
+    return -1;
+  }
+  src = import_meta(src, &len, rel_path);
+  *out_src = src;
+  *out_len = len;
+  *out_path = strdup(path);
+  return 0;
+}
+
+static int load_script(JSContext *ctx, const char *game_dir, const char *rel_path, char **out_src, size_t *out_len,
+                       char **out_path) {
+  if (scripts_read_file(game_dir, rel_path, out_src, out_len, out_path) != 0) return -1;
+  if (JS_CheckSyntax(ctx, *out_src, *out_len, *out_path) != 0) {
+    fprintf(stderr, "Error compiling %s:\n", *out_path);
+    js_std_dump_error(ctx);
+    free(*out_src);
+    free(*out_path);
+    return -2;
+  }
+  return 0;
+}
+
+int scripts_load(JSContext *ctx, const Config *cfg, ScriptBundle *bundle) {
+  int has_entry = cfg->scripts.entry && cfg->scripts.entry[0];
+  int total = cfg->scripts.libs_count + cfg->scripts.includes_count + (has_entry ? 1 : 0);
+  bundle->sources = calloc(total ? total : 1, sizeof(char *));
+  bundle->sizes = calloc(total ? total : 1, sizeof(size_t));
+  bundle->filenames = calloc(total ? total : 1, sizeof(char *));
+  bundle->paths = calloc(total ? total : 1, sizeof(char *));
+  if (!bundle->sources || !bundle->sizes || !bundle->filenames || !bundle->paths) {
+    scripts_free(bundle);
+    return -1;
+  }
+  bundle->count = total;
+  const char *list[total ? total : 1];
+  int n = 0;
+  for (int i = 0; i < cfg->scripts.libs_count; i++) list[n++] = cfg->scripts.libs[i];
+  for (int i = 0; i < cfg->scripts.includes_count; i++) list[n++] = cfg->scripts.includes[i];
+  if (has_entry) list[n++] = cfg->scripts.entry;
+  for (int i = 0; i < total; i++) {
+    bundle->filenames[i] = strdup(list[i]);
+    backend_loading_poke();   // el aviso de carga, si se ve (Play en el launcher)
+    if (load_script(ctx, cfg->game.game_dir, list[i], &bundle->sources[i], &bundle->sizes[i], &bundle->paths[i]) != 0) {
+      fprintf(stderr, "Failed to load %s\n", list[i]);
+    }
+  }
+  return 0;
+}
+
+void scripts_free(ScriptBundle *bundle) {
+  if (!bundle) return;
+  for (int i = 0; i < bundle->count; i++) {
+    if (bundle->sources) free(bundle->sources[i]);
+    if (bundle->filenames) free(bundle->filenames[i]);
+    if (bundle->paths) free(bundle->paths[i]);
+  }
+  free(bundle->sources);
+  free(bundle->sizes);
+  free(bundle->filenames);
+  free(bundle->paths);
+  memset(bundle, 0, sizeof(*bundle));
+}
+
+int scripts_run_file(JSContext *ctx, const Config *cfg, const char *rel_path) {
+  char *src = NULL, *path = NULL;
+  size_t len = 0;
+  int r = load_script(ctx, cfg->game.game_dir, rel_path, &src, &len, &path);
+  // con un error de sintaxis el navegador da load igual (el error va a la
+  // consola, ya escrito): RPG Maker solo se para si el archivo no carga
+  if (r == -2) return 1;
+  if (r != 0) return -1;
+  JSValue val = JS_Eval(ctx, src, len, path, JS_EVAL_TYPE_GLOBAL);
+  free(src);
+  free(path);
+  if (JS_IsException(val)) return -2;
+  JS_FreeValue(ctx, val);
+  return 0;
+}

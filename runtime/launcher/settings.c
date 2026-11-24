@@ -24,7 +24,7 @@
 #include <string.h>
 #include <sys/stat.h>
 #include "tomlc17.h"
-#include "cheats/cheats.h"
+#include "game/cheats/cheats.h"
 #include "settings.h"
 
 // quixjs-settings.toml en la carpeta del toml del juego
@@ -51,6 +51,8 @@ void settings_load(Settings *s, const char *config_path) {
   if (v.type == TOML_BOOLEAN) s->profile = v.u.boolean;
   v = toml_get(r.toptab, "vibration");
   if (v.type == TOML_BOOLEAN) s->no_vibration = !v.u.boolean;
+  v = toml_get(r.toptab, "hardcore");
+  if (v.type == TOML_BOOLEAN) s->hardcore = v.u.boolean;
   // pixel_perfect = true/false: el de antes de Scaling
   v = toml_get(r.toptab, "pixel_perfect");
   if (v.type == TOML_BOOLEAN) s->scaling = v.u.boolean ? 3 : 1;
@@ -73,7 +75,12 @@ void settings_load(Settings *s, const char *config_path) {
     s->mods_set = 1;
     for (int i = 0; i < v.u.arr.size && s->mods_count < MAX_SETTING_MODS; i++) {
       toml_datum_t e = v.u.arr.elem[i];
-      if (e.type == TOML_STRING) snprintf(s->mods[s->mods_count++], sizeof s->mods[0], "%s", e.u.s);
+      // un nombre de carpeta, sin rutas (como [game] mods): este archivo
+      // tambien se puede editar a mano
+      if (e.type == TOML_STRING && e.u.s[0] && !strchr(e.u.s, '/') && strcmp(e.u.s, "..") != 0 &&
+          strcmp(e.u.s, ".") != 0) {
+        snprintf(s->mods[s->mods_count++], sizeof s->mods[0], "%s", e.u.s);
+      }
     }
   }
   v = toml_get(r.toptab, "cheats");
@@ -100,6 +107,7 @@ int settings_save(const Settings *s, const char *config_path) {
   fprintf(f, "profile  = %s\n", s->profile ? "true" : "false");
   if (s->fullscreen) fprintf(f, "fullscreen = true\n");
   fprintf(f, "vibration = %s\n", s->no_vibration ? "false" : "true");
+  if (s->hardcore) fprintf(f, "hardcore = true\n");
   if (s->scaling >= 1 && s->scaling <= 3)
     fprintf(f, "scaling  = \"%s\"\n", s->scaling == 1 ? "sharp" : s->scaling == 2 ? "smooth" : "pixel_perfect");
   if (s->quality >= 1 && s->quality <= 3) fprintf(f, "quality = \"%s\"\n", s->quality == 1 ? "low" : s->quality == 2 ? "medium" : "high");
@@ -120,6 +128,7 @@ int settings_save(const Settings *s, const char *config_path) {
 void settings_apply_cheats(const Settings *s) {
   const char *ids[MAX_SETTING_CHEATS];
   for (int i = 0; i < s->cheats_count; i++) ids[i] = s->cheats[i];
+  cheats_set_hardcore(s->hardcore);
   cheats_set_active(ids, s->cheats_count);
 }
 

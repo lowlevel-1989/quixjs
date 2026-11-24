@@ -11,14 +11,14 @@ archivos al arrancar (en una consola no se pueden perder ni quedar viejos).
 
 Un archivo: una constante con su codigo.
 
-  python3 tools/embed_js.py obj/gen/js_nwjs.h NWJS_JS runtime/binding/nwjs.js
+  python3 tools/embed_js.py obj/cmake/pc/gen/js_nwjs.h NWJS_JS runtime/binding/nwjs.js
 
   -> static const char NWJS_JS[] = "...";   (el .c hace #include "js_nwjs.h")
 
 Una carpeta: una tabla {nombre, codigo} con sus .js en orden alfabetico (la
 usa binding/polyfill.c, que los ejecuta todos).
 
-  python3 tools/embed_js.py obj/gen/polyfills.h --table POLYFILLS runtime/binding/polyfill
+  python3 tools/embed_js.py obj/cmake/pc/gen/polyfills.h --table POLYFILLS runtime/binding/polyfill
 
   -> static const struct { const char *name; const char *src; } POLYFILLS[] = {...};
 

@@ -9,7 +9,7 @@ The parts of `core/main.c`, split by topic so they can be read.
 `core/main.c` is an index file: it includes the parts of this folder in
 order and then has `main()`, which reads as an index of steps (start, the
 loop of each frame, the end). Everything is compiled as a single file; the
-parts are not compiled by themselves (the `Makefile` only knows `main.c`).
+parts are not compiled by themselves (`cmake/sources.cmake` only lists `main.c`).
 
 All the steps are `always_inline` (`STEP`, in `run.h`): the compiler copies
 them inside `main()`, which is again a single function, as when everything
@@ -32,8 +32,12 @@ be read and opened in an editor by itself.
 | `stats.c` | `--fps` (the counter and the `FPS:` line) and the `[perf]` summary of the log |
 | `screen.c` | the screen: compose the visible canvases, show the frame, screenshots |
 | `run.h` | `Run` and `Loop` (the state the steps share) and `STEP` |
-| `start.c` | start: `info_option`, `start_window`, `load_port`, `launcher`, `start_js`, `start_tools` |
+| `start.c` | start: `info_option`, `quit_early`, `start_tools` |
+| `window.c` | the window: `fit_scale`, `start_window` |
+| `port.c` | the port: `load_port`, `launcher`, `mount_rom` |
+| `js.c` | the JS engine and the scripts of the game: `start_js` |
 | `loop.c` | the steps of each turn: `housekeeping` (memory and profiler), `events`, `run_timers`, `wait_next` |
 | `screenshot.c` | the screenshot (Select + R1): the PNG in `screenshots/`, the notice and, on Android, the gallery |
+| `state.c` | the savestates from the gamepad (Select + X saves, Select + Y loads, Select + left/right changes the slot): `quix.state` between two frames, with a notice |
 | `frame.c` | the steps of each frame: `game_frame`, `pace_frame` (the fixed pace on screen), `present_frame`, `frame_limit` |
 | `finish.c` | the end: `--hold`, `--screenshot`, reports, free everything |

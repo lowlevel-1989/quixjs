@@ -42,7 +42,7 @@ static double mono_ms(void) {
 // consola el cambio de imagen del thread tarda ~50 ms (tres refrescos) en
 // cada imagen: el juego se queda a 20 fps (los siguientes arranques, a 30).
 // Tras THROTTLED_SWAPS asi seguidos (~2 s) el thread se para y se presenta
-// sin el (gpu_present: el driver decide como).
+// sin el (gpu_driver_present: el driver decide como).
 #define THROTTLED_SWAPS 60
 
 // Con el aviso de carga, si el juego no entrega imagen en LOADING_REPAINT_MS
@@ -61,6 +61,7 @@ static void shadow_update(Backend *shadow, Backend *backend, const char *overlay
   shadow->mag_size = backend->mag_size;
   shadow->mag_x = backend->mag_x;
   shadow->mag_y = backend->mag_y;
+  shadow->mag_pinned = backend->mag_pinned;   // fija: el icono con candado
 }
 
 static int present_thread(void *arg) {
@@ -147,7 +148,7 @@ static int present_thread(void *arg) {
     gl_fence_wait_cpu(job.fence);
     TRACE_END(tg, 0.0, "gpu frame: %.2f ms after handed, waited", quix_trace_ms() - job.handed);
 #else
-    gpu_driver()->thread_wait(job.fence);
+    gpu_driver_get()->thread_wait(job.fence);
 #endif
     shadow_update(&shadow, backend, job.overlay, job.toast);
     draw_layers(&shadow, data, job.layers, job.n, job.ww, job.wh, 0);
@@ -190,20 +191,20 @@ static void thread_start(Backend *backend, SDLPlatformData *data) {
   data->thr_tried = 1;
   if (!backend->present_ahead || !gl_available()) return;
   // solo sirve con los refrescos de la pantalla (la imagen de adelanto apunta
-  // a uno); y solo con los drivers que lo permiten (gfx/drivers/)
+  // a uno); y solo con los drivers que lo permiten (gfx/gl/drivers/)
   double vlast, vper;
   if (platform_vblank(&vlast, &vper) != 0) {
     printf("[present] one frame ahead: not used (no screen refreshes)\n");
     return;
   }
   data->thr_vper = vper;
-  if (!gpu_driver()->thread_wait) {
-    printf("[present] one frame ahead: not used with the %s driver\n", gpu_driver()->name);
+  if (!gpu_driver_get()->thread_wait) {
+    printf("[present] one frame ahead: not used with the %s driver\n", gpu_driver_get()->name);
     return;
   }
   int fps = backend->fps > 0 ? backend->fps : 60;
-  if (gpu_driver()->thread_max_fps && fps > gpu_driver()->thread_max_fps) {
-    printf("[present] one frame ahead: not used at %d fps with the %s driver\n", fps, gpu_driver()->name);
+  if (gpu_driver_get()->thread_max_fps && fps > gpu_driver_get()->thread_max_fps) {
+    printf("[present] one frame ahead: not used at %d fps with the %s driver\n", fps, gpu_driver_get()->name);
     return;
   }
   SDL_GL_MakeCurrent(data->window, data->gl);

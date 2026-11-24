@@ -22,7 +22,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "context2d.h"
-#include "gfx/gpu2d.h"
+#include "gfx/gl/gpu2d.h"
 
 // gpu-canvas: el Gpu2D si esta operacion puede ir a la GPU (sin clip ni
 // sombra); NULL para hacerla por software

@@ -75,7 +75,17 @@ int mapper_from_file(SDL_JoystickGUID guid) {
   return 0;
 }
 
+// SDL_GAMECONTROLLERCONFIG antes de agregarle controller.map: el mapeo de
+// fabrica de los mandos (el que exporta PortMaster). Los combos del sistema
+// (Select + Start, R1, L1, R2: input.c) se leen con el, del mando crudo: lo
+// asignado en Controls no los cambia
+static char *base_config = NULL;
+
 void mapper_load(const char *path) {
+  if (!base_config) {
+    const char *env0 = getenv("SDL_GAMECONTROLLERCONFIG");
+    base_config = strdup(env0 ? env0 : "");
+  }
   file_guid_n = 0;
   keys_load(path);
   if (!path || !path[0]) return;
@@ -410,4 +420,48 @@ int mapper_save(const char *path, const char *pairs_in) {
   printf("[controls] %s: %s\n", path, line);
   if (strchr(pairs_in, '@') || binds_n) return keys_save(path, guid, pairs_in);
   return 0;
+}
+
+// role ("back", "start", "rightshoulder", "righttrigger"...) en el mapeo de
+// fabrica de ese mando, leido del mando crudo: 1 pulsado, 0 no, -1 si el mapeo
+// de fabrica no lo tiene (o no hay mapeo de fabrica para ese mando)
+int mapper_base_pressed(SDL_GameController *gc, const char *role) {
+  if (!gc || !base_config || !base_config[0]) return -1;
+  SDL_Joystick *j = SDL_GameControllerGetJoystick(gc);
+  if (!j) return -1;
+  char guid[33];
+  SDL_JoystickGetGUIDString(SDL_JoystickGetGUID(j), guid, sizeof guid);
+  // la ultima linea de ese mando (como SDL)
+  const char *line = NULL;
+  for (const char *p = base_config; p && *p;) {
+    if (strncmp(p, guid, 32) == 0 && p[32] == ',') line = p;
+    p = strchr(p, '\n');
+    if (p) p++;
+  }
+  if (!line) return -1;
+  const char *end = strchr(line, '\n');
+  size_t rl = strlen(role);
+  for (const char *p = line; p && (!end || p < end);) {
+    const char *c = strchr(p, ',');
+    if (!c || (end && c > end)) break;
+    p = c + 1;
+    if (strncmp(p, role, rl) != 0 || p[rl] != ':') continue;
+    const char *v = p + rl + 1;
+    int sign = 0;
+    if (*v == '+' || *v == '-') sign = *v++ == '+' ? 1 : -1;
+    if (*v == 'b') return SDL_JoystickGetButton(j, atoi(v + 1)) ? 1 : 0;
+    if (*v == 'a') {
+      int a = SDL_JoystickGetAxis(j, atoi(v + 1));
+      if (sign < 0) return a < -AXIS_PRESSED;
+      return a > AXIS_PRESSED;   // los gatillos y +eje
+    }
+    if (*v == 'h') {
+      int hat = atoi(v + 1), mask = 0;
+      const char *dot = strchr(v, '.');
+      if (dot) mask = atoi(dot + 1);
+      return (SDL_JoystickGetHat(j, hat) & mask) ? 1 : 0;
+    }
+    return -1;
+  }
+  return -1;
 }

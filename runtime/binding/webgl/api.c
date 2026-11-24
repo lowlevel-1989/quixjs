@@ -24,7 +24,7 @@
 #include "common.h"
 #include "args.h"
 
-#include "binding/webgl2_constants.h"
+#include "binding/webgl/constants/webgl2.h"
 static JSValue webgl2_proto;   // el prototipo de WebGL2RenderingContext
 
 #define FN(name, len) JS_CFUNC_DEF(#name, len, js_gl_##name)

@@ -1,0 +1,14 @@
+[game]
+rom       = "."
+width        = 200
+height       = 100
+# rpgmaker-mv/render/render-scale: el juego se dibuja a la mitad
+render_scale = 0.5
+
+[scripts]
+libs     = ["../lib/pixi_v4/pixi.js"]
+includes = ["../lib/assert.js"]
+entry    = "main.js"
+
+[hooks]
+"Graphics._updateRenderer" = "rpgmaker-mv/render/render-scale"

@@ -1,3 +1,90 @@
+0.6.0
+
+Ports
+- nuevo: Muffles' Life Sentence (RPG Maker MV, con batallas de cartas)
+- nuevo: Million Monster Militia (Construct 3, estrategia con cartas)
+
+Logros
+- modo hardcore, como en RetroAchievements (Options, Achievements; tambien en Android): sin trucos
+  (el menu no ofrece Cheats), y lo que se consigue en una partida empezada asi lleva una estrella
+  dorada (en el launcher, en la app y en el aviso). Los logros que ya se tenian cuentan como
+  normales
+
+Savestates (experimentales, en fase temprana)
+- Select + X guarda, Select + Y carga y Select + izquierda / derecha cambia de ranura (4), en
+  Firework, Look Outside, Million Monster Militia y L'Abbaye des Morts. En los demas, el aviso dice
+  que no estan soportados; un port los activa con un hook una vez probados en su juego
+- solo cuando es seguro: en RPG Maker, en el mapa con el control del jugador; en Construct 3, en
+  una partida; en L'Abbaye, al entrar en una sala. Si no, la peticion espera y se hace en cuanto se
+  puede. Manda la ultima: guardar cancela una carga que esperaba y al reves, y cambiar de ranura
+  la lleva a la nueva
+- un aviso con el numero de la ranura: gris al elegirla, azul al guardar y verde al cargar; uno
+  nuevo sustituye al anterior. Al cargar, el aviso de carga
+- no en modo hardcore; cargar uno quita los logros hardcore a esa partida
+- quix.state (register: can, save, load; tambien con promesas) para que otros motores y juegos los
+  tengan; en la consola de depuracion, state, state save N y state load N
+
+Mando
+- Controls pide siempre todos los botones, en el orden del mando estandar: los combos usan Select,
+  L1, R1, R2, X, Y y la cruceta, y en algunas consolas estan en otro orden. Los nombres de
+  [controls.buttons] salen como siempre ("Dash (X)")
+- con Select pulsado, el juego no recibe los demas botones (los combos): en Firework, X abria el
+  menu del juego al guardar. Select solo llega como siempre
+
+Lupa
+- se puede fijar: Start con ella abierta. Se queda donde esta, con su tamano y su zoom, y el mando
+  vuelve al juego, menos Start; el icono lleva un candado. Start otra vez, o Select + L1, la
+  desfija. Tambien en Android, con mando
+- un tamano mas (Y): toda la pantalla, tambien las franjas negras que deja el juego
+
+Compatibilidad con los juegos
+- RPG Maker MV dibujado a menos resolucion (render_scale, Firework en 720x720 o 4:3): la letra y
+  las imagenes se reducen con LINEAR, no con NEAREST, que se saltaba pixeles y deformaba la letra;
+  los tilesets no cambian
+- Firework, mod big-text: tambien el texto de la lista de partidas, 1,4 veces mas grande; mod
+  readable-font (activo): el texto con M+ 1m
+- los archivos del juego se encuentran sin distinguir mayusculas, como en Windows, donde se hacen
+  los juegos (Muffles' Life Sentence pide Leaf.rpgmvp y trae leaf.rpgmvp)
+- style.font de los elementos: la forma corta de CSS se reparte en fontSize, fontFamily,
+  fontWeight... (la usa el plugin OpenTypePixelFont para dibujar sus fuentes)
+- el aviso de carga sigue mientras el juego esta en su arranque (Scene_Boot de RPG Maker MV): antes
+  se quitaba antes de tiempo y quedaba en negro (Muffles' Life Sentence prepara sus fuentes)
+- quix.engine.lib('loading'): el aviso de carga desde un hook o un mod (show, hide, until)
+- Android: importar un port con el juego en www.zip decia "no game in www" aunque se importaba bien
+- Construct 3 (Million Monster Militia): Worker, MessageChannel y MessagePort en el mismo hilo,
+  createImageBitmap, <script type="module"> con import de efecto, y URL como texto
+
+Sandbox
+- se comprueba el archivo que de verdad se abre, no solo su ruta: un enlace simbolico cambiado
+  entre la comprobacion y la apertura ya no sirve para leer fuera del port
+- un script de [scripts] o un <script src> fuera del port se leia igual aunque el sandbox lo
+  rechazara
+- el archivo de un mod (un enlace simbolico o una ruta con "..") y los de una rom en carpeta
+  podian estar fuera del port
+- los mods de quixjs-settings.toml se comprueban como los de [game] mods (sin rutas)
+
+Cambios en el toml (un toml escrito a mano puede necesitarlos)
+- -c es obligatorio: sin el, quixjs dice que falta el toml del juego; ya no busca config.toml
+- los hooks de los motores van en una carpeta por lo que hacen (load, render, memory, logic, port)
+  y en extra/ los que enciende cada port: "rpgmaker-mv/render/tint-native",
+  "rpgmaker-mv/extra/render/terrax-lights-only" (runtime/engines/README.md)
+- los hooks de un mod, sin .js: "rumble"
+- quitados los hooks snap-half, refresh-if-changed y gc-when-still: ningun juego los usaba
+
+Compilar
+- por debajo es CMake; el Makefile deja los mismos comandos en todas las plataformas: make pc,
+  make portmaster PORT=..., make android, make <plataforma>-jsc, make <plataforma>-clean,
+  make clean (docs/build.md)
+- JavaScriptCore, ICU y libc++ de las portatiles y de Android tambien se compilan con CMake; lo que
+  se descarga se comprueba con su sha256
+
+Codigo
+- runtime/ reorganizado: carpetas por tema, los archivos grandes partidos en partes que se compilan
+  como uno (raster, gpu2d, mixer, document: el mismo codigo, sin coste) y los mismos nombres en
+  todo el codigo. Sin cambios para los juegos
+- el log dice cuando un hook deja la funcion original del juego porque no es la que espera
+  ("kept the original"); antes salia como instalado
+
 0.5.3
 - fixed: en un port recien instalado con la rom (www.zip) no se guardaba la partida: no existia la
   carpeta gamedata/save; quixjs la crea al arrancar

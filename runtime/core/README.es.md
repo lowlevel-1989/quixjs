@@ -13,25 +13,17 @@ urls y las herramientas de prueba (`--script`, `--debug`).
 |-------------------|-------------------|
 | `main.c`          | arranque, el menú de `--launcher` antes del juego, loop principal, entrada a KeyboardEvent, logros comprobados en cada frame, composición de la pantalla (capas en la GPU o en memoria), `--fps`, `--hold`, captura, código de salida |
 | `app_context.h`   | `AppContext`: backend, config, contador de frames y petición de `quix.exit()`, compartido con los bindings |
-| `args.c`          | opciones de la línea de comandos (`-c`, `-b`, `--test`, `--frames`, `--script`, `--debug`, `--gen-config`, `--launcher`...) |
-| `config_loader.c` | lee el toml del juego (`[engine]` y `[engine.pc]` / `[engine.handheld]`, `[game]` con `title`, `id` y `mods`, `[scripts]`, `[fonts]`, `[launcher]`, `[saves]` con `dir` desde `game_dir`, `[controls]`) con tomlc17; `[symbols]` y `[[achievements]]` los lee `achievements/`, `[hooks]` los lee `hooks/` |
-| `printer.c`       | muestra la config cargada al arrancar |
-| `gen_config.c`    | `--gen-config <carpeta o .html>`: mira el juego (`package.json` de nw.js, `index.html` o el `.html` dado, su CSS, `rpg_core.js` / `rmmz_core.js`, `pixi.js`) y escribe un `config.toml` en stdout. Es un archivo indice: sus partes estan en `gen_config/` (`manifest.c`, `html.c`, `engine.c`, `output.c`) |
-| `compiler.c`      | lee los scripts y comprueba su sintaxis; también carga los scripts agregados después (`<script src>`) |
-| `runner.c`        | ejecuta cada script en orden |
+| `config/`        | las opciones y el toml del juego: leerlos, mostrarlos y escribir uno con `--gen-config` ([README](config/README.es.md)) |
+| `scripts/`        | los scripts del juego, los de `[scripts]` en el toml (`libs`, `includes`, `entry`): `load.c` los lee y comprueba su sintaxis (también los agregados después, `<script src>`), `run.c` los ejecuta en orden |
 | `timer.c`         | reloj (real o fijo), setTimeout / setInterval, requestAnimationFrame |
 | `keymap.c`        | KeyboardEvent.code -> key y keyCode, como un navegador con teclado US; lo usan el backend sdl y `quix.input.pressKey()` |
-| `url.c`           | urls del juego a rutas del disco (`img/a.png?v=1`, `file://`, `http://localhost/`), data URIs, lectura de archivos |
-| `input_script.c`  | `--script <archivo>`: guion de entrada para pruebas, una acción por línea en un frame dado (`press`, `down`, `up`, `shot`, `log`, `exit`) |
-| `debug_server.c`  | `--debug`: consola de debug en un socket Unix (`quixjs.sock`), se usa con `tools/console.py` |
-| `profiler.c`      | `--profile`: el sampling profiler de JavaScriptCore, un informe cada 10 s y al salir |
-| `profiler.js`     | el resumen del informe en JS (agrupa las muestras por función); en el binario con `tools/embed_js.py` |
+| `url/`            | urls del juego a rutas del disco (`img/a.png?v=1`, `file://`, `http://localhost/`) y data URIs (`url.c`), leer archivos (`read.c`), stat, listar y mapear en disco o en la rom (`fs.c`) |
+| `debug/`         | las herramientas para probar y medir quixjs: `--script`, `--debug`, `--profile`, los contadores de `mem` y `make TRACE=1` ([README](debug/README.es.md)) |
 | `dispatch.c`      | el JS no habla con el hardware: deja una petición en un canal y quixjs la manda al aparato, al instante si está libre o cuando quede libre. Canales: `vibrate` (una cada vez y con pausa: en la RG CubeXX muchas seguidas colgaban la consola), `audio`, `lan` y `save` (estos tres salen siempre al instante: el juego espera su respuesta) |
 | `sandbox.c`       | el sandbox: leer solo dentro de la carpeta del port; escribir, solo dentro de la de las partidas |
 | `save.c`          | los archivos que escribe el juego (partidas, localStorage), por el canal `save`: a un temporal que se renombra |
 | `watchdog.c`      | salida de emergencia: un thread lee los mandos del kernel; Select + Start sale si el loop lleva más de 1 s parado |
 | `worker.c`        | un thread de trabajo para cargar en segundo plano (decodificar imágenes, leer y descifrar sonidos) |
-| `memstats.c`      | memoria de canvas, imágenes y texturas WebGL, para el comando `mem` |
 
 ## main()
 
@@ -109,20 +101,20 @@ no pararía la página).
 
 ## Scripts
 
-`compiler.c` lee cada script y comprueba su sintaxis (un error sale al arrancar
+`scripts/load.c` lee cada script y comprueba su sintaxis (un error sale al arrancar
 el juego, con el archivo y la línea); JavaScriptCore lo compila al ejecutarlo,
 y lo que más se ejecuta también a código máquina (JIT). No hay caché: la
 primera versión de quixjs, sobre QuickJS, guardaba bytecode en su caché.
 Ahora la caché (`cache/`, junto al toml) guarda los programas de WebGL ya
-enlazados (`cache/shaders`, `gfx/shader_cache.c`).
+enlazados (`cache/shaders`, `gfx/gl/shader_cache.c`).
 
 ## Consola de debug
 
 La consola de debug viene heredada de tamatama
-(https://github.com/lowlevel-1989/tamatama). quixjs escucha en un socket Unix
+(https://github.com/lowlevel-1989/tamatama/tree/780b7e723f3dbe8a58bc54ed571f1518dac9191a). quixjs escucha en un socket Unix
 y atiende comandos de texto entre frames, cuando no corre JS (el punto seguro):
 `help`, `info`, `press/down/up KEY`, `shot ARCHIVO`, `eval JS`, `pause`,
 `resume`, `run N`, `prof start|stop|save`, `fps [N]`, `gc`, `mem`, `pacing`,
-`ach`, `ach reset`, `quit`. Cada respuesta termina con una línea `ok` o
+`ach`, `ach reset`, `state`, `state save N`, `state load N`, `quit`. Cada respuesta termina con una línea `ok` o
 `err MENSAJE`. En pausa, la ventana sigue respondiendo y mostrando el último
 frame.

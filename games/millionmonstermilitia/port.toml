@@ -1,0 +1,738 @@
+# port.toml: el port de Million Monster Militia (Space Capsule Games y
+# Dejobaan Games, Construct 3) a quixjs.
+#
+# Es el archivo que describe el juego: quixjs -c port.toml. La primera parte
+# salio de quixjs --gen-config sobre su package.nw (la version de Steam),
+# revisada a mano. El juego no va en el port: el jugador copia el package.nw
+# de su Steam junto a este port.toml (README.md).
+#
+# Construct 3 lo exporto para NW.js. El juego solo usa el raton: el mod
+# controller lo lleva con el mando.
+[engine]
+name    = "construct3"
+nwjs    = true
+# en una portatil, 30 imagenes por segundo
+fps     = 30
+
+# en el PC (el binario que no es el de PortMaster): 60
+[engine.pc]
+fps = 60
+
+[game]
+title     = "Million Monster Militia"
+version   = "0.9.0"           # la del port
+id        = "millionmonstermilitia"
+# la rom: el package.nw del juego (un zip), junto a este port.toml. Lo que el
+# juego escribe va a gamedata/
+rom       = "package.nw"
+game_dir  = ""
+# el juego es de 480x270 (pixel art) y Construct 3 lo escala a la ventana:
+# al triple, la letra se lee y los pixeles quedan iguales
+width     = 1440
+height    = 810
+# en una pantalla mas pequena, Construct 3 dibuja a la resolucion de la
+# pantalla, no a 1440x810 para reducirlo despues (720x405 en una de 720x720)
+render_scale = "auto"
+player    = "Master"          # el nombre del jugador (el de Steam en el juego)
+developer = "Space Capsule Games"
+publisher = "Dejobaan Games"
+genres    = ["strategy", "casino/card"]
+mods      = ["controller", "achievements", "reader"]
+                              # mods/: controller (jugar con mando),
+                              # achievements (Start: la lista de logros) y
+                              # reader (R1: los textos con letra grande) vienen
+                              # activos; battle-music (musica en la batalla), apagado
+desc      = "A roguelite deckbuilding auto-battler: play monster cards to defend the city from waves of kaiju."
+
+# los de Construct 3 (runtime/engines/construct3/hooks.toml): las texturas
+# de las pantallas se quedan al cambiar de pantalla
+[hooks]
+engine = "construct3"
+# los savestates (Select + X guarda, Select + Y carga): probados en este juego
+"C3.Runtime.prototype.Start" = "construct3/extra/port/savestate"
+# el juego tiene el 3D activado sin usarlo: dibujado como 2D (en la Mali la
+# capa HUD de la pantalla del jefe no salia; ver el archivo)
+"C3.Runtime.prototype.Uses3DFeatures" = "construct3/extra/render/flat-2d"
+# empezar una partida para los trucos (quix.playthrough): hooks/playthrough-new.js
+"C3.Layout.prototype._StartRunning" = "hooks/playthrough-new"
+
+[portmaster]
+script       = "Million Monster Militia.sh"
+porter       = ["lowlevel.1989"]
+inst         = "Needs Million Monster Militia for Windows (Steam). Copy its file package.nw, as it is, into ports/millionmonstermilitia/, next to port.toml."
+store        = { name = "Steam", url = "https://store.steampowered.com/app/2358770/" }
+availability = "paid"
+
+[saves]
+local_storage = "localstorage.json"
+files         = ["localstorage.json"]
+
+# los <script> del index.html, en el mismo orden
+[scripts]
+libs     = []
+includes = [
+  "scripts/modernjscheck.js",
+  "scripts/supportcheck.js"
+]
+entry    = "scripts/main.js"
+
+# los elementos con id del <body> del index.html: quixjs los crea en el
+# body cuando el juego los pide (getElementById)
+[html]
+elements = [
+  { tag = "div", id = "notSupportedWrap" },
+  { tag = "h2", id = "notSupportedTitle" },
+]
+
+[controls]
+gamepad = true                # lo lee el mod controller
+screenshot = true
+magnifier  = true
+
+# lo que hace cada boton (mods/controller; start: mods/achievements; r1:
+# mods/reader)
+[controls.buttons]
+dpup    = "Cursor up"
+dpdown  = "Cursor down"
+dpleft  = "Cursor left"
+dpright = "Cursor right"
+a       = "Click"
+x       = "Menu"
+y       = "Action button"
+start   = "Achievements"
+r1      = "Reader"
+
+# ---------- los logros ----------
+# Million Monster Militia los da con Steam (greenworks): quixjs contesta por
+# Steam y deja cada id que el juego activa en quix.steam.achievements (y, una
+# vez, en gamedata/steam-achievements.txt). Los 77 ids salen de la API publica
+# de Steam (GetGlobalAchievementPercentagesForApp, app 2358770) y del codigo del
+# juego (scripts/c3runtime.js):
+#   ACHIEVEMENT_WON_CITY<n>  ganar la ciudad n de City.json (del juego; 0 Cape
+#                            Cod, 1 Boston...). 64 de las 75 tienen logro
+#   ACHIEVEMENT_WON_STANDARD, 2, 4 y SENDTOHELL  las misiones 1, 2, 4 y 3
+#   ACHIEVEMENT_WON_PERSIST, STANDARD6, LUMP, ALWAYSEMP, BANNED, ALLRARE y
+#     FINAL  las misiones 5 a 11: en el codigo van seguidos despues de las 4
+#     primeras, y en Steam su porcentaje baja en ese orden (4.1 % a 1.6 %)
+#   ACHIEVEMENT_WON_CUSTOM   ganar una partida personalizada (va aparte, al final)
+# Los titulos y descripciones son los de su pagina de Steam, que solo muestra
+# 26. Las ciudades que faltan llevan el nombre de City.json, como las demas
+# ("Beat <ciudad>"). Las misiones 5 a 11 y la personalizada llevan un titulo
+# neutro ("Mission 5", "Custom Game"): Steam no muestra los suyos.
+[symbols]
+start_the_game     = "path:quix.steam.achievements.ACHIEVEMENT_START_THE_GAME"
+won_standard       = "path:quix.steam.achievements.ACHIEVEMENT_WON_STANDARD"
+won_standard2      = "path:quix.steam.achievements.ACHIEVEMENT_WON_STANDARD2"
+won_sendtohell     = "path:quix.steam.achievements.ACHIEVEMENT_WON_SENDTOHELL"
+won_standard4      = "path:quix.steam.achievements.ACHIEVEMENT_WON_STANDARD4"
+won_standard6      = "path:quix.steam.achievements.ACHIEVEMENT_WON_STANDARD6"
+won_custom         = "path:quix.steam.achievements.ACHIEVEMENT_WON_CUSTOM"
+won_persist        = "path:quix.steam.achievements.ACHIEVEMENT_WON_PERSIST"
+won_lump           = "path:quix.steam.achievements.ACHIEVEMENT_WON_LUMP"
+won_alwaysemp      = "path:quix.steam.achievements.ACHIEVEMENT_WON_ALWAYSEMP"
+won_banned         = "path:quix.steam.achievements.ACHIEVEMENT_WON_BANNED"
+won_allrare        = "path:quix.steam.achievements.ACHIEVEMENT_WON_ALLRARE"
+won_final          = "path:quix.steam.achievements.ACHIEVEMENT_WON_FINAL"
+won_city0          = "path:quix.steam.achievements.ACHIEVEMENT_WON_CITY0"
+won_city1          = "path:quix.steam.achievements.ACHIEVEMENT_WON_CITY1"
+won_city2          = "path:quix.steam.achievements.ACHIEVEMENT_WON_CITY2"
+won_city3          = "path:quix.steam.achievements.ACHIEVEMENT_WON_CITY3"
+won_city4          = "path:quix.steam.achievements.ACHIEVEMENT_WON_CITY4"
+won_city5          = "path:quix.steam.achievements.ACHIEVEMENT_WON_CITY5"
+won_city6          = "path:quix.steam.achievements.ACHIEVEMENT_WON_CITY6"
+won_city7          = "path:quix.steam.achievements.ACHIEVEMENT_WON_CITY7"
+won_city8          = "path:quix.steam.achievements.ACHIEVEMENT_WON_CITY8"
+won_city9          = "path:quix.steam.achievements.ACHIEVEMENT_WON_CITY9"
+won_city11         = "path:quix.steam.achievements.ACHIEVEMENT_WON_CITY11"
+won_city12         = "path:quix.steam.achievements.ACHIEVEMENT_WON_CITY12"
+won_city13         = "path:quix.steam.achievements.ACHIEVEMENT_WON_CITY13"
+won_city14         = "path:quix.steam.achievements.ACHIEVEMENT_WON_CITY14"
+won_city15         = "path:quix.steam.achievements.ACHIEVEMENT_WON_CITY15"
+won_city16         = "path:quix.steam.achievements.ACHIEVEMENT_WON_CITY16"
+won_city18         = "path:quix.steam.achievements.ACHIEVEMENT_WON_CITY18"
+won_city19         = "path:quix.steam.achievements.ACHIEVEMENT_WON_CITY19"
+won_city20         = "path:quix.steam.achievements.ACHIEVEMENT_WON_CITY20"
+won_city21         = "path:quix.steam.achievements.ACHIEVEMENT_WON_CITY21"
+won_city22         = "path:quix.steam.achievements.ACHIEVEMENT_WON_CITY22"
+won_city23         = "path:quix.steam.achievements.ACHIEVEMENT_WON_CITY23"
+won_city25         = "path:quix.steam.achievements.ACHIEVEMENT_WON_CITY25"
+won_city26         = "path:quix.steam.achievements.ACHIEVEMENT_WON_CITY26"
+won_city27         = "path:quix.steam.achievements.ACHIEVEMENT_WON_CITY27"
+won_city29         = "path:quix.steam.achievements.ACHIEVEMENT_WON_CITY29"
+won_city30         = "path:quix.steam.achievements.ACHIEVEMENT_WON_CITY30"
+won_city31         = "path:quix.steam.achievements.ACHIEVEMENT_WON_CITY31"
+won_city32         = "path:quix.steam.achievements.ACHIEVEMENT_WON_CITY32"
+won_city33         = "path:quix.steam.achievements.ACHIEVEMENT_WON_CITY33"
+won_city34         = "path:quix.steam.achievements.ACHIEVEMENT_WON_CITY34"
+won_city35         = "path:quix.steam.achievements.ACHIEVEMENT_WON_CITY35"
+won_city36         = "path:quix.steam.achievements.ACHIEVEMENT_WON_CITY36"
+won_city38         = "path:quix.steam.achievements.ACHIEVEMENT_WON_CITY38"
+won_city42         = "path:quix.steam.achievements.ACHIEVEMENT_WON_CITY42"
+won_city43         = "path:quix.steam.achievements.ACHIEVEMENT_WON_CITY43"
+won_city46         = "path:quix.steam.achievements.ACHIEVEMENT_WON_CITY46"
+won_city47         = "path:quix.steam.achievements.ACHIEVEMENT_WON_CITY47"
+won_city48         = "path:quix.steam.achievements.ACHIEVEMENT_WON_CITY48"
+won_city49         = "path:quix.steam.achievements.ACHIEVEMENT_WON_CITY49"
+won_city50         = "path:quix.steam.achievements.ACHIEVEMENT_WON_CITY50"
+won_city51         = "path:quix.steam.achievements.ACHIEVEMENT_WON_CITY51"
+won_city52         = "path:quix.steam.achievements.ACHIEVEMENT_WON_CITY52"
+won_city53         = "path:quix.steam.achievements.ACHIEVEMENT_WON_CITY53"
+won_city54         = "path:quix.steam.achievements.ACHIEVEMENT_WON_CITY54"
+won_city55         = "path:quix.steam.achievements.ACHIEVEMENT_WON_CITY55"
+won_city56         = "path:quix.steam.achievements.ACHIEVEMENT_WON_CITY56"
+won_city57         = "path:quix.steam.achievements.ACHIEVEMENT_WON_CITY57"
+won_city58         = "path:quix.steam.achievements.ACHIEVEMENT_WON_CITY58"
+won_city59         = "path:quix.steam.achievements.ACHIEVEMENT_WON_CITY59"
+won_city60         = "path:quix.steam.achievements.ACHIEVEMENT_WON_CITY60"
+won_city61         = "path:quix.steam.achievements.ACHIEVEMENT_WON_CITY61"
+won_city62         = "path:quix.steam.achievements.ACHIEVEMENT_WON_CITY62"
+won_city63         = "path:quix.steam.achievements.ACHIEVEMENT_WON_CITY63"
+won_city64         = "path:quix.steam.achievements.ACHIEVEMENT_WON_CITY64"
+won_city65         = "path:quix.steam.achievements.ACHIEVEMENT_WON_CITY65"
+won_city66         = "path:quix.steam.achievements.ACHIEVEMENT_WON_CITY66"
+won_city67         = "path:quix.steam.achievements.ACHIEVEMENT_WON_CITY67"
+won_city69         = "path:quix.steam.achievements.ACHIEVEMENT_WON_CITY69"
+won_city70         = "path:quix.steam.achievements.ACHIEVEMENT_WON_CITY70"
+won_city71         = "path:quix.steam.achievements.ACHIEVEMENT_WON_CITY71"
+won_city72         = "path:quix.steam.achievements.ACHIEVEMENT_WON_CITY72"
+won_city73         = "path:quix.steam.achievements.ACHIEVEMENT_WON_CITY73"
+won_city74         = "path:quix.steam.achievements.ACHIEVEMENT_WON_CITY74"
+
+[[achievements]]
+id          = "start_the_game"
+title       = "You Found A Warhorn!"
+description = "Start Your First Game"
+type        = "progression"
+conditions  = ["start_the_game"]
+
+[[achievements]]
+id          = "won_standard"
+title       = "Buffalo, NY"
+description = "Win Mission 1"
+type        = "win_condition"
+conditions  = ["won_standard"]
+
+[[achievements]]
+id          = "won_standard2"
+title       = "Charleston Chew"
+description = "Win Mission 2"
+type        = "win_condition"
+conditions  = ["won_standard2"]
+
+[[achievements]]
+id          = "won_sendtohell"
+title       = "I Got the Goat"
+description = "Win Mission 3"
+type        = "win_condition"
+conditions  = ["won_sendtohell"]
+
+[[achievements]]
+id          = "won_standard4"
+title       = "St Louis, MS"
+description = "Win Mission 4"
+type        = "win_condition"
+conditions  = ["won_standard4"]
+
+[[achievements]]
+id          = "won_standard6"
+title       = "Mission 6"
+description = "Win Mission 6"
+type        = "win_condition"
+conditions  = ["won_standard6"]
+
+[[achievements]]
+id          = "won_custom"
+title       = "Custom Game"
+description = "Win a custom game"
+type        = "win_condition"
+conditions  = ["won_custom"]
+
+[[achievements]]
+id          = "won_persist"
+title       = "Mission 5"
+description = "Win Mission 5"
+type        = "win_condition"
+conditions  = ["won_persist"]
+
+[[achievements]]
+id          = "won_lump"
+title       = "Mission 7"
+description = "Win Mission 7"
+type        = "win_condition"
+conditions  = ["won_lump"]
+
+[[achievements]]
+id          = "won_alwaysemp"
+title       = "Mission 8"
+description = "Win Mission 8"
+type        = "win_condition"
+conditions  = ["won_alwaysemp"]
+
+[[achievements]]
+id          = "won_banned"
+title       = "Mission 9"
+description = "Win Mission 9"
+type        = "win_condition"
+conditions  = ["won_banned"]
+
+[[achievements]]
+id          = "won_allrare"
+title       = "Mission 10"
+description = "Win Mission 10"
+type        = "win_condition"
+conditions  = ["won_allrare"]
+
+[[achievements]]
+id          = "won_final"
+title       = "Mission 11"
+description = "Win Mission 11"
+type        = "win_condition"
+conditions  = ["won_final"]
+
+[[achievements]]
+id          = "won_city0"
+title       = "Cape Cod"
+description = "Beat Cape Cod, MA"
+type        = "progression"
+conditions  = ["won_city0"]
+
+[[achievements]]
+id          = "won_city1"
+title       = "Boston, MA"
+description = "Beat Boston, MA"
+type        = "progression"
+conditions  = ["won_city1"]
+
+[[achievements]]
+id          = "won_city2"
+title       = "Providence, RI"
+description = "Beat Providence, RI"
+type        = "progression"
+conditions  = ["won_city2"]
+
+[[achievements]]
+id          = "won_city3"
+title       = "New Haven, CT"
+description = "Beat New Haven, CT"
+type        = "progression"
+conditions  = ["won_city3"]
+
+[[achievements]]
+id          = "won_city4"
+title       = "Springfield, MA"
+description = "Beat Springfield, MA"
+type        = "progression"
+conditions  = ["won_city4"]
+
+[[achievements]]
+id          = "won_city5"
+title       = "Man Chest Hair, NH"
+description = "Beat Manchester, NH"
+type        = "progression"
+conditions  = ["won_city5"]
+
+[[achievements]]
+id          = "won_city6"
+title       = "Portland, ME"
+description = "Beat Portland, ME"
+type        = "progression"
+conditions  = ["won_city6"]
+
+[[achievements]]
+id          = "won_city7"
+title       = "Montreal, QC, Canada"
+description = "Beat Montreal, QC, Canada"
+type        = "progression"
+conditions  = ["won_city7"]
+
+[[achievements]]
+id          = "won_city8"
+title       = "Burlington, VT"
+description = "Beat Burlington, VT"
+type        = "progression"
+conditions  = ["won_city8"]
+
+[[achievements]]
+id          = "won_city9"
+title       = "New York, NY"
+description = "Beat New York, NY"
+type        = "progression"
+conditions  = ["won_city9"]
+
+[[achievements]]
+id          = "won_city11"
+title       = "Newark, NJ"
+description = "Beat Newark, NJ"
+type        = "progression"
+conditions  = ["won_city11"]
+
+[[achievements]]
+id          = "won_city12"
+title       = "Philadelphia, PA"
+description = "Beat Philadelphia, PA"
+type        = "progression"
+conditions  = ["won_city12"]
+
+[[achievements]]
+id          = "won_city13"
+title       = "Wilmington, DE"
+description = "Beat Wilmington, DE"
+type        = "progression"
+conditions  = ["won_city13"]
+
+[[achievements]]
+id          = "won_city14"
+title       = "Baltimore, MD"
+description = "Beat Baltimore, MD"
+type        = "progression"
+conditions  = ["won_city14"]
+
+[[achievements]]
+id          = "won_city15"
+title       = "Washington, D.C."
+description = "Beat Washington, D.C."
+type        = "progression"
+conditions  = ["won_city15"]
+
+[[achievements]]
+id          = "won_city16"
+title       = "Virginia Beach, VA"
+description = "Beat Virginia Beach, VA"
+type        = "progression"
+conditions  = ["won_city16"]
+
+[[achievements]]
+id          = "won_city18"
+title       = "Charlotte, NC"
+description = "Beat Charlotte, NC"
+type        = "progression"
+conditions  = ["won_city18"]
+
+[[achievements]]
+id          = "won_city19"
+title       = "Charleston, SC"
+description = "Beat Charleston, SC"
+type        = "progression"
+conditions  = ["won_city19"]
+
+[[achievements]]
+id          = "won_city20"
+title       = "Columbus, OH"
+description = "Beat Columbus, OH"
+type        = "progression"
+conditions  = ["won_city20"]
+
+[[achievements]]
+id          = "won_city21"
+title       = "Atlanta, GA"
+description = "Beat Atlanta, GA"
+type        = "progression"
+conditions  = ["won_city21"]
+
+[[achievements]]
+id          = "won_city22"
+title       = "Cleveland, OH"
+description = "Beat Cleveland, OH"
+type        = "progression"
+conditions  = ["won_city22"]
+
+[[achievements]]
+id          = "won_city23"
+title       = "Detroit, MI"
+description = "Beat Detroit, MI"
+type        = "progression"
+conditions  = ["won_city23"]
+
+[[achievements]]
+id          = "won_city25"
+title       = "Indianapolis, IN"
+description = "Beat Indianapolis, IN"
+type        = "progression"
+conditions  = ["won_city25"]
+
+[[achievements]]
+id          = "won_city26"
+title       = "Chicago, IL"
+description = "Beat Chicago, IL"
+type        = "progression"
+conditions  = ["won_city26"]
+
+[[achievements]]
+id          = "won_city27"
+title       = "Milkwaukee, WI"
+description = "Beat Milkwaukee, WI"
+type        = "progression"
+conditions  = ["won_city27"]
+
+[[achievements]]
+id          = "won_city29"
+title       = "Des Moines, IA"
+description = "Beat Des Moines, IA"
+type        = "progression"
+conditions  = ["won_city29"]
+
+[[achievements]]
+id          = "won_city30"
+title       = "Minneapolis, MN"
+description = "Beat Minneapolis, MN"
+type        = "progression"
+conditions  = ["won_city30"]
+
+[[achievements]]
+id          = "won_city31"
+title       = "Fargo, ND"
+description = "Beat Fargo, ND"
+type        = "progression"
+conditions  = ["won_city31"]
+
+[[achievements]]
+id          = "won_city32"
+title       = "Sioux Falls, SD"
+description = "Beat Sioux Falls, SD"
+type        = "progression"
+conditions  = ["won_city32"]
+
+[[achievements]]
+id          = "won_city33"
+title       = "Omaha, NE"
+description = "Beat Omaha, NE"
+type        = "progression"
+conditions  = ["won_city33"]
+
+[[achievements]]
+id          = "won_city34"
+title       = "Cheyenne, WY"
+description = "Beat Cheyenne, WY"
+type        = "progression"
+conditions  = ["won_city34"]
+
+[[achievements]]
+id          = "won_city35"
+title       = "Billings, MT"
+description = "Beat Billings, MT"
+type        = "progression"
+conditions  = ["won_city35"]
+
+[[achievements]]
+id          = "won_city36"
+title       = "Seattle, WA"
+description = "Beat Seattle, WA"
+type        = "progression"
+conditions  = ["won_city36"]
+
+[[achievements]]
+id          = "won_city38"
+title       = "Boise, ID"
+description = "Beat Boise, ID"
+type        = "progression"
+conditions  = ["won_city38"]
+
+[[achievements]]
+id          = "won_city42"
+title       = "Phoenix, AZ"
+description = "Beat Phoenix, AZ"
+type        = "progression"
+conditions  = ["won_city42"]
+
+[[achievements]]
+id          = "won_city43"
+title       = "Albuquerque, NM"
+description = "Beat Albuquerque, NM"
+type        = "progression"
+conditions  = ["won_city43"]
+
+[[achievements]]
+id          = "won_city46"
+title       = "Oklahoma City, OK"
+description = "Beat Oklahoma City, OK"
+type        = "progression"
+conditions  = ["won_city46"]
+
+[[achievements]]
+id          = "won_city47"
+title       = "San Antonio, TX"
+description = "Beat San Antonio, TX"
+type        = "progression"
+conditions  = ["won_city47"]
+
+[[achievements]]
+id          = "won_city48"
+title       = "Little Rock, AR"
+description = "Beat Little Rock, AR"
+type        = "progression"
+conditions  = ["won_city48"]
+
+[[achievements]]
+id          = "won_city49"
+title       = "Nashville, TN"
+description = "Beat Nashville, TN"
+type        = "progression"
+conditions  = ["won_city49"]
+
+[[achievements]]
+id          = "won_city50"
+title       = "Montgomery, AL"
+description = "Beat Montgomery, AL"
+type        = "progression"
+conditions  = ["won_city50"]
+
+[[achievements]]
+id          = "won_city51"
+title       = "Jackson, MS"
+description = "Beat Jackson, MS"
+type        = "progression"
+conditions  = ["won_city51"]
+
+[[achievements]]
+id          = "won_city52"
+title       = "New Orleans, LA"
+description = "Beat New Orleans, LA"
+type        = "progression"
+conditions  = ["won_city52"]
+
+[[achievements]]
+id          = "won_city53"
+title       = "Miami, FL"
+description = "Beat Miami, FL"
+type        = "progression"
+conditions  = ["won_city53"]
+
+[[achievements]]
+id          = "won_city54"
+title       = "Cincinnati, OH"
+description = "Beat Cincinnati, OH"
+type        = "progression"
+conditions  = ["won_city54"]
+
+[[achievements]]
+id          = "won_city55"
+title       = "Grand Rapids, MI"
+description = "Beat Grand Rapids, MI"
+type        = "progression"
+conditions  = ["won_city55"]
+
+[[achievements]]
+id          = "won_city56"
+title       = "Marquette, MI"
+description = "Beat Marquette, MI"
+type        = "progression"
+conditions  = ["won_city56"]
+
+[[achievements]]
+id          = "won_city57"
+title       = "Dallas, TX"
+description = "Beat Dallas, TX"
+type        = "progression"
+conditions  = ["won_city57"]
+
+[[achievements]]
+id          = "won_city58"
+title       = "Knoxville, TN"
+description = "Beat Knoxville, TN"
+type        = "progression"
+conditions  = ["won_city58"]
+
+[[achievements]]
+id          = "won_city59"
+title       = "Chattanooga, TN"
+description = "Beat Chattanooga, TN"
+type        = "progression"
+conditions  = ["won_city59"]
+
+[[achievements]]
+id          = "won_city60"
+title       = "San Diego, CA"
+description = "Beat San Diego, CA"
+type        = "progression"
+conditions  = ["won_city60"]
+
+[[achievements]]
+id          = "won_city61"
+title       = "Anaheim, CA"
+description = "Beat Anaheim, CA"
+type        = "progression"
+conditions  = ["won_city61"]
+
+[[achievements]]
+id          = "won_city62"
+title       = "San Jose, CA"
+description = "Beat San Jose, CA"
+type        = "progression"
+conditions  = ["won_city62"]
+
+[[achievements]]
+id          = "won_city63"
+title       = "Sacramento, CA"
+description = "Beat Sacramento, CA"
+type        = "progression"
+conditions  = ["won_city63"]
+
+[[achievements]]
+id          = "won_city64"
+title       = "Moab, UT"
+description = "Beat Moab, UT"
+type        = "progression"
+conditions  = ["won_city64"]
+
+[[achievements]]
+id          = "won_city65"
+title       = "Reno, NV"
+description = "Beat Reno, NV"
+type        = "progression"
+conditions  = ["won_city65"]
+
+[[achievements]]
+id          = "won_city66"
+title       = "Bozeman, MT"
+description = "Beat Bozeman, MT"
+type        = "progression"
+conditions  = ["won_city66"]
+
+[[achievements]]
+id          = "won_city67"
+title       = "Spokane, WA"
+description = "Beat Spokane, WA"
+type        = "progression"
+conditions  = ["won_city67"]
+
+[[achievements]]
+id          = "won_city69"
+title       = "Jacksonville, FL"
+description = "Beat Jacksonville, FL"
+type        = "progression"
+conditions  = ["won_city69"]
+
+[[achievements]]
+id          = "won_city70"
+title       = "Bismark, ND"
+description = "Beat Bismark, ND"
+type        = "progression"
+conditions  = ["won_city70"]
+
+[[achievements]]
+id          = "won_city71"
+title       = "The Rest of Canada"
+description = "Beat The Rest of Canada"
+type        = "progression"
+conditions  = ["won_city71"]
+
+[[achievements]]
+id          = "won_city72"
+title       = "Yellowstone, National Park"
+description = "Beat Yellowstone, National Park"
+type        = "progression"
+conditions  = ["won_city72"]
+
+[[achievements]]
+id          = "won_city73"
+title       = "Austin, TX"
+description = "Beat Austin, TX"
+type        = "progression"
+conditions  = ["won_city73"]
+
+[[achievements]]
+id          = "won_city74"
+title       = "Silver City, NM"
+description = "Beat Silver City, NM"
+type        = "progression"
+conditions  = ["won_city74"]

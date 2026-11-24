@@ -1,0 +1,21 @@
+# hooks.toml: los hooks de Construct 3 que usa cualquier juego del motor con
+#   [hooks]
+#   engine = "construct3"
+# en su toml. El juego manda: en su [hooks] puede poner otro en la misma ruta,
+# o "off". Lo que hace cada uno, en su archivo
+# (runtime/engines/construct3/<hook>.js).
+# Hay hooks en esta carpeta que no estan aqui (extra-flat-2d): un juego que los
+# quiera los pone en su [hooks].
+[hooks]
+# las texturas de una pantalla se quedan al salir de ella (hasta un limite):
+# volver no las sube otra vez a la GPU
+"C3.Layout.prototype._Unload" = "construct3/memory/keep-textures"
+# [game] render_scale: Construct 3 dibuja a la resolucion de la pantalla
+"RuntimeInterface.prototype._GetWindowInnerWidth" = "construct3/render/render-scale"
+"RuntimeInterface.prototype._GetWindowInnerHeight" = "construct3/render/render-scale"
+
+# la partida para los trucos (quix.playthrough): guardada dentro del guardado
+# de Construct 3 y cargada con el. Empezar una partida depende de cada juego:
+# lo pone el port (games/millionmonstermilitia/hooks/playthrough-new.js)
+"C3.Runtime.prototype._SaveToJsonString" = "construct3/port/playthrough-save"
+"C3.Runtime.prototype._DoLoadFromJsonString" = "construct3/port/playthrough-load"

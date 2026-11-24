@@ -92,6 +92,8 @@ STEP void housekeeping(Run *r, Loop *l) {
 STEP int events(Run *r, Loop *l, double t_events) {
   backend_process_events(l->backend);
   if (l->backend->want_screenshot) save_screenshot(r, l);
+  if (l->backend->want_state) do_state(l);
+  quix_state_tick(l->ctx);   // una peticion que esperaba: si ya se puede
 
   // consola de debug: entre frames, sin JS corriendo
   if (r->args.debug_sock) {

@@ -24,6 +24,6 @@
 
 JSValue rpgmaker_natives(JSContext *ctx);
 
-// decrypt.c (hooks rpgmaker-mv/decrypt-image-native.js,
-// rpgmaker-mv/load-audio-native.js y rpgmaker-mz/decrypt-image-native.js)
+// decrypt.c (hooks rpgmaker-mv/load/decrypt-image-native.js,
+// rpgmaker-mv/load/load-audio-native.js y rpgmaker-mz/load/decrypt-image-native.js)
 JSValue rpgmaker_set_decrypt_key(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv);

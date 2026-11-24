@@ -1,22 +1,20 @@
 /* TransferActivity: Transfer Save en Android, con vistas de Android como el
    menu del juego. Las pantallas son las del launcher de Linux
-   (runtime/transfer/transfer.c), una funcion show* cada una:
+   (runtime/transfer/transfer.c):
 
-     showHome        Send Save, Receive Save, Restore Backup
-     showDevices     a quien mandarlas: los que estan en Receive Save
-     showSending     esperando a que el otro pulse Accept; Cancel
-     showReceive     esperando unas partidas: este dispositivo y su firma
-     showAsk         llego una oferta: Accept o Decline
-     showReceiving   tras Accept, mientras llegan; Cancel
-     showRestore     volver a las partidas de antes de la ultima recepcion
-     showResult      como termino, con OK
+     showHome          Send Save, Receive Save, Restore Backup, Delete Save
+     TransferSend      Send Save: a quien mandarlas y el envio
+     TransferReceive   Receive Save: esperar, aceptar o rechazar, recibir
+     showRestore       volver a las partidas de antes de la ultima recepcion
+     showDelete        las partidas al backup (el juego empieza de cero)
+     showResult        como termino, con OK
 
    La firma de 4 letras, grande, es lo que se compara en los dos aparatos.
    La red y las partidas son las de runtime/transfer, en C (sender.c,
-   receiver.c, saves.c), por runtime/platform/android/launcher.c, para el
+   receiver.c, saves.c), por runtime/platform/android/transfer.c, para el
    juego de la carpeta del extra "game". Mientras hay un envio o una
-   recepcion abiertos, tick llama a sendPoll o receivePoll cada TICK_MS en
-   el thread de la interfaz.
+   recepcion abiertos, tick llama a su poll cada TICK_MS en el thread de la
+   interfaz.
 
    El bloqueo de multicast, mientras esta abierta: sin el, muchos telefonos
    tiran los broadcast que llegan por Wi-Fi.
@@ -31,7 +29,6 @@ import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
-import android.text.TextUtils;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
@@ -54,47 +51,43 @@ public class TransferActivity extends Activity {
         System.loadLibrary("quixjs");
     }
 
-    /* runtime/platform/android/launcher.c */
+    /* runtime/platform/android/transfer.c */
     private static native boolean start(String dir);
-    private static native String[] saves(boolean backup);
+    static native String[] saves(boolean backup);
     private static native boolean restore();
-    private static native String[] sendOpen();
-    private static native void sendClose();
-    private static native boolean sendPoll();
-    private static native String[] sendDevices();
-    private static native String sendStart(String signature);
-    private static native int sendProgress();
-    private static native String sendResult();
-    private static native void sendCancel();
-    private static native String[] receiveOpen();
-    private static native void receiveClose();
-    private static native void receiveListen(boolean on);
-    private static native int receivePoll();
-    private static native String[] receiveOffer();
-    private static native int receiveProgress();
-    private static native void receiveAccept();
-    private static native void receiveDecline();
-    private static native void receiveCancel();
-    private static native String receiveResult();
-    private static native String receiveNotice();
-
-    /* Lo que devuelve receivePoll: runtime/transfer/receiver.h */
-    private static final int OFFER = 1, CANCELLED = 2, DONE = 3;
+    private static native int deleteSave();
+    static native String[] sendOpen();
+    static native void sendClose();
+    static native boolean sendPoll();
+    static native String[] sendDevices();
+    static native String sendStart(String signature);
+    static native int sendProgress();
+    static native String sendResult();
+    static native void sendCancel();
+    static native String[] receiveOpen();
+    static native void receiveClose();
+    static native void receiveListen(boolean on);
+    static native int receivePoll();
+    static native String[] receiveOffer();
+    static native int receiveProgress();
+    static native void receiveAccept();
+    static native void receiveDecline();
+    static native void receiveCancel();
+    static native String receiveResult();
+    static native String receiveNotice();
 
     /* Que hace tick y que hace volver */
-    private enum Mode { HOME, DEVICES, SENDING, RECEIVE, ASK, RECEIVING, RESTORE, RESULT }
+    enum Mode { HOME, DEVICES, SENDING, RECEIVE, ASK, RECEIVING, RESTORE, DELETE, RESULT }
 
     private final Handler handler = new Handler(Looper.getMainLooper());
     private final Runnable tick = this::tick;
+    private final TransferSend send = new TransferSend(this);
+    private final TransferReceive receive = new TransferReceive(this);
     private WifiManager.MulticastLock multicast;
-    private TextView subtitle, notice, progress;
-    private LinearLayout content;
-    private Mode mode = Mode.HOME;
-    private boolean sending, receiving; /* sendOpen o receiveOpen abiertos */
-    private String me, signature;       /* los de este dispositivo */
-    private String saveLine;            /* "3 files  2026-11-20 18:30" */
-    private String shownDevices = "";
-    private int deviceLines;            /* las vistas de showDevices antes de la lista */
+    private TextView notice;
+    TextView progress;   /* el porcentaje del envio o la recepcion */
+    LinearLayout content;
+    Mode mode = Mode.HOME;
     private Runnable afterResult;
 
     @Override
@@ -158,7 +151,7 @@ public class TransferActivity extends Activity {
     }
 
     /* Una pantalla nueva: su etiqueta, sin lineas ni opciones */
-    private void screen(Mode next, String label) {
+    void screen(Mode next, String label) {
         mode = next;
         content.removeAllViews();
         content.addView(Ui.section(this, label), Ui.wide());
@@ -166,23 +159,23 @@ public class TransferActivity extends Activity {
         progress = null;
     }
 
-    private void say(String message) {
+    void say(String message) {
         notice.setText(message);
         notice.setVisibility(message.isEmpty() ? View.GONE : View.VISIBLE);
     }
 
-    private TextView line(String text, int color) {
+    TextView line(String text, int color) {
         TextView view = Ui.info(this, text, color);
         content.addView(view, Ui.wide());
         return view;
     }
 
     /* La firma: grande, que es lo que se compara en los dos aparatos */
-    private void signature(String text) {
+    void signature(String text) {
         content.addView(Ui.big(this, text), Ui.wide());
     }
 
-    private void gap() {
+    void gap() {
         content.addView(new View(this), new LinearLayout.LayoutParams(1, dp(16)));
     }
 
@@ -194,139 +187,26 @@ public class TransferActivity extends Activity {
         return row;
     }
 
-    private View item(String text, String detail, View.OnClickListener action) {
+    View item(String text, String detail, View.OnClickListener action) {
         return add(Ui.link(this, text, detail, action));
     }
 
-    private View primary(String text, View.OnClickListener action) {
+    View primary(String text, View.OnClickListener action) {
         return add(Ui.primary(this, text, null, action));
     }
 
     /* ---- las pantallas ---- */
 
-    private void showHome() {
+    void showHome() {
         closeAll();
         screen(Mode.HOME, "saves");
         line("Pass your saves to another device on the same network: a PC, a handheld or a phone"
                 + " with quixjs.", Ui.MUTED);
         gap();
-        item("Send Save", "to a device in Receive Save", v -> showDevices()).requestFocus();
-        item("Receive Save", "from a device in Send Save", v -> showReceive());
+        item("Send Save", "to a device in Receive Save", v -> send.showDevices()).requestFocus();
+        item("Receive Save", "from a device in Send Save", v -> receive.show());
         item("Restore Backup", "the saves before the last ones received", v -> showRestore());
-    }
-
-    private void showDevices() {
-        String[] save = saves(false);
-        if (save.length == 0) {
-            showResult("send save", "there are no saves to send", this::showHome);
-            return;
-        }
-        saveLine = save[0] + "  " + save[1];
-        if (!sending) {
-            String[] mine = sendOpen();
-            if (mine == null) {
-                showResult("send save", "cannot use the network", this::showHome);
-                return;
-            }
-            sending = true;
-            me = mine[0];
-            signature = mine[1];
-        }
-        screen(Mode.DEVICES, "send save");
-        line(saveLine, Ui.TEXT);
-        line("this device: " + me, Ui.TEXT);
-        signature(signature);
-        line("send it to:", Ui.TEXT);
-        deviceLines = content.getChildCount();
-        shownDevices = null;
-        refreshDevices();
-        schedule();
-    }
-
-    /* Rehace la lista si ha cambiado: cada fila, firma y nombre */
-    private void refreshDevices() {
-        String[] list = sendDevices();
-        String key = TextUtils.join("\n", list);
-        if (key.equals(shownDevices)) return;
-        shownDevices = key;
-        while (content.getChildCount() > deviceLines) content.removeViewAt(deviceLines);
-        for (int i = 0; i < list.length; i += 2) {
-            final String sig = list[i], name = list[i + 1];
-            View row = item(sig, name, v -> startSending(sig, name));
-            if (i == 0) row.requestFocus();
-        }
-        say(list.length == 0 ? "looking for devices in Receive Save..." : "");
-    }
-
-    private void startSending(String sig, String name) {
-        String problem = sendStart(sig);
-        if (problem != null) {
-            showResult("send save", problem, this::showDevices);
-            return;
-        }
-        screen(Mode.SENDING, "send save");
-        line("waiting for " + name, Ui.TEXT);
-        signature(sig);
-        line("to accept it", Ui.TEXT);
-        progress = line("", Ui.HIGHLIGHT);
-        gap();
-        item("Cancel", null, v -> cancelSending()).requestFocus();
-    }
-
-    private void cancelSending() {
-        sendCancel();
-        showResult("send save", "cancelled", this::showDevices);
-    }
-
-    private void showReceive() {
-        if (!receiving) {
-            String[] mine = receiveOpen();
-            if (mine == null) {
-                showResult("receive save", "cannot use the network", this::showHome);
-                return;
-            }
-            receiving = true;
-            me = mine[0];
-            signature = mine[1];
-        }
-        screen(Mode.RECEIVE, "receive save");
-        line("this device: " + me, Ui.TEXT);
-        signature(signature);
-        line("waiting for a save...", Ui.TEXT);
-        line("choose this device in Send Save", Ui.TEXT);
-        String last = receiveNotice();
-        say(last != null ? last : "");
-        receiveListen(true);
-        schedule();
-    }
-
-    private void showAsk() {
-        receiveListen(false);
-        String[] offer = receiveOffer();
-        screen(Mode.ASK, "receive save");
-        line("a save from " + offer[0], Ui.TEXT);
-        signature(offer[1]);
-        line(offer[2] + "  " + offer[3], Ui.TEXT);
-        line("your saves will be kept as backup", Ui.NOTICE);
-        gap();
-        primary("Accept", v -> {
-            receiveAccept();
-            showReceiving();
-        }).requestFocus();
-        item("Decline", null, v -> {
-            receiveDecline();
-            showReceive();
-        });
-    }
-
-    private void showReceiving() {
-        screen(Mode.RECEIVING, "receive save");
-        progress = line("receiving...", Ui.TEXT);
-        gap();
-        item("Cancel", null, v -> {
-            receiveCancel();
-            showReceive();
-        }).requestFocus();
+        item("Delete Save", "start the game from zero", v -> showDelete());
     }
 
     private void showRestore() {
@@ -347,8 +227,29 @@ public class TransferActivity extends Activity {
         }).requestFocus();
     }
 
+    /* Las partidas pasan a ser el backup (Restore Backup las devuelve); los
+       logros se quedan. Back viene elegido: borrar pide moverse a Delete */
+    private void showDelete() {
+        if (saves(false).length == 0) {
+            showResult("delete save", "there are no saves", this::showHome);
+            return;
+        }
+        screen(Mode.DELETE, "delete save");
+        line("the game starts from zero;", Ui.TEXT);
+        line("restore backup brings", Ui.TEXT);
+        line("the saves back", Ui.TEXT);
+        line("the old backup is lost", Ui.NOTICE);
+        gap();
+        item("Back", null, v -> showHome()).requestFocus();
+        primary("Delete", v -> {
+            int r = deleteSave();
+            showResult("delete save", r > 0 ? "saves deleted" : r < 0 ? "there are no saves" : "cannot delete the saves",
+                       this::showHome);
+        });
+    }
+
     /* Como termino, con OK. La red sigue atendiendo mientras se ve */
-    private void showResult(String title, String message, Runnable then) {
+    void showResult(String title, String message, Runnable then) {
         screen(Mode.RESULT, title);
         line(message, Ui.TEXT);
         gap();
@@ -358,49 +259,21 @@ public class TransferActivity extends Activity {
 
     /* ---- la red ---- */
 
-    private void schedule() {
+    void schedule() {
         handler.removeCallbacks(tick);
         handler.postDelayed(tick, TICK_MS);
     }
 
     private void tick() {
-        if (sending) {
-            boolean finished = sendPoll();
-            if (mode == Mode.DEVICES) refreshDevices();
-            if (mode == Mode.SENDING) {
-                int percent = sendProgress();
-                if (progress != null) progress.setText(percent >= 0 ? "sending " + percent + "%" : "");
-                if (finished) {
-                    String result = sendResult();
-                    boolean sent = "save sent".equals(result);
-                    showResult("send save", result, sent ? this::showHome : this::showDevices);
-                }
-            }
-        }
-        if (receiving) {
-            int event = receivePoll();
-            if (mode == Mode.RECEIVE && event == OFFER) showAsk();
-            else if (mode == Mode.ASK && event == CANCELLED) showReceive();
-            else if (mode == Mode.RECEIVING && event == DONE) {
-                String result = receiveResult();
-                boolean received = "save received".equals(result);
-                showResult("receive save", result, received ? this::showHome : this::showReceive);
-            } else if (mode == Mode.RECEIVING && progress != null) {
-                progress.setText("receiving " + receiveProgress() + "%");
-            }
-            if (mode == Mode.RECEIVE) {
-                String last = receiveNotice();
-                say(last != null ? last : "");
-            }
-        }
-        if (sending || receiving) handler.postDelayed(tick, TICK_MS);
+        if (send.open) send.poll();
+        if (receive.open) receive.poll();
+        if (send.open || receive.open) handler.postDelayed(tick, TICK_MS);
     }
 
     private void closeAll() {
         handler.removeCallbacks(tick);
-        if (sending) sendClose();
-        if (receiving) receiveClose();
-        sending = receiving = false;
+        send.close();
+        receive.close();
     }
 
     /* Volver: a la pantalla de antes, cancelando lo que este en marcha */
@@ -411,15 +284,13 @@ public class TransferActivity extends Activity {
                 super.onBackPressed();
                 break;
             case SENDING:
-                cancelSending();
+                send.cancel();
                 break;
             case ASK:
-                receiveDecline();
-                showReceive();
+                receive.decline();
                 break;
             case RECEIVING:
-                receiveCancel();
-                showReceive();
+                receive.cancel();
                 break;
             case RESULT:
                 if (afterResult != null) afterResult.run();

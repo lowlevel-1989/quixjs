@@ -22,10 +22,10 @@ de Felvidék: a tiempo real, saltando como una cuarta parte de las imágenes).
 | archivo   | qué hace |
 |-----------|----------|
 | `video.h` | abrir, reproducir, pausar, volumen, actualizar, fin, tiempo, imagenes decodificadas |
-| `video_internal.h` | la estructura `Video` y lo que comparten las partes |
+| `common.h` | la estructura `Video` y lo que comparten las partes |
 | `video.c` | lo comun: abrir segun el formato, reproducir, pausar, la cola de imagenes, el thread que decodifica y YUV a RGBA; sin soporte de video cada funcion no hace nada |
-| `video_webm.c` | WebM: nestegg, libvpx y libopus (`QUIX_VIDEO_WEBM`) |
-| `video_mp4.c` | MP4: minimp4 y FFmpeg (`QUIX_VIDEO_MP4`); el unico en la app de Android |
+| `webm.c` | WebM: nestegg, libvpx y libopus (`QUIX_VIDEO_WEBM`) |
+| `mp4.c` | MP4: minimp4 y FFmpeg (`QUIX_VIDEO_MP4`); el unico en la app de Android |
 
 La parte de JS es `binding/video.c` (`__quixVideo`) y el elemento `<video>`
 de `binding/polyfill/media.js` ([polyfill](../binding/polyfill/README.es.md)).
@@ -55,7 +55,7 @@ canvas. El elemento `<video>` dice si es visible por su `style` (`display`,
 
 ## Compilar
 
-El `Makefile` compila con video cuando `pkg-config` encuentra `vpx` y `opus`
+`make pc` compila con video cuando `pkg-config` encuentra `vpx` y `opus`
 (`VIDEO=1`). `make VIDEO=0` compila sin él: `video_open` devuelve NULL y el
 elemento `<video>` se salta (`loadeddata` y `ended` enseguida, así el juego
 sigue).
@@ -66,9 +66,9 @@ sudo apt-get install libvpx-dev libopus-dev
 ```
 
 El build de PortMaster siempre lleva video y lleva `libvpx.so.5` y
-`libopus.so.0` en `libs.aarch64/` y `libs.armhf/`, con las licencias de libvpx5, libopus0 y nestegg.
+`libopus.so.0` en `libs.aarch64/`, con las licencias de libvpx5, libopus0 y nestegg.
 
-El test es `games/tests/media/video`: `clip.webm` (64x48, 1 s, 10 imágenes,
+El test es `tests/games/media/video`: `clip.webm` (64x48, 1 s, 10 imágenes,
 hecho con ffmpeg desde `testsrc` y un tono `sine`) y `clip.mp4` (lo mismo,
 H.264 con imágenes B y AAC) se reproducen hasta el final, `big.mp4` (1080p)
 se ve a la mitad, y un archivo que no existe se salta.

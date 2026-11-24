@@ -54,12 +54,14 @@ static float axis_value(SDL_GameController *gc, SDL_GameControllerAxis axis) {
 // lecturas de esa imagen y se borra para la siguiente.
 static void sdl_read_gamepads(SDLPlatformData* data) {
   int count = 0;
+  int select_held[GAMEPAD_MAX] = {0};   // Select pulsado ahora (sin latch): los combos
   for (int i = 0; i < GAMEPAD_MAX; i++) {
     GamepadState *p = &data->pad_cache[i];
     memset(p, 0, sizeof(*p));
     SDL_GameController *gc = data->pads[i];
     if (!gc) continue;
     p->connected = 1;
+    select_held[i] = SDL_GameControllerGetButton(gc, SDL_CONTROLLER_BUTTON_BACK);
     snprintf(p->id, sizeof(p->id), "%s", SDL_GameControllerName(gc) ? SDL_GameControllerName(gc) : "SDL gamepad");
     p->axes[0] = axis_value(gc, SDL_CONTROLLER_AXIS_LEFTX);
     p->axes[1] = axis_value(gc, SDL_CONTROLLER_AXIS_LEFTY);
@@ -76,6 +78,22 @@ static void sdl_read_gamepads(SDLPlatformData* data) {
     p->pressed[6] = p->value[6] > 0.5f;
     p->pressed[7] = p->value[7] > 0.5f;
     count = i + 1;
+  }
+  // los combos de quixjs (Select + otro boton): con Select pulsado, el
+  // juego no ve ningun otro boton, ni despues, hasta que se suelte (en
+  // Firework, X abre el menu y Select + X lo abria al guardar). Select solo,
+  // como siempre
+  static unsigned char combo_mask[GAMEPAD_MAX][GAMEPAD_BUTTONS];
+  for (int i = 0; i < GAMEPAD_MAX; i++) {
+    GamepadState *p = &data->pad_cache[i];
+    for (int b = 0; b < GAMEPAD_BUTTONS; b++) {
+      if (b == 8) continue;   // Select
+      if (select_held[i] && p->pressed[b]) combo_mask[i][b] = 1;
+      if (!combo_mask[i][b]) continue;
+      if (!p->pressed[b]) combo_mask[i][b] = 0;
+      p->pressed[b] = 0;
+      p->value[b] = 0;
+    }
   }
   // el teclado (keyboard.map): por el mismo canal, el primer mando
   if (keypad_active()) {

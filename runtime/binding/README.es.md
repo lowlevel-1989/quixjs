@@ -11,25 +11,27 @@ audio en `audio/` y la ventana y la entrada en `backend/`.
 | archivo              | de qué se encarga |
 |----------------------|-------------------|
 | `window.c`           | `window` (el mismo objeto que `globalThis`), `innerWidth` / `innerHeight` del toml del juego, `location` (`http://localhost/`) |
-| `document.c`         | DOM mínimo: elementos, appendChild, getElementById, getElementsByTagName; los canvas agregados al documento son los que salen en pantalla |
+| `document.c`         | DOM mínimo: elementos, appendChild, getElementById, getElementsByTagName; los canvas agregados al documento son los que salen en pantalla; archivo índice de `document/` ([README](document/README.es.md)) |
 | `events.c`           | EventTarget, Event, KeyboardEvent, MouseEvent, CustomEvent; eventos despachados en la siguiente vuelta del loop |
 | `timer.c`            | setTimeout, setInterval, requestAnimationFrame, `performance.now()` (sobre `core/timer.c`) |
-| `canvas.c`           | HTMLCanvasElement: su framebuffer RGBA, width, height, getContext (un tipo de contexto por canvas); un canvas creado dentro de un hook `gpu-canvas` dibuja en la GPU (`gfx/gpu2d.c`) |
+| `canvas.c`           | HTMLCanvasElement: su framebuffer RGBA, width, height, getContext (un tipo de contexto por canvas); un canvas creado dentro de un hook `gpu-canvas` dibuja en la GPU (`gfx/gl/gpu2d.c`) |
 | `canvas/2d/`         | CanvasRenderingContext2D, un archivo por tema ([README](canvas/2d/README.es.md)) |
-| `webgl.c`            | WebGL 1 sobre OpenGL ES 2.0 (`gfx/gl.c`): cada canvas dibuja en su propio framebuffer. Archivo indice: une las partes de `webgl/` y se compila como uno ([README](webgl/README.es.md)) |
+| `webgl.c`            | WebGL 1 sobre OpenGL ES 2.0 (`gfx/gl/gl.c`): cada canvas dibuja en su propio framebuffer. Archivo indice: une las partes de `webgl/` y se compila como uno ([README](webgl/README.es.md)) |
 | `video.c`            | `__quixVideo` sobre `video/` (open, info, state, play, pause, close, volume, visible, `supported`); hasta 4 videos, el visible sale en pantalla |
-| `webgl_constants.h`  | constantes de WebGL 1, generadas por `tools/gen_gl.py` (no editar a mano) |
-| `image.c`            | Image / HTMLImageElement: decodifica al asignar `src`, load / error en la siguiente vuelta |
+| `webgl/constants/webgl1.h`, `webgl/constants/webgl2.h` | constantes de WebGL 1 y 2, generadas por `tools/gen_gl.py` (no editar a mano) |
+| `image/`             | Image / HTMLImageElement: `image.c` (el objeto de JS: `src`, tamaño, `complete`, `decode()`, load / error en la siguiente vuelta, y lo que pide el canvas) y `decode.c` (decodificar al momento o en el thread de trabajo) |
 | `blob.c`             | Blob y `URL.createObjectURL`: los bytes se quedan en C e Image y XHR leen la url `blob:` sin copias |
 | `xhr.c`              | XMLHttpRequest para los archivos locales del juego (texto, json, arraybuffer; `blob` da un ArrayBuffer); sin red |
 | `script.c`           | `<script>` agregados con appendChild, `document.currentScript`, DOMContentLoaded y load |
-| `audio.c`            | WebAudio sobre el mezclador de `audio/`: las nativas (`__quixAudio`) |
-| `webaudio.js`        | el grafo de WebAudio en JS (AudioContext, decodeAudioData, nodos de ganancia y panner) |
-| `navigator.c`        | `navigator` y `getGamepads()` (4 posiciones, mapeo "standard") |
-| `gamepads.js`        | `getGamepads()` en JS, sobre el estado que `navigator.c` lee del backend |
+| `module.c`           | `<script type="module">` (Construct 3): sus `import "x"` antes, una vez cada uno; el resto en su propia función; `export {}` vacío se ignora |
+| `audio/audio.c`            | WebAudio sobre el mezclador de `audio/`: las nativas (`__quixAudio`) |
+| `audio/webaudio.js`        | el grafo de WebAudio en JS (AudioContext, decodeAudioData, nodos de ganancia y panner) |
+| `navigator/navigator.c` | `navigator` y `getGamepads()` (4 posiciones, mapeo "standard") |
+| `navigator/gamepads.js` | `getGamepads()` en JS, sobre el estado que `navigator.c` lee del backend |
 | `nwjs.c`             | modo nw.js: las nativas de `fs` |
 | `nwjs/`              | el modo nw.js en JS, un archivo por módulo de Node: `require('fs')`, `path`, `events`, `os`, `nw.gui`, `process`, greenworks ([README](nwjs/README.es.md)) |
-| `quix.c`             | el objeto `quix`: `exit`, `pressKey`, `frame`, `backend`, `fixedStep`, `registerFont`, `hasFont`, `version`, `frameTime`, `achievementUnlocked`, `achievements`, `achievementsIcon`, `isGpuCanvas`, `collectGarbage`, `gcPressure` |
+| `quix/`                   | el objeto `quix`, una parte por grupo: `quix.c` (crearlo y lo básico: `exit`, `loading`, `frame`, `frameTime`, `backend`, `fixedStep`, `version`), `input.c` (`quix.input`), `gpu.c` (`quix.gpu`), `achievements.c` (`quix.achievements` y `quix.steam`), `storage.c` (`quix.storage`, el `localStorage` en disco), `state.c` (`quix.state`, los savestates), `fonts.c` (`quix.fonts`), `memory.c` (`quix.memory`) y `lan.c` (`quix.lan`); lo que comparten, en `common.h` |
+| `quix/trace_saves.c`, `quix/trace-saves.js` | `--trace-saves`: `quix.traceSave`, `quix.tracingSaves`, `quix.saves.isSave` y las funciones de partida que vigila (la guía: [docs/trace-saves.es.md](../../docs/trace-saves.es.md)) |
 | `console.c`          | `console` (log, info, warn, error...) y `print` |
 | `polyfill.c`         | ejecuta al arrancar las APIs escritas en JS de `polyfill/` |
 | `polyfill/`          | las APIs escritas en JS, una por archivo ([README](polyfill/README.es.md)) |
@@ -47,7 +49,7 @@ como JS y quixjs sigue siendo un solo programa, sin archivos que buscar.
 Va en C cuando:
 
 1. Toca algo nativo: la GPU (`webgl.c`, `canvas/2d`), archivos (`xhr.c`,
-   `image.c`), el audio de SDL (`audio.c`), el decodificador de video
+   `image.c`), el audio de SDL (`audio/audio.c`), el decodificador de video
    (`video.c`), los mandos (`navigator.c`) o las fuentes TTF
    (`quix.fonts.register`).
 2. Se llama muchas veces por frame: `drawImage`, `fillRect` o `drawElements`.
@@ -74,7 +76,7 @@ con una url `blob:`. `blob.c` guarda los bytes en C con un contador de
 referencias, así la url `blob:quix/N` de `createObjectURL` la pueden leer Image
 y XMLHttpRequest sin copiar los datos de vuelta a JS.
 
-Con el hook `rpgmaker-mv/decrypt-image-native` la imagen recibe la ruta
+Con el hook `rpgmaker-mv/load/decrypt-image-native` la imagen recibe la ruta
 cifrada, y quixjs la lee, la descifra (la clave de `$dataSystem`) y la
 decodifica en segundo plano: los bytes no pasan por el JS.
 

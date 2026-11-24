@@ -10,7 +10,7 @@
 // partidas (la unica donde el juego puede escribir: runtime/core/sandbox.c): quien
 // hace el port juega y copia los ids a sus [[achievements]].
 (function (N) {
-  var steam = N.g.quix.steam;   // lo crea runtime/binding/quix.c
+  var steam = N.g.quix.steam;   // lo crea runtime/binding/quix/quix.c
   var NOTES = N.SAVES_DIR ? N.SAVES_DIR + '/steam-achievements.txt' : null;
 
   function done(cb, v) {
@@ -47,7 +47,10 @@
     // contesta como un Steam sin DLC, sin nube y sin amigos
     isSteamRunning: yes,
     getSteamId: function () {
-      return { screenName: 'quixjs', accountId: 0, steamId: '0', isValid: 1 };
+      // screenName: [game] player del toml ("Master" sin el).
+      // staticAccountId (64 bits, como texto) y level: el plugin de Steam de
+      // Construct 3 los lee al cargar
+      return { screenName: steam.player || 'Master', accountId: 0, steamId: '0', staticAccountId: '0', level: 0, isValid: 1 };
     },
     getCurrentGameLanguage: function () {
       return 'english';

@@ -22,7 +22,7 @@
 #include <string.h>
 #include "window.h"
 #include "document.h"
-#include "navigator.h"
+#include "navigator/navigator.h"
 #include "core/app_context.h"
 
 void js_api_add_window(JSContext *ctx) {

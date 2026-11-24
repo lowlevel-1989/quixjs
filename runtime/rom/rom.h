@@ -60,7 +60,7 @@ void *rom_map(const char *path, size_t *len, size_t *delta);
 int rom_copy_dir(const char *dir);
 void rom_hide(const char *dir);
 
-// ---- lo que hace cada tipo de rom (rom_zip.c, rom_dir.c). rel: la ruta
+// ---- lo que hace cada tipo de rom (zip.c, dir.c). rel: la ruta
 // dentro del juego (desde root, sin "/" delante; "" el principio)
 typedef struct {
   uint8_t *(*read)(const char *rel, size_t *len);

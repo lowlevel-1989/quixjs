@@ -4,7 +4,7 @@ English | [Español](README.es.md)
 
 JavaScriptCore, WTF and bmalloc from WebKit (tag `webkitgtk-2.50.6` of
 https://github.com/WebKit/WebKit, JSCOnly port), with only the files needed
-to build JavaScriptCore. Built by `tools/build-jsc.sh`.
+to build JavaScriptCore. Built by `cmake/jsc.cmake`.
 
 ## Changes of quixjs
 
@@ -33,5 +33,5 @@ only removed or added.
 ## Licenses
 
 JavaScriptCore: LGPL-2.1 and BSD (each file says which). WTF and bmalloc:
-BSD. `tools/build-jsc.sh` copies them into `licenses/`, and they go with the
+BSD. `cmake/jsc/install.cmake` copies them into `licenses/`, and they go with the
 port and the release packages.

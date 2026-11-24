@@ -4,7 +4,7 @@ English | [Español](README.es.md)
 
 The screens of quixjs itself, the ones that are not the game: the menu of
 `--launcher` and the screens that it opens (Transfer Save, achievements). They
-come from tamatama (https://github.com/lowlevel-1989/tamatama): the menu of
+come from tamatama (https://github.com/lowlevel-1989/tamatama/tree/780b7e723f3dbe8a58bc54ed571f1518dac9191a): the menu of
 its `--menu` option (`src/shared/menu.c`) and its screens (`src/shared/screen.c`).
 
 The menu shows the title of the game (`[game] title`, or `[engine] name`) and
@@ -26,21 +26,26 @@ achievements. There is no frame rate option: the port sets `[engine] fps`.
 What changes in Options, Mods and Cheats is saved at once in
 `quixjs-settings.toml`, next to the config. Controls maps every button and
 stick of the gamepad and saves it in `controller.map`, the format of
-PortMaster (`backend/sdl/mapper.c`). With `[controls.buttons]` it asks Start,
-those buttons by the name the port gives them ("Confirm (A)") and always both
-sticks; the buttons it does not ask keep what they had. Select is asked always
-(Select + Start closes the game), and so are the D-pad, A and B, which this
-menu uses. The actions of `[controls.keys]` go last,
+PortMaster (`backend/sdl/mapper.c`). It always asks every button, in the
+order of the standard gamepad (Start, Select, the D-pad, A, B, X, Y, L1, R1,
+L2, R2...), and both sticks: the combos of quixjs (Select + Start, L1, R1, R2,
+X, Y, left and right) use them, and on some consoles they are in another
+order. With `[controls.buttons]` a button is shown by the name the port gives
+it ("Confirm (A)"). The actions of `[controls.keys]` go last,
 by their name, and are saved in `controller.keys`; with `[controls] screenshot =
 true` and `magnifier = true`, also Screenshot and Magnifier (a single button besides
 their combos).
 
 | file         | what it does |
 |--------------|--------------|
-| `launcher.c` | the menu: its options, the achievements, options and cheats screens, and what is chosen; after Transfer Save it reads the achievements again |
+| `launcher.h` | what the rest of quixjs uses: the menu, Controls, opening the screens and mounting the rom |
+| `common.h` | what the parts of the launcher share: the functions of each screen |
+| `launcher.c` | the menu: its options, with the colors of `[launcher]`, and what is chosen; after Transfer Save it reads the achievements again |
+| `screens.c` | the screens of the menu: Achievements, Options (with Reset achievements), Cheats and Mods |
+| `controls.c` | Controls: map the gamepad input by input and save it in `controller.map` |
 | `rom.c` | mount the rom (`[game] rom`) when the game starts; if the zip is compressed, the screen "preparing the game" with the percent while it is uncompressed once |
-| `settings.c` | `quixjs-settings.toml`: `show_fps`, `profile`, `fullscreen`, `vibration`, `cheats` and `mods`, and what choosing a cheat or a mod changes (also used by the Android menu, `platform/android/launcher.c`) |
-| `ui.c`       | draws a screen (logo, title, lines, a list that slides when it does not fit, a notice and the help) and waits for a choice: keyboard, the d-pad and stick of a controller, and `--script` |
+| `settings.c` | `quixjs-settings.toml`: `show_fps`, `profile`, `fullscreen`, `vibration`, `cheats` and `mods`, and what choosing a cheat or a mod changes (also used by the Android menu, `platform/android/menu.c`) |
+| `ui/`         | the own screens (inherited from tamatama): `ui.c` opens, builds and runs them (`ui_run`), `draw.c` draws them (logo, title, lines, the sliding list, the legend, the notice and the help) and `input.c` reads what is pressed (keyboard, d-pad and stick of the gamepad, `--script`); they share `common.h` |
 
 ## How it is drawn
 

@@ -1,0 +1,49 @@
+[game]
+rom       = "."
+width     = 64
+height    = 64
+
+[scripts]
+libs     = []
+includes = ["../lib/assert.js"]
+entry    = "main.js"
+
+# un hook de engines/ (engines/rpgmaker-mv/hooks/request-images-once.js)
+[hooks]
+"Game_Interpreter.requestImages" = "rpgmaker-mv/logic/request-images-once"
+"Game_Interpreter.prototype.skipBranch" = "rpgmaker-mv/logic/skip-branch-table"
+"Bitmap.prototype.adjustTone" = "rpgmaker-mv/render/adjust-tone"
+"Game_Map.prototype.refresh" = "rpgmaker-mv/logic/refresh-on-net-change"
+"Game_Actor.prototype.hasSkill" = "rpgmaker-mv/logic/has-skill-fast"
+"Game_BattlerBase.prototype.traits" = "rpgmaker-mv/logic/traits-cache"
+"Tilemap.prototype._sortChildren" = "rpgmaker-mv/render/sort-if-needed"
+"Game_Map.prototype.isAnyEventStarting" = "rpgmaker-mv/logic/any-event-starting"
+"Game_Map.prototype.isAnyEventStartingQuick" = "rpgmaker-mv/logic/any-event-starting-quick"
+"SceneManager.updateMain" = "rpgmaker-mv/logic/fluid-timestep-cap"
+"LZString.decompressFromBase64" = "rpgmaker-mv/load/lz-string-native"
+"Game_Interpreter.prototype.update" = "rpgmaker-mv/logic/interpreter-fast"
+"Spriteset_Map.prototype.update" = "rpgmaker-mv/extra/render/terrax-lights-only"
+"Game_Switches.prototype.value" = "rpgmaker-mv/logic/olivia-meta-fast"
+"Sprite_Character.prototype.update" = "rpgmaker-mv/render/skip-hidden-sprites"
+"Tilemap.prototype.update" = "rpgmaker-mv/render/tilemap-sprites-once-per-frame"
+"WindowLayer.prototype.renderWebGL" = "rpgmaker-mv/render/skip-empty-windowlayer"
+"Game_Event.prototype.update" = "rpgmaker-mv/logic/event-idle-fast"
+"Spriteset_Base.prototype.updateToneChanger" = "rpgmaker-mv/render/tone-filter-when-needed"
+"Game_Map.prototype.events" = "rpgmaker-mv/logic/events-cache"
+"Sprite.prototype.update" = "rpgmaker-mv/render/sprite-update-loop"
+"Scene_Map.prototype.create" = "rpgmaker/memory/gc-on-transition"
+"Scene_Base.prototype.terminate" = "rpgmaker-mv/memory/scene-release"
+"Scene_Battle.prototype.terminate" = "rpgmaker-mv/memory/battle-release"
+"DataManager.loadDataFile" = "rpgmaker-mv/load/lazy-data"
+"Window_EnemyVisualSelect.prototype.refresh" = "rpgmaker-mv/logic/yep-enemy-select-refresh"
+"DataManager.loadGame" = "rpgmaker-mv/port/loading-notice"
+"DataManager.setupNewGame" = "rpgmaker-mv/port/loading-notice"
+"Scene_Map.prototype.start" = "rpgmaker-mv/port/loading-notice"
+"Scene_Map.prototype.onMapLoaded" = "rpgmaker-mv/port/loading-notice"
+"Scene_Battle.prototype.createDisplayObjects" = "rpgmaker-mv/port/loading-notice"
+"Scene_Battle.prototype.start" = "rpgmaker-mv/port/loading-notice"
+"Scene_Boot.prototype.isReady" = "rpgmaker-mv/port/loading-notice"
+"Window_BattleStatus.prototype.refresh" = "rpgmaker-mv/logic/refresh-if-same-drawing"
+"Game_Follower.prototype.actor" = "rpgmaker-mv/logic/party-member-fast"
+"Game_Party.prototype.leader" = "rpgmaker-mv/logic/party-member-fast"
+"Scene_Map.prototype.updateButtonEvents" = "rpgmaker-mv/port/button-events-keys"

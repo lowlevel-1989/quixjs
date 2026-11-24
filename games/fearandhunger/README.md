@@ -24,7 +24,7 @@ Needs Fear & Hunger **1.4.1** for Windows (itch.io or Steam).
 | L1 / R1 | Previous / next character or page, in the menus |
 | (you choose it in Controls) | Torch |
 | (you choose it in Controls) | Phase |
-| Select + L1 | Magnifier: a box that enlarges; d-pad or sticks move it, R1 / L1 zoom, Y / X size, A centers, B closes |
+| Select + L1 | Magnifier: a box that enlarges; d-pad or sticks move it, R1 / L1 zoom, Y / X size, A centers, Start pins it (the gamepad goes back to the game) and unpins it, B closes |
 | Select + R1 | Screenshot (in `screenshots/`) |
 | Select + R2 | Back to the port menu |
 | Select + Start | Quit |
@@ -36,10 +36,10 @@ Mods (on): [rumble](mods/rumble/README.md) (vibration), [party-bars](mods/party-
 ```
 git clone https://github.com/lowlevel-1989/quixjs.git
 cd quixjs
-make PLATFORM=portmaster PORT=fearandhunger
+make portmaster PORT=fearandhunger
 ```
 
-It builds `fearandhunger.zip`.
+It builds `build/fearandhunger.zip`.
 
 ## Install
 

@@ -26,7 +26,7 @@
 // GAME. Un mensaje puede perderse o llegar dos veces: el juego manda el
 // estado entero cada vez, no cambios.
 //
-// Uso (runtime/binding/quix.c lo expone en JS):
+// Uso (runtime/binding/quix/quix.c lo expone en JS):
 //   lan_open("hexgl")         abre (el id del juego: solo entre el mismo)
 //   lan_update()              en cada imagen: lee lo que llega y anuncia
 //   lan_peers(...)            las consolas que se vieron hace poco

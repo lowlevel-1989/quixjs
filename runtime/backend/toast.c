@@ -21,6 +21,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "stb/stb_easy_font.h"
+#include "star.h"
 #include "toast.h"
 
 // Retro: rectangulos de bordes rectos y la letra de pixeles del launcher
@@ -100,8 +101,10 @@ int toast_render(const Toast *t, int px, Surface *out) {
   int scales[3] = { small, title_scale, small };
   int heights[3] = { 12 * small, 12 * title_scale, t->text[0] ? 12 * small : 0 };
   int text_wd = 0, text_h = 0;
+  // la estrella (hardcore) despues del titulo
+  int star = t->star ? (STAR_SIZE + STAR_GAP) * title_scale : 0;
   for (int i = 0; i < 3; i++) {
-    int w = text_w(lines[i], scales[i]);
+    int w = text_w(lines[i], scales[i]) + (i == 1 ? star : 0);
     if (w > text_wd) text_wd = w;
     text_h += heights[i];
   }
@@ -137,6 +140,12 @@ int toast_render(const Toast *t, int px, Surface *out) {
   for (int i = 0; i < 3; i++) {
     if (!heights[i]) continue;
     text(out, tx, ty, lines[i], scales[i], rgb[i]);
+    if (i == 1 && star) {
+      int s = scales[i], sx = tx + text_w(lines[i], s) + STAR_GAP * s, sy = ty - s;
+      for (int r = 0; r < STAR_SIZE; r++)
+        for (int c = 0; c < STAR_SIZE; c++)
+          if (STAR_ART[r][c] == 'X') fill(out, sx + c * s, sy + r * s, s, s, STAR_RGB);
+    }
     ty += heights[i];
   }
   // la barra: el fondo oscuro con un borde gris y lo hecho del color
@@ -157,8 +166,30 @@ static Toast    queue[TOAST_QUEUE];
 static int      queued = 0;
 static unsigned serial = 0;
 static double   busy_until = 0;
+static char     shown_group[16];   // el grupo del que se ve (o "")
 
 void toast_push(const Toast *t) {
+  // de un grupo (los savestates): fuera los suyos que esperaban; si el que se
+  // ve es de su grupo, este lo sustituye ya (el primero de la cola, sin
+  // esperar). Pulsar varias veces no deja una fila de avisos viejos
+  if (t->group[0]) {
+    for (int i = 0; i < queued;) {
+      if (strcmp(queue[i].group, t->group) == 0) {
+        memmove(queue + i, queue + i + 1, sizeof queue[0] * (size_t)(queued - i - 1));
+        queued--;
+      } else {
+        i++;
+      }
+    }
+    if (busy_until && strcmp(shown_group, t->group) == 0 && queued < TOAST_QUEUE) {
+      memmove(queue + 1, queue, sizeof queue[0] * (size_t)queued);
+      queue[0] = *t;
+      queue[0].replaces = 1;
+      queued++;
+      busy_until = 0;
+      return;
+    }
+  }
   // un contador ("3/12") que aun espera en la cola: el nuevo lo cambia, y
   // asi no salen uno detras de otro todos los que subio
   for (int i = 0; t->goal > 0 && i < queued; i++) {
@@ -177,6 +208,7 @@ void toast_tick(Backend *backend, double now_ms) {
   if (!queued || !backend) return;
   backend->toast = queue[0];
   backend->toast.serial = ++serial;
+  snprintf(shown_group, sizeof shown_group, "%s", queue[0].group);
   memmove(queue, queue + 1, sizeof queue[0] * (size_t)--queued);
   busy_until = now_ms + TOAST_MS + 300;   // un respiro entre uno y otro
 }
@@ -184,4 +216,5 @@ void toast_tick(Backend *backend, double now_ms) {
 void toast_clear(void) {
   queued = 0;
   busy_until = 0;
+  shown_group[0] = 0;
 }

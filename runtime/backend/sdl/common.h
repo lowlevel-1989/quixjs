@@ -28,15 +28,15 @@
 #include <time.h>
 #include <string.h>
 #include "core/keymap.h"
-#include "core/trace.h"
-#include "gfx/font.h"
-#include "gfx/gl.h"
-#include "gfx/gl_state.h"
-#include "gfx/driver.h"
-#include "backend/sdl/backend.h"
+#include "core/debug/trace.h"
+#include "gfx/soft/font.h"
+#include "gfx/gl/gl.h"
+#include "gfx/gl/state.h"
+#include "gfx/gl/driver.h"
+#include "backend/sdl/sdl.h"
 #include "backend/toast.h"
 #include "platform/platform.h"
-#include "shaders.h"   // runtime/shaders, generado por tools/embed_shaders.py
+#include "shaders.h"   // runtime/gfx/gl/shaders, generado por tools/embed_shaders.py
 
 #define RESIZABLE_DELAY 30
 // Ventana mas grande que la pantalla (sway: el juego de 816x624 en una
@@ -55,7 +55,7 @@ typedef struct {
 #define PRESENT_MAX_LAYERS 8
 #define SHOWN_MAX 64
 
-// Una imagen para el thread que presenta (o, sin el, para gpu_present)
+// Una imagen para el thread que presenta (o, sin el, para gpu_driver_present)
 typedef struct {
   PresentLayer layers[PRESENT_MAX_LAYERS];
   int          n, ww, wh;
@@ -66,7 +66,7 @@ typedef struct {
   Toast        toast;
 } PresentJob;
 
-// Sin el thread: la imagen que el driver presenta (gfx/driver.h, gpu_present)
+// Sin el thread: la imagen que el driver presenta (gfx/gl/driver.h, gpu_driver_present)
 typedef struct {
   GpuFrame    base;         // primero: el driver solo ve esto
   PresentJob  job;
@@ -135,7 +135,7 @@ typedef struct SDLPlatformData {
   int                 thr_slow;     // cambios de imagen seguidos que tardaron de mas
   int                 thr_throttled;
   PresentJob          job;          // la imagen entregada
-  // sin thread: las imagenes para gpu_present (el driver puede guardar la
+  // sin thread: las imagenes para gpu_driver_present (el driver puede guardar la
   // anterior: se alternan dos) y la marca de la GPU de la ultima que se
   // mostro (su textura vuelve al juego)
   SdlFrame            frames[2];

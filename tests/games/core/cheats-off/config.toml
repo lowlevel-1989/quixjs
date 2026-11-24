@@ -1,0 +1,36 @@
+[game]
+# la firma de los datos de la partida usa el id del juego (main.js la trae hecha)
+id        = "cheats-test"
+rom       = "."
+width     = 320
+height    = 240
+
+[scripts]
+libs     = []
+includes = ["../lib/assert.js"]
+entry    = "main.js"
+
+# sin fichero: cada vez empiezan sin conseguir
+[saves]
+achievements = ""
+
+[symbols]
+encounters = "path:$gameSystem._encounterEnabled"
+gold       = "path:game.gold"
+
+[[achievements]]
+id         = "rich"
+title      = "Rich"
+conditions = ["gold >= 100"]
+
+# no esta activo (no hay quixjs-settings.toml)
+[[cheat]]
+id   = "no_encounters"
+name = "No random encounters"
+set  = { encounters = false }
+
+# la partida para los trucos: los hooks de RPG Maker (quix.playthrough)
+[hooks]
+"DataManager.createGameObjects" = "rpgmaker/port/playthrough-new"
+"DataManager.makeSaveContents" = "rpgmaker/port/playthrough-save"
+"DataManager.extractSaveContents" = "rpgmaker/port/playthrough-load"

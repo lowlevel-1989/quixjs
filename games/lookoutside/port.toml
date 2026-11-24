@@ -4,7 +4,7 @@
 # ([engine], [game], [saves], [scripts]) salio de quixjs --gen-config sobre
 # Look Outside (RPG Maker MZ 1.8.1, GOG), revisada a mano; despues, los
 # hooks. Sirve en cualquier sitio donde corre quixjs, con el juego copiado en
-# gamedata/. [portmaster] es lo que pide PortMaster (make PLATFORM=portmaster
+# gamedata/. [portmaster] es lo que pide PortMaster (make portmaster
 # PORT=lookoutside genera con ella su port.json, su gameinfo.xml y el script
 # .sh del port).
 
@@ -22,7 +22,7 @@ fps = 60
 
 [game]
 title     = "Look Outside"
-version   = "0.1.0"           # la del port
+version   = "0.1.1"           # la del port
 id        = "look_outside"
 # la carpeta del juego (la que tiene index.html), copiada como gamedata/; MZ
 # no tiene www/
@@ -65,17 +65,19 @@ availability = "paid"
 # ---------- hooks ----------
 # Los de RPG Maker MZ (runtime/engines/rpgmaker-mz/hooks.toml); lo que hace
 # cada uno, en runtime/engines/rpgmaker-mz:
-#   - effekseer-no-wasm: sin WebAssembly, Effekseer no arranca y el juego se
+#   - load/effekseer-wasm-off: sin WebAssembly, Effekseer no arranca y el juego se
 #     quedaba en negro
 #   - color-filter-identity-off: los ColorFilter en neutro no se dibujan
 #   - menu-blur-once: el fondo desenfocado de los menus, una vez
-#   - no-vao-bind: PixiJS sin VAO, sin rehacer la geometria en cada bind
+#   - render/vao-bind-off: PixiJS sin VAO, sin rehacer la geometria en cada bind
 #   - touch-ui-off: sin los botones tactiles en pantalla
 #   - decrypt-image-native: las imagenes cifradas (.png_) en C, por su ruta
 #   - battle-images-release y gc-on-transition: lo de cada batalla se suelta
 #     al terminarla
 [hooks]
 engine = "rpgmaker-mz"
+# los savestates (Select + X guarda, Select + Y carga): probados en este juego
+"Scene_Boot.prototype.start" = "rpgmaker/extra/port/savestate"
 # Look Outside: un plugin del juego borra cada segundo un canvas "refresher"
 # del index.html de nw.js; en quixjs no existe y lanzaba un error cada
 # segundo. La funcion no hace nada mas: fuera
@@ -89,7 +91,7 @@ screenshot = true
 magnifier  = true
 
 # lo que hace cada boton en el juego, con los nombres de su Mano_InputConfig:
-# Controls los pide por su nombre (y siempre las dos palancas)
+# Controls (que pide todos los botones) los muestra con su nombre
 [controls.buttons]
 dpup          = "Move up"
 dpdown        = "Move down"

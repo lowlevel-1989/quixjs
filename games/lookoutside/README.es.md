@@ -23,20 +23,25 @@ Necesita Look Outside **2.3** para Windows (GOG o Steam).
 | X | Dash (correr) |
 | Y | Menu (menú) |
 | L1 / R1 | Next / Prev: personaje o página siguiente / anterior, en los menús |
-| Select + L1 | Lupa: un cuadro que amplía; la cruceta o las palancas lo mueven, R1 / L1 zoom, Y / X tamaño, A centra, B la cierra |
+| Select + L1 | Lupa: un cuadro que amplía; la cruceta o las palancas lo mueven, R1 / L1 zoom, Y / X tamaño, A centra, Start la fija (el mando vuelve al juego) y la desfija, B la cierra |
+| Select + X / Y | Savestate: guardar / cargar (en el mapa; no en hardcore) |
+| Select + izquierda / derecha | Ranura del savestate (1 a 4) |
 | Select + R1 | Captura de pantalla (en `screenshots/`) |
 | Select + R2 | Volver al menú del port |
 | Select + Start | Salir |
+
+Los savestates (Select + X / Y) son experimentales, en fase temprana: sigue
+guardando también con el juego.
 
 ## Compilar
 
 ```
 git clone https://github.com/lowlevel-1989/quixjs.git
 cd quixjs
-make PLATFORM=portmaster PORT=lookoutside
+make portmaster PORT=lookoutside
 ```
 
-Crea `lookoutside.zip`.
+Construye `build/lookoutside.zip`.
 
 ## Instalar
 

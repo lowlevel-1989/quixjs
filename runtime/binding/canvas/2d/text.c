@@ -18,7 +18,7 @@
 
 // font, textAlign, textBaseline, measureText, fillText, strokeText
 //
-// El texto se dibuja con SDL_ttf (gfx/font.c). De momento con el color de
+// El texto se dibuja con SDL_ttf (gfx/soft/font.c). De momento con el color de
 // fillStyle/strokeStyle: los gradientes y patrones usan el color del primer
 // stop o negro (TODO).
 
@@ -27,10 +27,10 @@
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
-#include "gfx/font.h"
+#include "gfx/soft/font.h"
 #include "context2d.h"
 
-double context2d_parse_font_size(const char *font) {
+double ctx2d_parse_font_size(const char *font) {
   // busca el primer "<numero>px" o "<numero>pt"
   for (const char *p = font; *p; p++) {
     if (!isdigit((unsigned char)*p) && *p != '.') continue;
@@ -58,7 +58,7 @@ JSValue js_ctx2d_set_font(JSContext *ctx, JSValueConst this_val, JSValueConst va
   if (!c) return JS_EXCEPTION;
   const char *f = JS_ToCString(ctx, val);
   if (!f) return JS_EXCEPTION;
-  double size = context2d_parse_font_size(f);
+  double size = ctx2d_parse_font_size(f);
   if (size > 0) {
     Context2DState *s = CTX2D_STATE(c);
     snprintf(s->font, sizeof(s->font), "%s", f);

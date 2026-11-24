@@ -1,4 +1,4 @@
-# quixjs 0.5.3
+# quixjs 0.6.0
 
 English | [Español](README.es.md)
 
@@ -32,11 +32,11 @@ the player copies them from their own copy.
 
 ```
 make
-./quixjs --gen-config path/to/game > mygame.toml   # describe the game
-./quixjs -c mygame.toml --launcher                  # play (with the menu first)
+./build/quixjs --gen-config path/to/game > mygame.toml   # describe the game
+./build/quixjs -c mygame.toml --launcher                  # play (with the menu first)
 ```
 
-Each game is described by one toml file (`config.toml` by default; a port uses
+Each game is described by one toml file, passed with `-c` (a port uses
 `port.toml`): its folder, its size, its scripts, its hooks (changes to
 functions of the game) and its achievements. The options and the toml:
 [docs/usage.md](docs/usage.md).
@@ -53,6 +53,7 @@ Using a toml file to configure each game is inspired by bogodroid
 | [Features](docs/features.md) | what quixjs supports |
 | [Compatibility](docs/compatibility.md) | which browser APIs work and which do not |
 | [Tests](docs/tests.md) | the test games, `--script` and the debug console |
+| [Finding the save](docs/trace-saves.md) | `--trace-saves`: where a game saves and where the playthrough hooks go |
 | [JavaScript engine](docs/javascript-engine.md) | why JavaScriptCore |
 | [Benchmark](docs/benchmark.md) | h5bench (`make bench`) and how to profile a game |
 | [Code](runtime/README.md) | what each folder and file of the runtime does |

@@ -24,7 +24,7 @@ What quixjs can do today, in short. The state of each browser API is in
 - hooks in the toml of the game (`[hooks]`): change a function of the game without
   touching its files. `gpu-canvas` draws a 2d canvas on the GPU (the light masks
   of RPG Maker), `skip` and `once-per-frame`
-  ([runtime/hooks](../runtime/hooks/README.md))
+  ([runtime/game/hooks](../runtime/game/hooks/README.md))
 - `[engine] fps` (10 to 60) and `vsync`: a port can draw at 30 fps while RPG
   Maker keeps 60 updates per second. On a handheld the battery is a priority:
   that is why ports run at 30 fps by default (half the frames to draw, the CPU
@@ -45,22 +45,29 @@ What quixjs can do today, in short. The state of each browser API is in
   game and a small "quixjs" signature: Play, Achievements, Mods, Options and
   Cheats, and below them, always visible, Transfer Save, Controls and Exit
   (each option only when the game uses it).
-  It comes from tamatama (https://github.com/lowlevel-1989/tamatama), an
+  It comes from tamatama (https://github.com/lowlevel-1989/tamatama/tree/780b7e723f3dbe8a58bc54ed571f1518dac9191a), an
   earlier project of the same author
   ([runtime/launcher](../runtime/launcher/README.md))
 - Transfer Save: passes the saves to another device on the same network, without
   opening ports, with the achievements ([runtime/transfer](../runtime/transfer/README.md))
 - achievements, defined in the toml of the game, with a notice when one is
   unlocked and, in RPG Maker MV, an Achievements option in the game's own
-  menu ([runtime/achievements](../runtime/achievements/README.md))
+  menu ([runtime/game/achievements](../runtime/game/achievements/README.md))
+- a hardcore mode for the achievements, as in RetroAchievements: no cheats, and
+  what is unlocked in it has a gold star
+- savestates (experimental, early stage) in RPG Maker MV and MZ games,
+  Construct 3 and L'Abbaye des Morts: Select + X saves the moment, Select + Y
+  loads it, Select + left / right changes the slot (4); not in hardcore mode,
+  and loading one takes the hardcore achievements away from that playthrough
+  (`quix.state`, so other engines can have them too)
 - cheats (`[[cheat]]`), turned on in the launcher; a playthrough played with
-  one gets no achievements ([runtime/cheats](../runtime/cheats/README.md))
+  one gets no achievements ([runtime/game/cheats](../runtime/game/cheats/README.md))
 - `--debug` and `tools/console.py`: a debug console to press keys, take
   screenshots, run JS and pause the game (inherited from tamatama)
 - `--script`: keys and screenshots at given frames, to automate tests
 - headless mode (`dummy`) with a fixed clock and screenshots, for tests
-- 46 test games in `games/tests`, most of them also runnable in a browser
-- PortMaster: `make PLATFORM=portmaster` builds a port for aarch64 handhelds
+- 46 test games in `tests/games`, most of them also runnable in a browser
+- PortMaster: `make portmaster` builds a port for aarch64 handhelds
 
 Not yet: mouse and touch, saving localStorage to disk, antialiasing in
 canvas 2d, `toDataURL`. Status of each API:

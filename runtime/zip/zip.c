@@ -22,15 +22,18 @@
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
 #endif
+#include <ctype.h>
 #include <fcntl.h>
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>
 #include <sys/types.h>
 #include <time.h>
 #include <unistd.h>
 #include <zlib.h>
 #include "zip.h"
 #include "asar.h"
+#include "core/sandbox.h"
 
 struct Zip {
   char      path[1024];
@@ -39,10 +42,12 @@ struct Zip {
   int       count;
   int      *table;      // busqueda por nombre: indices + 1 (0: libre)
   int       table_size;
+  int      *table_ci;    // la misma, por el nombre sin mayusculas (zip_find)
 };
 
 static uint16_t le16(const uint8_t *p) { return (uint16_t)(p[0] | p[1] << 8); }
 static uint32_t le32(const uint8_t *p) { return (uint32_t)p[0] | (uint32_t)p[1] << 8 | (uint32_t)p[2] << 16 | (uint32_t)p[3] << 24; }
+static uint64_t le64(const uint8_t *p) { return (uint64_t)le32(p) | (uint64_t)le32(p + 4) << 32; }
 
 static int read_at(int fd, void *buf, size_t n, uint64_t off) {
   uint8_t *p = buf;
@@ -59,6 +64,13 @@ static int read_at(int fd, void *buf, size_t n, uint64_t off) {
 static unsigned hash(const char *s) {
   unsigned h = 2166136261u;
   for (; *s; s++) h = (h ^ (unsigned char)*s) * 16777619u;
+  return h;
+}
+
+// la de un nombre sin mayusculas (solo las ASCII)
+static unsigned hash_ci(const char *s) {
+  unsigned h = 2166136261u;
+  for (; *s; s++) h = (h ^ (unsigned char)tolower((unsigned char)*s)) * 16777619u;
   return h;
 }
 
@@ -90,7 +102,7 @@ static Zip *open_asar(const char *path, int fd, const uint8_t head[16]) {
 }
 
 Zip *zip_open(const char *path) {
-  int fd = open(path, O_RDONLY | O_CLOEXEC);
+  int fd = sandbox_open(path, O_RDONLY, 0, "zip");
   if (fd < 0) return NULL;
   off_t size = lseek(fd, 0, SEEK_END);
   uint8_t head[16];
@@ -117,20 +129,44 @@ Zip *zip_open(const char *path) {
     fail(path, "not a zip (no end of central directory)");
     return NULL;
   }
-  int count = le16(buf + eocd + 10);
-  uint32_t cd_size = le32(buf + eocd + 12), cd_off = le32(buf + eocd + 16);
-  free(buf);
+  uint64_t count = le16(buf + eocd + 10);
+  uint64_t cd_size = le32(buf + eocd + 12), cd_off = le32(buf + eocd + 16);
   // un zip pegado al final de otro archivo (un Game.exe de nw.js con el juego
   // dentro): sus posiciones cuentan desde donde empieza el zip
   uint64_t eocd_at = (uint64_t)(size - (off_t)tail) + (uint64_t)eocd;
-  uint64_t base = eocd_at >= (uint64_t)cd_off + cd_size ? eocd_at - cd_off - cd_size : 0;
-  cd_off += (uint32_t)base;
-  if (count == 0xffff || cd_off == 0xffffffffu) {
+  uint64_t end_at = eocd_at;   // donde acaba el directorio central
+  // ZIP64: el fin del directorio con los numeros de 64 bits, que apunta su
+  // localizador (20 bytes antes). Lo escriben algunas herramientas aunque el
+  // zip sea pequeno (el package.nw de Million Monster Militia)
+  if (eocd >= 20 && le32(buf + eocd - 20) == 0x07064b50) {
+    uint64_t rec_at = le64(buf + eocd - 20 + 8);
+    uint64_t loc_at = eocd_at - 20;
+    uint8_t rec[56];
+    // su posicion cuenta desde donde empieza el zip: se busca justo antes
+    // del localizador si no esta donde dice
+    if (loc_at >= 56 && read_at(fd, rec, 56, loc_at - 56) == 0 && le32(rec) == 0x06064b50) {
+      end_at = loc_at - 56;
+    } else if (read_at(fd, rec, 56, rec_at) == 0 && le32(rec) == 0x06064b50) {
+      end_at = rec_at;
+    } else {
+      free(buf);
+      close(fd);
+      fail(path, "zip64: cannot read its end of central directory");
+      return NULL;
+    }
+    count = le64(rec + 32);
+    cd_size = le64(rec + 40);
+    cd_off = le64(rec + 48);
+  }
+  free(buf);
+  uint64_t base = end_at >= cd_off + cd_size ? end_at - cd_off - cd_size : 0;
+  cd_off += base;
+  if (count > 1000000 || cd_size > ((uint64_t)1 << 31)) {
     close(fd);
-    fail(path, "zip64 is not supported (a zip over 4 GB or with over 65535 files)");
+    fail(path, "its central directory is too big");
     return NULL;
   }
-  uint8_t *cd = malloc(cd_size ? cd_size : 1);
+  uint8_t *cd = malloc(cd_size ? (size_t)cd_size : 1);
   if (!cd || read_at(fd, cd, cd_size, cd_off) != 0) {
     free(cd);
     close(fd);
@@ -142,7 +178,7 @@ Zip *zip_open(const char *path) {
   snprintf(z->path, sizeof z->path, "%s", path);
   z->fd = fd;
   size_t at = 0;
-  for (int i = 0; i < count && at + 46 <= cd_size; i++) {
+  for (uint64_t i = 0; i < count && at + 46 <= cd_size; i++) {
     const uint8_t *h = cd + at;
     if (le32(h) != 0x02014b50) break;
     ZipEntry *e = &z->entries[z->count];
@@ -152,8 +188,23 @@ Zip *zip_open(const char *path) {
     e->comp_size = le32(h + 20);
     e->size = le32(h + 24);
     uint16_t nlen = le16(h + 28), xlen = le16(h + 30), clen = le16(h + 32);
-    uint64_t local = le32(h + 42) + base;
-    if (at + 46 + nlen > cd_size) break;
+    uint64_t local = le32(h + 42);
+    if (at + 46 + nlen + xlen > cd_size) break;
+    // ZIP64: lo que no cabe en 32 bits (0xffffffff) esta en el extra 0x0001,
+    // en este orden: tamano, tamano comprimido, posicion de la cabecera local
+    for (size_t x = 0; x + 4 <= xlen;) {
+      const uint8_t *f = h + 46 + nlen + x;
+      uint16_t id = le16(f), flen = le16(f + 2);
+      if (x + 4 + flen > xlen) break;
+      if (id == 0x0001) {
+        size_t o = 4;
+        if (e->size == 0xffffffffu && o + 8 <= 4u + flen) { e->size = le64(f + o); o += 8; }
+        if (e->comp_size == 0xffffffffu && o + 8 <= 4u + flen) { e->comp_size = le64(f + o); o += 8; }
+        if (local == 0xffffffffu && o + 8 <= 4u + flen) local = le64(f + o);
+      }
+      x += 4u + flen;
+    }
+    local += base;
     e->name = malloc(nlen + 1u);
     memcpy(e->name, h + 46, nlen);
     e->name[nlen] = 0;
@@ -180,10 +231,16 @@ static void build_table(Zip *z) {
   z->table_size = 16;
   while (z->table_size < z->count * 2) z->table_size *= 2;
   z->table = calloc((size_t)z->table_size, sizeof(int));
+  z->table_ci = calloc((size_t)z->table_size, sizeof(int));
+  unsigned mask = (unsigned)(z->table_size - 1);
   for (int i = 0; i < z->count; i++) {
-    unsigned k = hash(z->entries[i].name) & (unsigned)(z->table_size - 1);
-    while (z->table[k]) k = (k + 1) & (unsigned)(z->table_size - 1);
+    unsigned k = hash(z->entries[i].name) & mask;
+    while (z->table[k]) k = (k + 1) & mask;
     z->table[k] = i + 1;
+    if (!z->table_ci) continue;
+    k = hash_ci(z->entries[i].name) & mask;
+    while (z->table_ci[k]) k = (k + 1) & mask;
+    z->table_ci[k] = i + 1;
   }
 }
 
@@ -192,6 +249,7 @@ void zip_close(Zip *z) {
   for (int i = 0; i < z->count; i++) free(z->entries[i].name);
   free(z->entries);
   free(z->table);
+  free(z->table_ci);
   close(z->fd);
   free(z);
 }
@@ -207,6 +265,15 @@ const ZipEntry *zip_find(const Zip *z, const char *name) {
   while (z->table[k]) {
     const ZipEntry *e = &z->entries[z->table[k] - 1];
     if (strcmp(e->name, name) == 0) return e;
+    k = (k + 1) & (unsigned)(z->table_size - 1);
+  }
+  // sin distinguir mayusculas, como en Windows (donde se hacen los juegos):
+  // Muffles' Life Sentence pide img/pictures/Leaf.rpgmvp y trae leaf.rpgmvp
+  if (!z->table_ci) return NULL;
+  k = hash_ci(name) & (unsigned)(z->table_size - 1);
+  while (z->table_ci[k]) {
+    const ZipEntry *e = &z->entries[z->table_ci[k] - 1];
+    if (strcasecmp(e->name, name) == 0) return e;
     k = (k + 1) & (unsigned)(z->table_size - 1);
   }
   return NULL;

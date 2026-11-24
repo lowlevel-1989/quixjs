@@ -32,7 +32,7 @@
 // el tamano de letra del titulo, que el backend saca del alto de la ventana.
 
 #include "backend.h"
-#include "gfx/surface.h"
+#include "gfx/soft/surface.h"
 
 // Dibuja la tarjeta en una superficie nueva (RGBA, alfa normal). 0 si va bien.
 int toast_render(const Toast *t, int px, Surface *out);

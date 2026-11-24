@@ -19,7 +19,7 @@
 #pragma once
 
 #include "js/js.h"
-#include "gfx/surface.h"
+#include "gfx/soft/surface.h"
 
 // HTMLCanvasElement: cada canvas tiene su framebuffer RGBA en memoria.
 struct WebGLCtx;
@@ -31,7 +31,7 @@ typedef struct {
   JSValue contextgl;   // JS_UNDEFINED hasta getContext("webgl")
   struct WebGLCtx *webgl;   // con WebGL: su framebuffer se lee a surface
   int     dirty;       // el contexto 2d dibujo desde que se mostro (subir a la GPU)
-  // hook gpu-canvas: el contexto 2d dibuja en la GPU (gfx/gpu2d.c)
+  // hook gpu-canvas: el contexto 2d dibuja en la GPU (gfx/gl/gpu2d.c)
   int     gpu_wanted;  // se creo dentro de una funcion con el hook
   struct Gpu2D *gpu;   // su textura; NULL hasta el primer dibujo (o si no se puede)
   int     cpu_stale;   // surface no tiene lo ultimo dibujado en la GPU
@@ -47,7 +47,7 @@ JSValue js_create_canvas_context(JSContext *ctx, JSValueConst canvas);
 void    context2d_reset(JSContext *ctx, JSValueConst context2d);
 
 // Superficie de un origen de drawImage/createPattern (canvas o imagen).
-const Surface *js_get_image_source(JSContext *ctx, JSValueConst val);
+const Surface *js_canvas_image_source(JSContext *ctx, JSValueConst val);
 
 // gpu-canvas. Los canvas creados mientras canvas_gpu_scope > 0 dibujan en la
 // GPU (lo usa el hook gpu-canvas de [hooks]).

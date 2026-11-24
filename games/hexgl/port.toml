@@ -16,7 +16,7 @@ fps     = 60
 
 [game]
 title     = "HexGL"
-version   = "0.1.0"           # la del port
+version   = "1.0.0"           # la del port
 id        = "hexgl"
 # la rom: el zip del juego, tal cual se descarga de GitHub, junto a este
 # port.toml. game_dir: donde empieza el juego dentro de la rom (la carpeta del
@@ -71,7 +71,15 @@ includes = [
   "bkcore/hexgl/CameraChase.js",
   "bkcore/hexgl/Gameplay.js",
   "bkcore/hexgl/tracks/Cityscape.js",
-  "bkcore/hexgl/HexGL.js"
+  "bkcore/hexgl/HexGL.js",
+  # el menu del port (games/hexgl/scripts/menu/, en el zip junto a port.toml): sus
+  # partes, en orden; entry.js las usa
+  "../scripts/menu/settings.js",
+  "../scripts/menu/dom.js",
+  "../scripts/menu/draw.js",
+  "../scripts/menu/screens.js",
+  "../scripts/menu/race.js",
+  "../scripts/menu/input.js"
 ]
 entry    = "../entry.js"   # games/hexgl/entry.js (en el zip, junto a port.toml)
 

@@ -16,7 +16,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-// Entregar una imagen: con el thread o sin el (gpu_present y el Presenter
+// Entregar una imagen: con el thread o sin el (gpu_driver_present y el Presenter
 // del driver), repintar durante una carga y las tres entradas del backend
 // (present_layers, present y present_gl).
 // Parte de backend/sdl.c, que une las partes en orden y se compila como
@@ -24,7 +24,7 @@
 
 #include "common.h"
 
-// Lo que el backend hace con una imagen (gfx/driver.h, Presenter)
+// Lo que el backend hace con una imagen (gfx/gl/driver.h, Presenter)
 
 // la CPU espera a que la GPU termine lo dibujado en el canvas WebGL (otro
 // contexto) antes de leerlo: con libmali no basta con mandarlo (gl_fence),
@@ -37,11 +37,11 @@ static void frame_wait(GpuFrame *g) {
   f->job.fence = NULL;
 }
 
-// Con el contexto del juego actual (gfx/driver.h, one_context): dibuja la
+// Con el contexto del juego actual (gfx/gl/driver.h, one_context): dibuja la
 // pantalla en el, guardando su estado y devolviendolo despues. 0 si ese
 // contexto no es el de la ventana (WebGL con su propia ventana oculta)
 static int one_context(SDLPlatformData *data) {
-  if (!gpu_driver()->one_context || !gl_available()) return 0;
+  if (!gpu_driver_get()->one_context || !gl_available()) return 0;
   gl_make_current();
   return SDL_GL_GetCurrentWindow() == data->window;
 }
@@ -203,7 +203,7 @@ static void sdl_present_layers(Backend* backend, const PresentLayer *layers, int
       gl_fence_wait_cpu(data->shown_fence);
       data->shown_fence = NULL;
     }
-    gpu_present(&sdl_presenter, &f->base);   // cuando se ve: lo decide el driver
+    gpu_driver_present(&sdl_presenter, &f->base);   // cuando se ve: lo decide el driver
   }
 
   if (data->frames_until_resizable > 0 && --data->frames_until_resizable == 0) {

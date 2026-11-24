@@ -1,0 +1,4 @@
+# reader: el boton "Reader" (R1 en Controls) abre los textos de la pantalla
+# con letra grande y normal, encima del juego. Ver README.md. Las partes, en
+# este orden (cada una, en su archivo)
+scripts = ["text.js", "scan.js", "view.js", "screens.js", "reader.js"]

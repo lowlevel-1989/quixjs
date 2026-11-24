@@ -31,7 +31,7 @@ struct Decoder {
   float             *tmp;   // CHUNK frames con los canales del archivo
 };
 
-static const DecoderKind *const kinds[] = { &vorbis_decoder, &mp3_decoder, &wav_decoder };
+static const DecoderKind *const kinds[] = { &vorbis_decoder, &mp3_decoder, &wav_decoder, &webm_decoder };
 
 Decoder *decoder_open(const uint8_t *data, size_t len) {
   if (!data || !len) return NULL;

@@ -45,7 +45,7 @@ echo "not a save" > "$DIR/send/save/notes.txt"
 # quixjs-achievements.txt en la carpeta de las partidas): el que llega pisa
 # al que habia. El que envia juega una vez y consigue "played"; el que recibe
 # tiene uno que no es un archivo de logros
-./quixjs -b dummy -c "$DIR/send/config.toml" > "$DIR/play.log" 2>&1
+./build/quixjs -b dummy -c "$DIR/send/config.toml" > "$DIR/play.log" 2>&1
 echo "achievements of the receiver" > "$DIR/receive/quixjs-achievements.txt"
 # las del que recibe pasan a ser el backup
 echo "old slot 1" > "$DIR/receive/save/file1.rpgsave"
@@ -77,10 +77,10 @@ cat > "$DIR/send.keys" <<KEYS
 KEYS
 
 export QUIXJS_TRANSFER_HOSTS=127.0.0.1
-./quixjs -b dummy --launcher -c "$DIR/receive/config.toml" --script "$DIR/receive.keys" > "$DIR/receive.log" 2>&1 &
+./build/quixjs -b dummy --launcher -c "$DIR/receive/config.toml" --script "$DIR/receive.keys" > "$DIR/receive.log" 2>&1 &
 receiver=$!
 sleep 0.3
-./quixjs -b dummy --launcher -c "$DIR/send/config.toml" --script "$DIR/send.keys" > "$DIR/send.log" 2>&1
+./build/quixjs -b dummy --launcher -c "$DIR/send/config.toml" --script "$DIR/send.keys" > "$DIR/send.log" 2>&1
 sent=$?
 wait $receiver
 received=$?

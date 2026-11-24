@@ -29,9 +29,9 @@
 //   text.c       font, textAlign, measureText, fillText
 
 #include "js/js.h"
-#include "gfx/surface.h"
-#include "gfx/paint.h"
-#include "gfx/raster.h"
+#include "gfx/soft/surface.h"
+#include "gfx/soft/paint.h"
+#include "gfx/soft/raster.h"
 #include "binding/canvas.h"
 
 // Profundidad maxima de save(). Los save() de mas se cuentan para que los
@@ -80,8 +80,8 @@ Surface   *context2d_surface(JSContext *ctx, Context2D *c);
 void       context2d_draw_params(Context2D *c, DrawParams *dp);
 
 // state.c
-void    context2d_state_default(Context2DState *s);
-void    context2d_state_release(JSRuntime *rt, Context2DState *s);
+void    ctx2d_state_default(Context2DState *s);
+void    ctx2d_state_release(JSRuntime *rt, Context2DState *s);
 JSValue js_ctx2d_save(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv);
 JSValue js_ctx2d_restore(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv);
 JSValue js_ctx2d_reset(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv);
@@ -143,4 +143,4 @@ JSValue js_ctx2d_set_font(JSContext *ctx, JSValueConst this_val, JSValueConst va
 JSValue js_ctx2d_measureText(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv);
 JSValue js_ctx2d_fillText(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv);
 JSValue js_ctx2d_strokeText(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv);
-double  context2d_parse_font_size(const char *font);
+double  ctx2d_parse_font_size(const char *font);

@@ -1,0 +1,16 @@
+[game]
+rom       = "."
+width     = 64
+height    = 64
+
+[scripts]
+includes = ["../lib/assert.js", "c2.js"]
+entry    = "main.js"
+
+# los hooks de Construct 2 (runtime/engines/construct2)
+[hooks]
+"cr.truncateArray" = "construct2/extra/memory/clear-array"
+"cr.clearArray"    = "construct2/extra/memory/clear-array"
+"cr.layer.prototype.drawInstanceWithShadersGL" = "construct2/extra/render/effects-direct"
+"cr.eventinclude.prototype.run" = "construct2/extra/logic/include-sol"
+"cr.layer.prototype.drawGL" = "construct2/extra/render/pixellate-1"

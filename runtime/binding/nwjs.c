@@ -30,9 +30,9 @@
 #include "core/save.h"
 #include "core/sandbox.h"
 #include "core/app_context.h"
-#include "core/url.h"
+#include "core/url/url.h"
 #include "version.h"
-#include "binding/quix.h"
+#include "binding/quix/quix.h"
 #include "nwjs.h"
 
 // ------------------------------------------------------------- __quixFs
@@ -114,17 +114,19 @@ static JSValue js_fs_write(JSContext *ctx, JSValueConst this_val, int argc, JSVa
   return JS_NewBool(ctx, ok);
 }
 
+// las que faltan, una a una (las que ya estan, aunque sean de fuera de la
+// carpeta de las partidas, se saltan)
 static int mkdir_p(const char *path) {
   char tmp[PATH_MAX];
   snprintf(tmp, sizeof(tmp), "%s", path);
   for (char *s = tmp + 1; *s; s++) {
     if (*s == '/') {
       *s = 0;
-      if (mkdir(tmp, 0755) != 0 && errno != EEXIST) return -1;
+      if (access(tmp, F_OK) != 0 && sandbox_mkdir(tmp, 0755, "mkdir") != 0 && errno != EEXIST) return -1;
       *s = '/';
     }
   }
-  return (mkdir(tmp, 0755) == 0 || errno == EEXIST) ? 0 : -1;
+  return (sandbox_mkdir(tmp, 0755, "mkdir") == 0 || errno == EEXIST) ? 0 : -1;
 }
 
 static JSValue js_fs_mkdir(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
@@ -135,7 +137,7 @@ static JSValue js_fs_mkdir(JSContext *ctx, JSValueConst this_val, int argc, JSVa
     return JS_FALSE;
   }
   int recursive = argc > 1 && JS_ToBool(ctx, argv[1]);
-  int ok = recursive ? mkdir_p(p) == 0 : mkdir(p, 0755) == 0;
+  int ok = recursive ? mkdir_p(p) == 0 : sandbox_mkdir(p, 0755, "mkdir") == 0;
   JS_FreeCString(ctx, p);
   return JS_NewBool(ctx, ok);
 }
@@ -147,7 +149,7 @@ static JSValue js_fs_unlink(JSContext *ctx, JSValueConst this_val, int argc, JSV
     JS_FreeCString(ctx, p);
     return JS_FALSE;
   }
-  int ok = unlink(p) == 0;
+  int ok = sandbox_unlink(p, "unlink") == 0;
   JS_FreeCString(ctx, p);
   return JS_NewBool(ctx, ok);
 }
@@ -159,7 +161,7 @@ static JSValue js_fs_rmdir(JSContext *ctx, JSValueConst this_val, int argc, JSVa
     JS_FreeCString(ctx, p);
     return JS_FALSE;
   }
-  int ok = rmdir(p) == 0;
+  int ok = sandbox_rmdir(p, "rmdir") == 0;
   JS_FreeCString(ctx, p);
   return JS_NewBool(ctx, ok);
 }
@@ -168,7 +170,7 @@ static JSValue js_fs_rename(JSContext *ctx, JSValueConst this_val, int argc, JSV
   if (argc < 2) return JS_FALSE;
   const char *a = arg_path(ctx, argv[0]);
   const char *b = arg_path(ctx, argv[1]);
-  int ok = a && b && sandbox_check_write(a, "rename") && sandbox_check_write(b, "rename") && rename(a, b) == 0;
+  int ok = a && b && sandbox_check_write(a, "rename") && sandbox_check_write(b, "rename") && sandbox_rename(a, b, "rename") == 0;
   if (a) JS_FreeCString(ctx, a);
   if (b) JS_FreeCString(ctx, b);
   return JS_NewBool(ctx, ok);
@@ -215,7 +217,7 @@ static JSValue js_fs_stat(JSContext *ctx, JSValueConst this_val, int argc, JSVal
   long long size = 0, mtime = 0;
   int is_dir = 0;
   // en disco (con la fecha exacta) o en la rom
-  int disk = stat(p, &st) == 0;
+  int disk = sandbox_stat(p, &st, "stat") == 0;
   int ok = disk || url_stat(p, &size, &mtime, &is_dir) == 0;
   JS_FreeCString(ctx, p);
   if (!ok) return JS_NULL;
@@ -245,7 +247,7 @@ static const JSCFunctionListEntry js_quixfs_funcs[] = {
 
 // runtime/binding/nwjs/*.js: los modulos de Node (path, fs, events...), un
 // archivo cada uno. tools/embed_js.py los mete en el binario al compilar;
-// nwjs_parts.h (en obj/gen/) define NWJS_PARTS[], {nombre, texto}, en orden
+// nwjs_parts.h (generado) define NWJS_PARTS[], {nombre, texto}, en orden
 // alfabetico. Ver runtime/binding/nwjs/README.md y docs/embedded-js.md.
 #include "nwjs_parts.h"
 

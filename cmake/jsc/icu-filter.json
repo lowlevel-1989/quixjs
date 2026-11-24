@@ -1,0 +1,11 @@
+{
+  "localeFilter": {
+    "filterType": "language",
+    "includelist": ["en", "es", "pt", "fr", "de", "it", "ru", "pl", "ja", "zh", "ko"]
+  },
+  "featureFilters": {
+    "conversion_mappings": "exclude",
+    "translit": "exclude",
+    "unames": "exclude"
+  }
+}

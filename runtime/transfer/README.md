@@ -5,7 +5,7 @@ English | [Español](README.es.md)
 Transfer Save: passes the saves of a game to another device on the same
 network (a PC, a handheld), without a keyboard and without opening ports. It
 is opened from the menu of `--launcher`. It comes from tamatama
-(https://github.com/lowlevel-1989/tamatama, `src/transfer`), which passes one
+(https://github.com/lowlevel-1989/tamatama/tree/780b7e723f3dbe8a58bc54ed571f1518dac9191a, `src/transfer`), which passes one
 file of 768 bytes; here they are all the files of `[saves] files`, in one
 package sent in pieces.
 
@@ -29,14 +29,14 @@ The logic, without screens:
 | `net.c`       | the UDP socket, the announcements and the format of the packets |
 | `sender.c`    | the sending, with its state |
 | `receiver.c`  | the receiving, with its state |
-| `saves.c`     | finds, packs, stores (with backup) and restores the saves |
+| `saves/`      | the saves: `saves.c` (what a save is and finding them), `pack.c` (pack them and store the ones that arrive) and `backup.c` (the backup, Restore Backup and Delete Save) |
 | `identity.c`  | the name (user@hostname (system)) and the 4-character signature, new each time Send Save or Receive Save opens |
 
-And the screens, on `launcher/ui.c`:
+And the screens, on `launcher/ui/`:
 
 | file         | what it does |
 |--------------|--------------|
-| `transfer.c` | Transfer Save: Send Save, Receive Save and Restore Backup |
+| `transfer.c` | Transfer Save: Send Save, Receive Save, Restore Backup and Delete Save |
 
 ## The protocol
 
@@ -90,6 +90,8 @@ to each other (guest networks, some hotels).
 - The new files are written apart (`<saves dir>/.quixjs/incoming`) and moved
   with rename. The saves that were there go to `<saves dir>/.quixjs/backup`,
   and Restore Backup swaps them back.
+- Delete Save moves the saves to that backup too (the achievements file
+  stays), so the game starts from zero and Restore Backup brings them back.
 
 ## Tests
 

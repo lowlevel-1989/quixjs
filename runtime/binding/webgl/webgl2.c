@@ -17,7 +17,7 @@
  */
 
 // WebGL 2: lo que WebGL2RenderingContext agrega a WebGL 1, sobre OpenGL ES
-// 3.0 (qgl3, gfx/gl.h). Solo existe si el driver es ES 3.x (gl_es3). Lo que
+// 3.0 (qgl3, gfx/gl/gl.h). Solo existe si el driver es ES 3.x (gl_es3). Lo que
 // hay es lo que usa three.js (r163 en adelante ya no funciona con WebGL 1):
 // vertex arrays, texturas 3D y con texStorage, dibujo instanciado, varias
 // salidas y multimuestreo en framebuffers, uniform buffers y sync.

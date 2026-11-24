@@ -9,34 +9,60 @@ and a game or a port turns on the ones it wants in its `[hooks]` table.
 
 | file / folder     | what it does |
 |-------------------|--------------|
-| `engine_api.c`    | `quix.engine`: one object per engine with its native functions |
+| `api.c`    | `quix.engine`: one object per engine with its native functions |
 | `same-code.js`    | `quix.engine.sameCode(fn, model)`: is `fn` the original function? ([below](#is-it-the-original-samecode)) |
 | `lib/`            | JS modules that know no engine, for any hook (`quix.engine.lib`, [below](#lib)) |
-| `rpgmaker/`       | what RPG Maker MV and MZ share: the hook `rpgmaker/gc-on-transition` and the decrypter in C (`decrypt.c`, `quix.engine["rpgmaker"].setDecryptKey`) |
+| `rpgmaker/`       | what RPG Maker MV and MZ share: the hook `rpgmaker/memory/gc-on-transition` and the decrypter in C (`natives/decrypt.c`, `quix.engine["rpgmaker"].setDecryptKey`) |
 | `rpgmaker-mv/`    | hooks for RPG Maker MV ([README](rpgmaker-mv/README.md)) |
 | `rpgmaker-mz/`    | hooks for RPG Maker MZ ([README](rpgmaker-mz/README.md)) |
 | `construct2/`      | hooks for Construct 2 ([README](construct2/README.md)) |
+| `construct3/`      | hooks for Construct 3 and its `entry.js` ([README](construct3/README.md)) |
 | `rpgmaker-mv/hooks.toml` | the preset: the hooks any MV game gets with `[hooks] engine = "rpgmaker-mv"`; each one checks that the function is the original and, if not, leaves it |
 
 ## A hook
 
-A `.js` file in `runtime/engines/<engine>/` is a function that gets the game's
+A `.js` file in `runtime/engines/<engine>/hooks/` is a function that gets the game's
 original function (and, second, the path: `"DataManager.loadGame"`, in case
 the same file serves several) and returns the one that replaces it. It is embedded in
-the binary at build time (`tools/embed_engines.py`) and named
-`<engine>/<file>`:
+the binary at build time (`tools/embed_engines.py`) and named by its path
+without `.js`, `<engine>/<category>/<file>`:
 
 ```
 [hooks]
-"Game_Interpreter.prototype.skipBranch" = "rpgmaker-mv/skip-branch-table"
+"Game_Interpreter.prototype.skipBranch" = "rpgmaker-mv/logic/skip-branch-table"
 ```
+
+The hooks go in a folder for the work they do, the same in every engine:
+
+| folder | what its hooks do |
+|--------|-------------------|
+| `load/` | load data, images and sounds in C |
+| `render/` | draw less, or in C |
+| `memory/` | free memory and run the GC when it is not noticed |
+| `logic/` | less CPU in events, the interpreter and battles |
+| `port/` | what quixjs adds to the game: achievements, notices, the playthrough of the cheats |
+| `extra/<folder>/` | the ones that are not in the engine's `hooks.toml`: each port turns them on in its `[hooks]` |
+
+A name says what the hook does, with one suffix per idea: `-native` (in C),
+`-fast`, `-once`, `-cache`, `-off` (turns something off), `skip-` (skips
+something), `-release` (frees memory); a hook for a plugin starts with the
+plugin (`yep-`, `olivia-`, `terrax-`).
 
 How to add one for RPG Maker MV, step by step:
 [Adding a hook](rpgmaker-mv/README.md#adding-a-hook).
 
-When a hook needs C, its native part goes in a `.c` file with the same name
-(`adjust-tone.js` and `adjust_tone.c`), listed in the engine's `natives.c`.
+When a hook needs C, its native part is a hook written in C: a `.c` file in
+`natives/` with the same name (`hooks/render/adjust-tone.js` and
+`natives/adjust_tone.c`), listed in the engine's `natives.c` (next to
+`hooks.toml`).
 The hook falls back to the original JS when the native one cannot do it.
+
+## entry.js: before the game
+
+An engine can have an `entry.js` next to its `hooks/`. It is not a hook: it
+changes no function of the game; it runs before the scripts of the game
+(`[engine] name = "<engine>"`) and leaves what the game looks at when it
+loads. Construct 3 has one ([README](construct3/README.md)).
 
 ## rpgmaker/: shared by MV and MZ
 
@@ -49,8 +75,8 @@ functions, so almost every `MODEL` of MV differs (`findDirectionTo`,
 Today only `gc-on-transition` (it wraps `Scene_Map`/`Scene_Battle.create` and
 reads `SceneManager._previousClass` and `Scene_MenuBase`, the same in MZ) and
 the decrypter in C (the same format: 16 byte header and XOR with
-`encryptionKey`), which `rpgmaker-mv/decrypt-image-native`,
-`rpgmaker-mv/load-audio-native` and `rpgmaker-mz/decrypt-image-native` use.
+`encryptionKey`), which `rpgmaker-mv/load/decrypt-image-native`,
+`rpgmaker-mv/load/load-audio-native` and `rpgmaker-mz/load/decrypt-image-native` use.
 
 ## lib
 
@@ -58,11 +84,15 @@ the decrypter in C (the same format: 16 byte header and XOR with
 exports. A hook gets it with `quix.engine.lib("<name>")` (the first call
 runs it, the next ones return the same; `undefined` if it does not exist).
 They are embedded like the hooks (`tools/embed_engines.py`, `ENGINE_LIBS`)
-and loaded by `runtime/hooks/hooks.c`.
+and loaded by `runtime/game/hooks/hooks.c`. A module for one engine only goes in
+`<engine>/lib/` and is asked for as `"<engine>/<name>"`
+(`quix.engine.lib("rpgmaker-mv/achievements")`: the list of achievements as
+an RPG Maker MV scene).
 
 | module | what it does | used by |
 |--------|--------------|---------|
-| `tile-index.js` | objects grouped by tile: `create()`, `add(x, y, obj)`, `at(x, y)` (a copy of the list, in the order they were added) | `rpgmaker-mv/find-path-index` |
+| `tile-index.js` | objects grouped by tile: `create()`, `add(x, y, obj)`, `at(x, y)` (a copy of the list, in the order they were added) | `rpgmaker-mv/logic/find-path-index` |
+| `loading.js` | the quixjs loading notice ("Loading"), from a hook or a mod: `show(ms)` (at once, or only if the game stops more than `ms` without drawing), `hide()`, `until(check)` (shown until `check()` is true) | any hook or mod (none yet) |
 | `rumble.js` | vibration effects with a shape: `play(preset)` or `play([[strong, weak, ms], ...])`, `names()`, `steps(preset)`; presets `heartbeat`, `impact`, `heavy-impact`, `fade`, `quake`, `alarm`, `sting`, `tick` | the `rumble` mod of Fear & Hunger |
 
 ```js
@@ -104,7 +134,7 @@ frame.
 Where it comes from:
 
 ```
-start (main)       engine_api.c creates the global quix.engine (the natives of each engine)
+start (main)       api.c creates the global quix.engine (the natives of each engine)
                    and runs same-code.js once: it adds quix.engine.sameCode
 loading the game   hooks.c installs each hook; the hook asks
                    sameCode(original, MODEL[...]) and keeps the original if it is not the same
@@ -115,7 +145,7 @@ loading the game   hooks.c installs each hook; the hook asks
 - One hook per file, with a comment that says what it replaces, why, and
   what it measured.
 - Same result as the original: each hook has a test that compares both
-  (`games/tests/core/engine-hooks`, and `core/tint-native`,
+  (`tests/games/core/engine-hooks`, and `core/tint-native`,
   `core/pure-common-events`, `core/yep-enemy-name`, `core/native-loading`,
   `core/achievements-menu`; the preset in `core/hooks-engine`; the RPG
   Maker MZ ones in `core/hooks-mz`).

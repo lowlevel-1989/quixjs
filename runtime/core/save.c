@@ -21,6 +21,7 @@
 #include <stdio.h>
 #include "dispatch.h"
 #include "save.h"
+#include "core/sandbox.h"
 
 typedef struct {
   const char *path;
@@ -35,12 +36,12 @@ static int save_send(void *user, const void *item) {
   const SaveWrite *w = item;
   char tmp[4200];
   snprintf(tmp, sizeof(tmp), "%s.quixtmp", w->path);
-  FILE *f = fopen(w->append ? w->path : tmp, w->append ? "ab" : "wb");
+  FILE *f = sandbox_fopen(w->append ? w->path : tmp, w->append ? "ab" : "wb", "save");
   int ok = 0;
   if (f) {
     ok = fwrite(w->data, 1, w->len, f) == w->len;
     ok = (fclose(f) == 0) && ok;
-    if (!w->append) ok = ok && rename(tmp, w->path) == 0;
+    if (!w->append) ok = ok && sandbox_rename(tmp, w->path, "save") == 0;
   }
   *w->ret = ok;
   return 0;

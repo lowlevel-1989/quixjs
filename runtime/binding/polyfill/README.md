@@ -4,8 +4,8 @@ English | [Español](README.es.md)
 
 The browser APIs that need no C are written in JS in this folder, one file
 each. They are not read at run time: `tools/embed_js.py` puts them in
-`obj/gen/polyfills.h` before compiling (the `Makefile` does it when a file
-changes), and `binding/polyfill.c` runs them all at start, before the scripts
+`obj/cmake/<platform>/gen/polyfills.h` before compiling (`cmake/generated.cmake` does it
+when a file changes), and `binding/polyfill.c` runs them all at start, before the scripts
 of the game. Each file is its own function on `globalThis`: the order does not
 matter, and an error says which file it comes from
 (`<quix-polyfill/media.js>`). They do need the APIs written in C, and run
@@ -26,12 +26,14 @@ when they run, `window.js` uses `innerWidth`.
 | `text.js`     | `TextDecoder` / `TextEncoder` (UTF-8) and `structuredClone` |
 | `fetch.js`    | `fetch()` on top of `XMLHttpRequest` (files, `data:` and `blob:`), with `Response` and `Headers` |
 | `url.js`      | `URLSearchParams` (the `?a=b` parameters of an address) and `URL.prototype.searchParams` |
+| `worker.js`   | `Worker`, `MessageChannel` and `MessagePort` on the same thread: each worker with its own `self`, messages delivered on the next turn of the loop (Construct 3) |
+| `imagebitmap.js` | `createImageBitmap` (an `Image` or a canvas with `close()`) and `ImageBitmap` |
 
 ## Adding an API
 
 Create a `.js` file here with the code inside
 `(function (g) { ... })(globalThis);` and add it to the table above: the
-`Makefile` embeds it on the next build. It must not depend on another file of
+next build embeds it. It must not depend on another file of
 this folder. If the API needs C, it goes in a `binding/*.c` file instead (see
 [C or JS](../README.md#c-or-js)).
 
@@ -55,13 +57,13 @@ this folder. If the API needs C, it goes in a `binding/*.c` file instead (see
 ## Legacy JS
 
 `RegExp.$1..$9`, `lastMatch`, `leftContext`..., used by many RPG Maker
-plugins, come with JavaScriptCore (the test `games/tests/core/legacy` checks
+plugins, come with JavaScriptCore (the test `tests/games/core/legacy` checks
 them).
 
 ## Audio
 
 `<audio>` and `new Audio()` (`media.js`) play with the WebAudio of quixjs
-(`binding/webaudio.js`), the same mixer as the sound effects: setting `src`
+(`binding/audio/webaudio.js`), the same mixer as the sound effects: setting `src`
 opens the whole file in the background (`quixLoadFile`) and fires `canplay`
 and `canplaythrough`; `play()`, `pause()`, `loop`, `volume`, `muted` and
 `currentTime` work, and `ended` fires at the end. Construct 2 plays its music

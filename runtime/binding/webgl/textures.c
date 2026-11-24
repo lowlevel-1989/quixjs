@@ -205,7 +205,7 @@ static int gpu_canvas_copy(JSContext *ctx, WebGLCtx *w, JSValueConst v, GLenum t
 static int source_pixels(JSContext *ctx, JSValueConst v, const uint8_t **px, int *width, int *height) {
   CanvasData *cd = js_canvas_get(ctx, v);
   if (cd && cd->webgl) webgl_canvas_sync(cd);
-  const Surface *s = cd ? js_get_image_source(ctx, v) : js_image_get_surface_gpu(ctx, v);
+  const Surface *s = cd ? js_canvas_image_source(ctx, v) : js_image_get_surface_gpu(ctx, v);
   if (s) {
     *px = s->px;
     *width = s->w;
@@ -346,7 +346,7 @@ static JSValue js_gl_generateMipmap(ARGS) {
   return JS_UNDEFINED;
 }
 
-static JSValue js_gl_texImage2D(ARGS) {
+static JSValue tex_image_2d(ARGS) {
   backend_loading_poke();   // un trabajo largo: el aviso de carga, si toca
   CTX();
   GLenum target = u(0);
@@ -391,7 +391,7 @@ static JSValue js_gl_texImage2D(ARGS) {
   return JS_UNDEFINED;
 }
 
-static JSValue js_gl_texSubImage2D(ARGS) {
+static JSValue tex_sub_image_2d(ARGS) {
   backend_loading_poke();   // un trabajo largo: el aviso de carga, si toca
   CTX();
   if (u(0) == GL_TEXTURE_2D) evict_forget(ctx, bound_texture_2d());   // el juego la cambia: no se suelta
@@ -435,4 +435,39 @@ static JSValue js_gl_readPixels(ARGS) {
   if (p && len >= (size_t)n(2) * n(3) * 4) qgl.ReadPixels(n(0), n(1), n(2), n(3), u(4), u(5), p);
   TRACE_END(tr, 1.0, "readPixels %dx%d", (int)n(2), (int)n(3));
   return JS_UNDEFINED;
+}
+
+// Un ImageBitmap (runtime/binding/polyfill/imagebitmap.js) lleva su forma de
+// alfa: premultiplicado salvo premultiplyAlpha: "none", sin mirar
+// UNPACK_PREMULTIPLY_ALPHA_WEBGL (como el navegador). Construct 3 lo pide asi
+// y dibuja con alfa premultiplicado: sin esto, el color que las WebP guardan
+// en los pixeles transparentes se suma (Million Monster Militia, todo rosa)
+static int bitmap_premultiply(JSContext *ctx, JSValueConst src) {
+  if (!JS_IsObject(src)) return -1;
+  JSValue v = JS_GetPropertyStr(ctx, src, "__quixPremultiply");
+  int r = JS_IsUndefined(v) ? -1 : JS_ToBool(ctx, v);
+  JS_FreeValue(ctx, v);
+  return r;
+}
+
+static JSValue with_bitmap_alpha(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv, int src,
+                                 JSValue (*fn)(ARGS)) {
+  WebGLCtx *w = webgl_get(ctx, this_val);
+  int pm = w && argc == src + 1 ? bitmap_premultiply(ctx, argv[src]) : -1;
+  if (pm < 0) return fn(ctx, this_val, argc, argv);
+  int saved = w->premultiply;
+  w->premultiply = pm;
+  JSValue r = fn(ctx, this_val, argc, argv);
+  w->premultiply = saved;
+  return r;
+}
+
+// texImage2D(target, level, internalformat, format, type, source)
+static JSValue js_gl_texImage2D(ARGS) {
+  return with_bitmap_alpha(ctx, this_val, argc, argv, 5, tex_image_2d);
+}
+
+// texSubImage2D(target, level, x, y, format, type, source)
+static JSValue js_gl_texSubImage2D(ARGS) {
+  return with_bitmap_alpha(ctx, this_val, argc, argv, 6, tex_sub_image_2d);
 }

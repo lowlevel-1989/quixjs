@@ -9,7 +9,7 @@
 # corre. Los resultados quedan en results/h5bench/<etiqueta>-<pagina>.log, una
 # linea por medida (H5B ...). Variables:
 #
-#   QUIXJS=ruta   el quixjs a usar (./quixjs; en una portatil, el del port)
+#   QUIXJS=ruta   el quixjs a usar (./build/quixjs; en una portatil, el del port)
 #   LABEL=nombre  la etiqueta de los resultados (por defecto, el nombre del host)
 #   ARGS="..."    mas argumentos para quixjs (--fullscreen en una portatil)
 #
@@ -20,7 +20,7 @@ cd "$(dirname "$0")/.."
 REPO=https://github.com/Knifethrower/h5bench
 REV=9846e8e
 DIR=obj/h5bench
-QUIXJS=${QUIXJS:-./quixjs}
+QUIXJS=${QUIXJS:-./build/quixjs}
 LABEL=${LABEL:-$(hostname)}
 OUT=results/h5bench
 PAGES=${*:-js webgl canvas2d memory}

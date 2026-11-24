@@ -26,7 +26,7 @@ Mods (on): [rumble](mods/rumble/README.md) (vibration), [performance-mode](mods/
 | L1 / L2 | Previous tab, in the menus |
 | R1 / R2 | Next tab, in the menus |
 | Start | Pause |
-| Select + L1 | Magnifier: a box that enlarges; d-pad or sticks move it, R1 / L1 zoom, Y / X size, A centers, B closes |
+| Select + L1 | Magnifier: a box that enlarges; d-pad or sticks move it, R1 / L1 zoom, Y / X size, A centers, Start pins it (the gamepad goes back to the game) and unpins it, B closes |
 | Select + R1 | Screenshot (in `screenshots/`) |
 | Select + R2 | Back to the port menu |
 | Select + Start | Quit |
@@ -38,10 +38,10 @@ The ship shoots by itself.
 ```
 git clone https://github.com/lowlevel-1989/quixjs.git
 cd quixjs
-make PLATFORM=portmaster PORT=gunfield
+make portmaster PORT=gunfield
 ```
 
-It builds `gunfield.zip`.
+It builds `build/gunfield.zip`.
 
 ## Install
 

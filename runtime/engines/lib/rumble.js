@@ -17,7 +17,7 @@
 // momento de la partida.
 //
 // El archivo es una funcion que devuelve lo que exporta; la llama
-// quix.engine.lib la primera vez que se pide (runtime/hooks/hooks.c).
+// quix.engine.lib la primera vez que se pide (runtime/game/hooks/hooks.c).
 function () {
   function times(n, steps) {
     var out = [];

@@ -8,7 +8,7 @@
 # con el juego copiado en gamedata/.
 #
 # Cada forma de empaquetarlo tiene su seccion: [portmaster] es lo que pide
-# PortMaster (make PLATFORM=portmaster PORT=fearandhunger genera con ella su
+# PortMaster (make portmaster PORT=fearandhunger genera con ella su
 # port.json, su gameinfo.xml y el script .sh del port).
 
 [engine]
@@ -24,7 +24,7 @@ fps     = 30
 # antes y su heap no crece de mas. Con 256 llegaba a ~300 MB de heap y
 # ~200 MB de datos aparte en una partida larga: la RG CubeXX se quedaba sin
 # RAM (tirones de mas de 1 s y al final bloqueada). Con los hooks que quitan
-# la basura (events-cached, interpreter-fast...) 128 ya no da tirones.
+# la basura (logic/events-cache, interpreter-fast...) 128 ya no da tirones.
 js_memory = 128
 scaling   = "pixel_perfect"   # 1x, 2x... si cabe; en una pantalla mas pequena que
                               # 816x624, reducido (Options > Scaling)
@@ -36,7 +36,7 @@ fps = 60
 
 [game]
 title     = "Fear & Hunger"     # el del menu y el de PortMaster
-version   = "1.0.1"             # la del port: subirla con cada cambio del port
+version   = "1.0.2"             # la del port: subirla con cada cambio del port
 id        = "fear_and_hunger"   # el id del juego: Transfer Save solo pasa partidas del mismo
 # la rom: la carpeta www/ del juego comprimida en un .zip, junto a este
 # port.toml. game_dir: donde empieza el juego dentro de la rom (la carpeta
@@ -112,7 +112,7 @@ engine = "rpgmaker-mv"
 # hace cada uno, en runtime/engines/rpgmaker-mv. TerraxLighting: su mascara
 # de luces en la GPU, y solo con los eventos que tienen luz
 "Spriteset_Map.prototype.createLightmask" = "gpu-canvas"
-"Spriteset_Map.prototype.update" = "rpgmaker-mv/terrax-lights-only"
+"Spriteset_Map.prototype.update" = "rpgmaker-mv/extra/render/terrax-lights-only"
 
 # ---------- los logros ----------
 # Sacados de los datos del juego (data/System.json, los mapas y Troops.json):
@@ -138,7 +138,7 @@ magnifier  = true
 vibration = true   # el mod rumble vibra en los momentos fuertes; Options > Vibration la apaga
 
 # lo que hace cada boton en el juego, con los nombres de su YEP_KeyboardConfig:
-# Controls los pide por su nombre (y siempre las dos palancas)
+# Controls (que pide todos los botones) los muestra con su nombre
 [controls.buttons]
 dpup          = "Move up"
 dpdown        = "Move down"
@@ -338,7 +338,7 @@ conditions  = ["valteil"]
 
 # Trucos: se activan en el launcher (Cheats). La partida en la que se juega
 # con un truco activo queda sin logros, aunque luego se apague el truco; las
-# demas partidas los siguen consiguiendo (ver runtime/cheats/cheats.h).
+# demas partidas los siguen consiguiendo (ver runtime/game/cheats/cheats.h).
 
 [[cheat]]
 id          = "no_encounters"

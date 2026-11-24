@@ -58,7 +58,7 @@ STEP void game_frame(Run *r, Loop *l) {
   // los avisos (en este orden)
   symbols_tick(ctx);
   cheats_tick(ctx);
-  ach_tick(ctx, l->backend, real_ms());
+  achievements_tick(ctx, l->backend, real_ms());
   toast_tick(l->backend, real_ms());
 
   l->t1 = r->fps.enabled ? real_ms() : 0;
@@ -121,7 +121,7 @@ STEP void pace_frame(Run *r, Loop *l) {
   backend->present_async = 0;
   backend->present_at = 0;
   // sin el thread: la imagen se entrega igual (el canvas sigue en otra
-  // textura) y el driver decide cuando se ve (gfx/drivers/, present)
+  // textura) y el driver decide cuando se ve (gfx/gl/drivers/, present)
   if (!backend->present_thread) backend->present_async = 1;
   if (vb_n >= 2) {
     double now = real_ms();

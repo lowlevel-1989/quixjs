@@ -18,15 +18,18 @@
 
 // Los <script> del documento. Ver script.h.
 
+#include <limits.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <strings.h>
 #include "core/app_context.h"
-#include "core/compiler.h"
+#include "core/scripts/load.h"
 #include "core/timer.h"
-#include "core/url.h"
+#include "core/url/url.h"
 #include "events.h"
-#include "hooks/hooks.h"
+#include "game/hooks/hooks.h"
+#include "module.h"
 #include "script.h"
 
 static JSValue static_scripts = { 0 };   // <script> de [scripts] del toml del juego
@@ -101,14 +104,22 @@ static void dispatch(JSContext *ctx, JSValueConst target, const char *type) {
 }
 
 // Ruta del script relativa a game_dir ("js/plugins/X.js"), sin los mods:
-// compiler_run_file la lee con url_resolve (el del mod si lo trae)
+// scripts_run_file la lee con url_resolve (el del mod si lo trae)
 static int script_path(JSContext *ctx, const char *src, char *out, size_t size) {
   AppContext *app = JS_GetContextOpaque(ctx);
   char path[1024];
   if (url_resolve_game(app->cfg->game.game_dir, src, path, sizeof(path)) != URL_FILE) return -1;
-  size_t gl = strlen(app->cfg->game.game_dir);
-  if (strncmp(path, app->cfg->game.game_dir, gl) == 0 && path[gl] == '/') {
-    snprintf(out, size, "%s", path + gl + 1);
+  // game_dir tal cual o absoluto: un file:///.../gamedata/x.js (nw.js) da
+  // la ruta absoluta
+  char abs_dir[PATH_MAX];
+  const char *dirs[2] = { app->cfg->game.game_dir, realpath(app->cfg->game.game_dir, abs_dir) ? abs_dir : NULL };
+  const char *rel = NULL;
+  for (int i = 0; i < 2 && !rel; i++) {
+    size_t gl = dirs[i] ? strlen(dirs[i]) : 0;
+    if (gl && strncmp(path, dirs[i], gl) == 0 && path[gl] == '/') rel = path + gl + 1;
+  }
+  if (rel) {
+    snprintf(out, size, "%s", rel);
   } else {
     // ruta fuera de game_dir: no se carga (el script recibe error)
     return -1;
@@ -127,7 +138,13 @@ static JSValue js_script_load(JSContext *ctx, JSValueConst this_val, int argc, J
   int r = -1;
   set_current_script(ctx, el);
   if (script_path(ctx, src, rel, sizeof(rel)) == 0) {
-    r = compiler_run_file(ctx, app->cfg, rel);
+    // type="module" (Construct 3): sus import antes (binding/module.c)
+    JSValue type = JS_GetPropertyStr(ctx, el, "type");
+    const char *t = JS_IsString(type) ? JS_ToCString(ctx, type) : NULL;
+    int module = t && strcasecmp(t, "module") == 0;
+    if (t) JS_FreeCString(ctx, t);
+    JS_FreeValue(ctx, type);
+    r = module ? module_run_file(ctx, app->cfg, rel) : scripts_run_file(ctx, app->cfg, rel);
   }
   set_current_script(ctx, JS_NULL);
   if (r == 1) r = 0;   // error de sintaxis, ya escrito: load como el navegador

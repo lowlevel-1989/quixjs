@@ -9,7 +9,7 @@ Las partes de `core/main.c`, partidas por temas para que se puedan leer.
 `core/main.c` es un archivo indice: incluye las partes de esta carpeta en
 orden y despues tiene `main()`, que se lee como un indice de pasos (arrancar,
 el bucle de cada frame, cerrar). Todo se compila como un solo archivo; las
-partes no se compilan solas (el `Makefile` solo conoce `main.c`).
+partes no se compilan solas (`cmake/sources.cmake` solo lista `main.c`).
 
 Todos los pasos son `always_inline` (`STEP`, en `run.h`): el compilador los
 copia dentro de `main()`, que vuelve a ser una sola funcion, como cuando todo
@@ -32,8 +32,12 @@ leer y abrir en el editor por separado.
 | `stats.c` | `--fps` (el contador y la linea `FPS:`) y el resumen `[perf]` del log |
 | `screen.c` | la pantalla: componer los canvas visibles, mostrar el frame, capturas |
 | `run.h` | `Run` y `Loop` (el estado que comparten los pasos) y `STEP` |
-| `start.c` | arrancar: `info_option`, `start_window`, `load_port`, `launcher`, `start_js`, `start_tools` |
+| `start.c` | arrancar: `info_option`, `quit_early`, `start_tools` |
+| `window.c` | la ventana: `fit_scale`, `start_window` |
+| `port.c` | el port: `load_port`, `launcher`, `mount_rom` |
+| `js.c` | el motor de JS y los scripts del juego: `start_js` |
 | `loop.c` | los pasos de cada vuelta: `housekeeping` (memoria y profiler), `events`, `run_timers`, `wait_next` |
 | `screenshot.c` | la captura de pantalla (Select + R1): el PNG en `screenshots/`, el aviso y, en Android, la galeria |
+| `state.c` | los savestates desde el mando (Select + X guarda, Select + Y carga, Select + izquierda/derecha cambia de ranura): `quix.state` entre dos frames, con un aviso |
 | `frame.c` | los pasos de cada frame: `game_frame`, `pace_frame` (el ritmo fijo en pantalla), `present_frame`, `frame_limit` |
 | `finish.c` | cerrar: `--hold`, `--screenshot`, informes, liberar todo |

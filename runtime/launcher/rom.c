@@ -16,16 +16,17 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-// La rom ([game] rom, runtime/zip): montarla al empezar el juego. Si el zip
-// viene comprimido se descomprime una vez (zip_convert_store) en otro thread,
-// y mientras tanto una pantalla del launcher dice cuanto lleva.
+// runtime/launcher/rom.c: la rom ([game] rom, runtime/zip): montarla
+// al empezar el juego. Si el zip viene comprimido se descomprime una vez
+// (zip_convert_store) en otro thread, y mientras tanto una pantalla del
+// launcher dice cuanto lleva.
 
 #include <pthread.h>
 #include <stdio.h>
 #include <unistd.h>
 #include "rom/rom.h"
 #include "launcher.h"
-#include "ui.h"
+#include "ui/ui.h"
 
 typedef struct {
   const char *rom, *root, *mount, *script;

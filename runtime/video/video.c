@@ -16,7 +16,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-// Video WebM (video_webm.c: nestegg + libvpx + libopus) y MP4 (video_mp4.c:
+// Video WebM (webm.c: nestegg + libvpx + libopus) y MP4 (mp4.c:
 // minimp4 + el H.264 y el AAC de FFmpeg): aqui lo comun. Abrir segun el
 // formato, reproducir, pausar, la cola de imagenes, el thread que decodifica
 // y el paso de YUV a RGBA. Ver video.h.
@@ -24,8 +24,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "video_internal.h"
-#include "core/url.h"
+#include "common.h"
+#include "core/url/url.h"
 
 #ifndef QUIX_VIDEO
 

@@ -17,8 +17,8 @@
  */
 
 // La lista de las funciones nativas de RPG Maker MV. Cada una va en su
-// archivo (adjust_tone.c...) y la usa el hook de esta carpeta con su mismo
-// nombre (adjust-tone.js), que cae a la original de JS si la nativa no puede
+// archivo de natives/ (natives/adjust_tone.c...): son hooks escritos en C, y
+// la usa el hook de hooks/ con su mismo nombre (hooks/adjust-tone.js), que cae a la original de JS si la nativa no puede
 // (devuelve false). Una nativa nueva: su .c, su declaracion en natives.h y
 // una linea aqui.
 

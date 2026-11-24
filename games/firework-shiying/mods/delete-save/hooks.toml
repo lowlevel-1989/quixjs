@@ -1,6 +1,6 @@
 # delete-save: borrar una partida desde la pantalla de partidas. Ver README.md.
 [hooks]
-"Scene_File.prototype.update"           = "delete-save.js"   # X en la partida elegida
-"Scene_File.prototype.drawItem"         = "draw.js"          # el aviso "X: delete?"
-"Scene_File.prototype.createMenuSprite" = "draw.js"          # "X Delete" junto a la leyenda
-"Scene_Load.prototype.onSavefileOk"     = "new-game.js"      # A en una casilla vacia: partida nueva
+"Scene_File.prototype.update"           = "delete-save"   # X en la partida elegida
+"Scene_File.prototype.drawItem"         = "draw"          # el aviso "X: delete?"
+"Scene_File.prototype.createMenuSprite" = "draw"          # "X Delete" junto a la leyenda
+"Scene_Load.prototype.onSavefileOk"     = "new-game"      # A en una casilla vacia: partida nueva

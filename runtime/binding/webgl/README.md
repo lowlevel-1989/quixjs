@@ -8,14 +8,13 @@ WebGL 1 on OpenGL ES 2.0, split by topic so it can be read.
 
 `binding/webgl.c` is an index file: it includes the parts of this folder in
 order and is compiled as a single file. The parts are not compiled by
-themselves (the `Makefile` only knows `webgl.c`).
+themselves (`cmake/sources.cmake` only lists `webgl.c`).
 
 This way the compiler sees the same text as when it was a single file and
 generates the same code: it puts the small functions of one part inside
 another (`webgl_get`, the argument readers `U`/`I`/`F`/`B`...), and the WebGL
 methods are called hundreds of times per frame. Compiled apart, each of those
-calls would be a real function call. The machine code of `webgl.o` is
-byte-for-byte the same as with the old single file.
+calls would be a real function call.
 
 The order matters: a part uses what the parts before it define (`args.h`
 defines the macros the methods are written with). A new part goes into

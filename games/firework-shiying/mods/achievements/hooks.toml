@@ -1,7 +1,7 @@
 # achievements: una fila "Achievements" en el menu del juego (KJ_Menu), debajo
 # de Quit, que abre la lista de los logros del port
 [hooks]
-"Scene_Menu.prototype.createMenuSprite" = "menu.js"
-"Scene_Menu.prototype.setIndex"         = "menu.js"
-"Scene_Menu.prototype.updateKeyMove"    = "menu.js"
-"Scene_Menu.prototype.updateKeyOk"      = "menu.js"
+"Scene_Menu.prototype.createMenuSprite" = "menu"
+"Scene_Menu.prototype.setIndex"         = "menu"
+"Scene_Menu.prototype.updateKeyMove"    = "menu"
+"Scene_Menu.prototype.updateKeyOk"      = "menu"

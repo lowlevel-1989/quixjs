@@ -1,3 +1,0 @@
-# un mod que no esta activo: sus hooks no se ponen
-[hooks]
-"Game.hit" = "never.js"

@@ -1,5 +1,5 @@
 #!/bin/sh
-# Ejecuta cada juego de games/tests en modo test (dummy, reloj fijo) y
+# Ejecuta cada juego de tests/games en modo test (dummy, reloj fijo) y
 # muestra el resultado. Uso:
 #   tests/run.sh            todos los tests
 #   tests/run.sh pixi_v4    solo los que tengan "pixi_v4" en la ruta
@@ -10,7 +10,7 @@
 
 cd "$(dirname "$0")/.." || exit 1
 
-QUIXJS=${QUIXJS:-./quixjs}
+QUIXJS=${QUIXJS:-./build/quixjs}
 FILTER=${1:-}
 LOGDIR=${LOGDIR:-cache/tests-logs}
 mkdir -p "$LOGDIR"
@@ -24,9 +24,9 @@ pass=0
 fail=0
 failed_list=""
 
-for cfg in $(find games/tests -name config.toml -not -path "*/rom/*" | sort); do
+for cfg in $(find tests/games -name config.toml -not -path "*/rom/*" | sort); do
   dir=$(dirname "$cfg")
-  name=${dir#games/tests/}
+  name=${dir#tests/games/}
   case "$name" in
     *"$FILTER"*) ;;
     *) continue ;;
@@ -47,13 +47,13 @@ for cfg in $(find games/tests -name config.toml -not -path "*/rom/*" | sort); do
   esac
   [ -n "$BACKEND" ] && own=""
   # el sandbox no deja salir de la carpeta del test: lo que comparten
-  # (games/tests/lib y assets) y, los de pixi_v4_webgl, el juego de pixi_v4,
+  # (tests/games/lib y assets) y, los de pixi_v4_webgl, el juego de pixi_v4,
   # se copian dentro (lib/, assets/ y rom/, fuera del repositorio)
-  rm -rf "$dir/lib" "$dir/assets" && cp -r games/tests/lib games/tests/assets "$dir/"
+  rm -rf "$dir/lib" "$dir/assets" && cp -r tests/games/lib tests/games/assets "$dir/"
   case "$name" in
     pixi_v4_webgl/*)
-      rm -rf "$dir/rom" && cp -r "games/tests/pixi_v4/${name#pixi_v4_webgl/}" "$dir/rom"
-      rm -rf "$dir/rom/assets" && cp -r games/tests/assets "$dir/rom/" ;;
+      rm -rf "$dir/rom" && cp -r "tests/games/pixi_v4/${name#pixi_v4_webgl/}" "$dir/rom"
+      rm -rf "$dir/rom/assets" && cp -r tests/games/assets "$dir/rom/" ;;
   esac
   # lo que el test prepara antes (su setup.sh: los zips de los tests de la rom)
   [ -f "$dir/setup.sh" ] && sh "$dir/setup.sh" > "$log.setup" 2>&1

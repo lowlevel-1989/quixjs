@@ -38,7 +38,7 @@ function (original, path) {
     if (n) sel = (sel + d + n) % n;
   }
 
-  // la cruceta y la palanca, leidas aqui: en la pausa entry.js solo manda Start
+  // la cruceta y la palanca, leidas aqui: en la pausa scripts/gamepad-keys.js solo manda Start
   function pad() {
     var pads = navigator.getGamepads ? navigator.getGamepads() : [];
     var now = {};

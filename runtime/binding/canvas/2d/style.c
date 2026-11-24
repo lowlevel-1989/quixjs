@@ -22,7 +22,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "context2d.h"
-#include "binding/image.h"
+#include "binding/image/image.h"
 
 // Mismo orden que en context2d.c
 enum { NUM_GLOBAL_ALPHA, NUM_LINE_WIDTH, NUM_MITER_LIMIT, NUM_SHADOW_BLUR,
@@ -162,7 +162,7 @@ JSValue js_ctx2d_createPattern(JSContext *ctx, JSValueConst this_val, int argc, 
   if (!context2d_get(ctx, this_val)) return JS_EXCEPTION;
   if (argc < 1) return JS_ThrowTypeError(ctx, "createPattern: image required");
 
-  const Surface *src = js_get_image_source(ctx, argv[0]);
+  const Surface *src = js_canvas_image_source(ctx, argv[0]);
   if (!src) return JS_NULL;   // imagen sin cargar
 
   PatternRepeat repeat = PATTERN_REPEAT;

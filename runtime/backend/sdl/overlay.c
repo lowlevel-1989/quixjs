@@ -81,7 +81,8 @@ static void sdl_draw_toast(Backend* backend, SDLPlatformData* data, int ww, int 
   Uint32 now = SDL_GetTicks();
   if (t->serial != data->toast.serial) {
     data->toast.serial = t->serial;
-    data->toast.age = 0;
+    // sustituye al que se veia (toast_push, un grupo): ya dentro, sin entrar
+    data->toast.age = t->replaces ? TOAST_IN_MS : 0;
     data->toast.last = now;
     data->toast.px = 0;
   }

@@ -24,18 +24,18 @@
 
 JSValue rpgmaker_mv_natives(JSContext *ctx);
 
-// adjust_tone.c (hook adjust-tone.js)
+// natives/adjust_tone.c (hook hooks/adjust-tone.js)
 JSValue rpgmaker_mv_adjust_tone(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv);
 
-// blur.c (hook blur-native.js)
+// natives/blur.c (hook hooks/blur-native.js)
 JSValue rpgmaker_mv_blur(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv);
 
 
-// lazy_data.c (hook lazy-data.js)
+// natives/lazy_data.c (hook hooks/lazy-data.js)
 JSValue rpgmaker_mv_split_json_array(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv);
 
-// tint.c (hook tint-native.js)
+// natives/tint.c (hook hooks/tint-native.js)
 JSValue rpgmaker_mv_tint_sprite(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv);
 
-// lz_string.c (hook lz-string-native.js)
+// natives/lz_string.c (hook hooks/lz-string-native.js)
 JSValue rpgmaker_mv_lz_decompress_base64(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv);

@@ -25,7 +25,7 @@ Mods (off): [readable-font](mods/readable-font/README.md) (easier to read font).
 | X | Dash |
 | Y | Menu |
 | L1 / R1 | Previous / next, in the menus |
-| Select + L1 | Magnifier: a box that enlarges; d-pad or sticks move it, R1 / L1 zoom, Y / X size, A centers, B closes |
+| Select + L1 | Magnifier: a box that enlarges; d-pad or sticks move it, R1 / L1 zoom, Y / X size, A centers, Start pins it (the gamepad goes back to the game) and unpins it, B closes |
 | Select + R1 | Screenshot (in `screenshots/`) |
 | Select + R2 | Back to the port menu |
 | Select + Start | Quit |
@@ -35,10 +35,10 @@ Mods (off): [readable-font](mods/readable-font/README.md) (easier to read font).
 ```
 git clone https://github.com/lowlevel-1989/quixjs.git
 cd quixjs
-make PLATFORM=portmaster PORT=felvidek
+make portmaster PORT=felvidek
 ```
 
-Builds `felvidek.zip`.
+It builds `build/felvidek.zip`.
 
 ## Install
 

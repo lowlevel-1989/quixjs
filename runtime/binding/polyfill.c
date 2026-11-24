@@ -23,7 +23,7 @@
 #include <string.h>
 #include "polyfill.h"
 // polyfill/*.js: tools/embed_js.py los mete en el binario al compilar;
-// polyfills.h (en obj/gen/) define POLYFILLS[], {nombre, texto} de cada uno.
+// polyfills.h (generado) define POLYFILLS[], {nombre, texto} de cada uno.
 // Ver docs/embedded-js.md.
 #include "polyfills.h"
 

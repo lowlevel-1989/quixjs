@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""tools/embed_shaders.py: mete los shaders de runtime/shaders/ en el binario.
+"""tools/embed_shaders.py: mete los shaders de runtime/gfx/gl/shaders/ en el binario.
 Lo usa el Makefile, antes de compilar.
 
-  python3 tools/embed_shaders.py runtime/shaders obj/gen/shaders.h
+  python3 tools/embed_shaders.py runtime/gfx/gl/shaders obj/cmake/pc/gen/shaders.h
 
-Cada archivo pasa a ser una cadena de C: runtime/shaders/gpu2d.frag es
+Cada archivo pasa a ser una cadena de C: runtime/gfx/gl/shaders/gpu2d.frag es
 SHADER_GPU2D_FRAG. Asi los shaders se editan como GLSL y quixjs sigue siendo
 un solo programa, sin archivos que buscar al arrancar.
 """

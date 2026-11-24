@@ -41,7 +41,7 @@ fps = 60
 
 [game]
 title     = "Gunfield"
-version   = "0.1.0"           # la del port
+version   = "0.8.0"           # la del port
 id        = "gunfield"
 # la rom: el package.nw del juego, tal cual (ya es un zip), junto a este
 # port.toml. game_dir: donde empieza el juego dentro de la rom (el juego esta
@@ -67,7 +67,7 @@ desc      = "A roguelite shoot 'em up: fly through waves of enemies, roll new we
 includes = [
   "jquery-3.4.1.min.js",
   "c2runtime.js",
-  "../levelup.js"   # games/gunfield/levelup.js: el menu de mejoras no se abre dos veces
+  "../scripts/levelup.js"   # games/gunfield/scripts/levelup.js: el menu de mejoras no se abre dos veces
 ]
 entry    = "../entry.js"   # games/gunfield/entry.js: el <script> del index.html
 
@@ -104,20 +104,23 @@ vibration = true   # el mod rumble
 # ---------- hooks ----------
 # Los de Construct 2 (runtime/engines/construct2): lo que hace cada uno, en
 # su archivo. Medidos en una partida automatica, A-B-B-A:
-#   effects-direct  el texto y los paneles con un efecto de color (Tint,
+#   extra/render/effects-direct  el texto y los paneles con un efecto de color (Tint,
 #                   Brightness) se dibujan directos, sin una textura aparte
 #                   (RGB30: de 19,8 a 27,2 fps; RX6S: de 7,4 a 11,4)
-#   clear-array     no vaciar las listas de los eventos que ya estan vacias
+#   extra/memory/clear-array     no vaciar las listas de los eventos que ya estan vacias
 #                   (RGB30: de 28,1 a 31,1 fps; RX6S: de 11,4 a 12,5)
-#   include-sol     las hojas incluidas limpian la seleccion solo de sus tipos,
+#   extra/logic/include-sol     las hojas incluidas limpian la seleccion solo de sus tipos,
 #                   no de los ~530 del juego (RGB30: de 29,8 a 35,6 fps; RX6S:
 #                   de 11,9 a 17,4)
 [hooks]
-"cr.layer.prototype.drawInstanceWithShadersGL" = "construct2/effects-direct"
-"cr.truncateArray" = "construct2/clear-array"
-"cr.clearArray"    = "construct2/clear-array"
-"cr.eventinclude.prototype.run" = "construct2/include-sol"
-"cr.layer.prototype.drawGL" = "construct2/pixellate-1"
+"cr.layer.prototype.drawInstanceWithShadersGL" = "construct2/extra/render/effects-direct"
+"cr.truncateArray" = "construct2/extra/memory/clear-array"
+"cr.clearArray"    = "construct2/extra/memory/clear-array"
+"cr.eventinclude.prototype.run" = "construct2/extra/logic/include-sol"
+"cr.layer.prototype.drawGL" = "construct2/extra/render/pixellate-1"
+# la partida para los trucos (quix.playthrough): una run empieza al pasar de
+# Base a Game (hooks/playthrough-new.js)
+"cr.runtime.prototype.doChangeLayout" = "hooks/playthrough-new"
 
 # ---------- los logros ----------
 # Gunfield los da con Steam (greenworks): quixjs contesta por Steam y deja

@@ -59,7 +59,7 @@ static void perf_print(const char *what, const PerfSpan *p, double now) {
   double s = (now - p->start) / 1000.0;
   if (p->frames < 2 || s <= 0) return;
   printf("[perf] %s: %.1f fps, %ld frames, %ld over 50 ms, %ld over 100 ms (driver %s)\n", what, p->frames / s,
-         p->frames, p->over50, p->over100, gpu_driver()->name);
+         p->frames, p->over50, p->over100, gpu_driver_get()->name);
 }
 
 static void perf_add(PerfSpan *p, double now) {

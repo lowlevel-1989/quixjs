@@ -22,7 +22,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "core/app_context.h"
-#include "core/url.h"
+#include "core/url/url.h"
 #include "events.h"
 #include "blob.h"
 #include "xhr.h"

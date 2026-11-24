@@ -27,7 +27,7 @@ static JSClassID js_context2d_class_id;
 static void js_context2d_finalizer(JSRuntime *rt, JSValue val) {
   Context2D *c = JS_GetOpaque(val, js_context2d_class_id);
   if (!c) return;
-  for (int i = 0; i <= c->depth; i++) context2d_state_release(rt, &c->stack[i]);
+  for (int i = 0; i <= c->depth; i++) ctx2d_state_release(rt, &c->stack[i]);
   path_free(&c->path);
   // c->canvas es prestado (lo mantiene vivo la propiedad oculta "canvas")
   js_free_rt(rt, c);
@@ -214,7 +214,7 @@ JSValue js_create_canvas_context(JSContext *ctx, JSValueConst canvas) {
   c->canvas = canvas;
   JS_SetHidden(ctx, obj, "canvas", JS_DupValue(ctx, canvas));
   c->depth = 0;
-  context2d_state_default(&c->stack[0]);
+  ctx2d_state_default(&c->stack[0]);
   path_init(&c->path);
   JS_SetOpaque(obj, c);
   return obj;
@@ -223,9 +223,9 @@ JSValue js_create_canvas_context(JSContext *ctx, JSValueConst canvas) {
 void context2d_reset(JSContext *ctx, JSValueConst context2d) {
   Context2D *c = JS_GetOpaque(context2d, js_context2d_class_id);
   if (!c) return;
-  for (int i = 0; i <= c->depth; i++) context2d_state_release(JS_GetRuntime(ctx), &c->stack[i]);
+  for (int i = 0; i <= c->depth; i++) ctx2d_state_release(JS_GetRuntime(ctx), &c->stack[i]);
   c->depth = 0;
   c->overflow = 0;
-  context2d_state_default(&c->stack[0]);
+  ctx2d_state_default(&c->stack[0]);
   path_clear(&c->path);
 }

@@ -31,8 +31,8 @@ JSValue js_element_proto(JSContext *ctx);
 // Propiedades de instancia (tagName, style, childNodes...)
 void element_setup(JSContext *ctx, JSValueConst elem, const char *tag);
 
-void register_element_with_id(JSContext *ctx, JSValue obj, const char *id);
-void free_element_registry(JSContext *ctx);
+void document_register_id(JSContext *ctx, JSValue obj, const char *id);
+void document_free(JSContext *ctx);
 
 // Canvas visibles agregados al documento, en orden (el primero va debajo).
 int document_screen_canvases(JSContext *ctx, CanvasData **out, int max);

@@ -1,0 +1,6 @@
+# big-text: la letra de Firework mas grande. Los mensajes y los iconos, con
+# js/main.js y js/plugins/QuixBigIcons.js; la pantalla de partidas, con este
+# hook. Ver README.md.
+[hooks]
+"Scene_File.prototype.drawAll" = "save-list"   # la lista de partidas
+"Window_Message.prototype.startMessage" = "message-name"   # el nombre, sin salirse por la izquierda

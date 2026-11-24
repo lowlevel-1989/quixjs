@@ -1,5 +1,5 @@
 # big-text: la letra mas grande (ver README.md)
 [hooks]
-"gdjs.TextRuntimeObjectRenderer.prototype.updateStyle"    = "style.js"
-"gdjs.TextRuntimeObjectRenderer.prototype.updateString"   = "box.js"
-"gdjs.TextRuntimeObjectRenderer.prototype.updatePosition" = "position.js"
+"gdjs.TextRuntimeObjectRenderer.prototype.updateStyle"    = "style"
+"gdjs.TextRuntimeObjectRenderer.prototype.updateString"   = "box"
+"gdjs.TextRuntimeObjectRenderer.prototype.updatePosition" = "position"

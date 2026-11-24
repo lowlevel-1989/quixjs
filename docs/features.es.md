@@ -25,7 +25,7 @@ esta en [compatibilidad](compatibility.es.md).
 - hooks en el toml del juego (`[hooks]`): cambian una funcion del juego sin tocar sus
   archivos. `gpu-canvas` dibuja un canvas 2d en la GPU (las mascaras de luces de
   RPG Maker), `skip` y `once-per-frame`
-  ([runtime/hooks](../runtime/hooks/README.es.md))
+  ([runtime/game/hooks](../runtime/game/hooks/README.es.md))
 - `[engine] fps` (de 10 a 60) y `vsync`: un port puede dibujar a 30 fps mientras
   RPG Maker sigue con 60 actualizaciones por segundo. En una portatil la bateria
   es una prioridad: por eso los ports van a 30 fps por defecto (la mitad de
@@ -46,22 +46,29 @@ esta en [compatibilidad](compatibility.es.md).
   una pequena firma "quixjs": Play, Achievements, Mods, Options y Cheats, y
   debajo, siempre a la vista, Transfer Save, Controls y Exit (cada opcion
   solo si el juego la usa). Viene de
-  tamatama (https://github.com/lowlevel-1989/tamatama), un proyecto anterior
+  tamatama (https://github.com/lowlevel-1989/tamatama/tree/780b7e723f3dbe8a58bc54ed571f1518dac9191a), un proyecto anterior
   del mismo autor ([runtime/launcher](../runtime/launcher/README.es.md))
 - Transfer Save: pasa las partidas a otro dispositivo de la misma red, sin abrir
   puertos, con los logros ([runtime/transfer](../runtime/transfer/README.es.md))
 - logros, definidos en el toml del juego, con un aviso al conseguir uno y, en
   RPG Maker MV, una opcion Achievements en el propio menu del juego
-  ([runtime/achievements](../runtime/achievements/README.es.md))
+  ([runtime/game/achievements](../runtime/game/achievements/README.es.md))
+- un modo hardcore para los logros, como en RetroAchievements: sin trucos, y lo
+  que se consigue en el lleva una estrella dorada
+- savestates (experimentales, en fase temprana) en los juegos de RPG Maker MV
+  y MZ, Construct 3 y L'Abbaye des Morts: Select + X guarda el momento, Select
+  + Y lo carga, Select + izquierda / derecha cambia de ranura (4); no en modo
+  hardcore, y cargar uno quita los logros hardcore a esa partida
+  (`quix.state`, para que otros motores tambien los tengan)
 - trucos (`[[cheat]]`), que se activan en el launcher; la partida jugada con uno
-  no consigue logros ([runtime/cheats](../runtime/cheats/README.es.md))
+  no consigue logros ([runtime/game/cheats](../runtime/game/cheats/README.es.md))
 - `--debug` y `tools/console.py`: una consola de debug para pulsar teclas, hacer
   capturas, ejecutar JS y pausar el juego (heredada de tamatama)
 - `--script`: teclas y capturas en frames dados, para automatizar pruebas
 - modo sin ventana (`dummy`) con reloj fijo y capturas, para los tests
-- 46 juegos de test en `games/tests`, la mayoria se pueden abrir tambien en un
+- 46 juegos de test en `tests/games`, la mayoria se pueden abrir tambien en un
   navegador
-- PortMaster: `make PLATFORM=portmaster` construye un port para portatiles aarch64
+- PortMaster: `make portmaster` construye un port para portatiles aarch64
 
 Todavia no: raton y pantalla tactil, guardar localStorage en disco,
 antialiasing en canvas 2d, `toDataURL`. Estado de cada API:

@@ -25,7 +25,7 @@ convierte en KeyboardEvent. `quix.input.pressKey()` usa la misma cola.
   canvas WebGL va directo (comparte texturas con el contexto de WebGL). Todas
   las capas se escalan al rectángulo de la primera (el canvas del juego),
   manteniendo la proporción con barras negras. Un `<video>` visible es una
-  capa más, encima. Los shaders están en `runtime/shaders/present.*`.
+  capa más, encima. Los shaders están en `runtime/gfx/gl/shaders/present.*`.
 - Teclas: el scancode de SDL se convierte en KeyboardEvent.code y
   `core/keymap.c` da su key y su keyCode.
 - Mandos: hasta 4 con SDL_GameController, que llegan a

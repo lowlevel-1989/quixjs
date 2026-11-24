@@ -10,4 +10,4 @@ scripts = [
 ]
 
 [hooks]
-"PortMenu.items" = "option.js"
+"PortMenu.items" = "option"

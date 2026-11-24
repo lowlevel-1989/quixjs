@@ -23,8 +23,8 @@ once to a zip without compression (`zip/convert.c`), with a progress screen
 |-------------|--------------|
 | `rom.h`     | the rom API (read, open, stat, list, map) and the interface of each kind |
 | `rom.c`     | mount it and pass each path of the game to its kind, without knowing which |
-| `rom_zip.c` | the rom in a `.zip` (`zip/`): uncompress it once if needed, files and folders inside |
-| `rom_dir.c` | the rom in a folder (the tests, or a game unzipped on the PC) |
+| `zip.c` | the rom in a `.zip` (`zip/`): uncompress it once if needed, files and folders inside |
+| `dir.c` | the rom in a folder (the tests, or a game unzipped on the PC) |
 
-`core/url.c` is the only one that calls it: every file the game reads goes
-through `url.c` (scripts, images, sounds, videos, fonts, `fs` of nw.js).
+`core/url/` is the only one that calls it: every file the game reads goes
+through `core/url/` (scripts, images, sounds, videos, fonts, `fs` of nw.js).

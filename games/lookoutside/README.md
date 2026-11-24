@@ -23,20 +23,25 @@ Needs Look Outside **2.3** for Windows (GOG or Steam).
 | X | Dash |
 | Y | Menu |
 | L1 / R1 | Next / Prev: next or previous character or page, in the menus |
-| Select + L1 | Magnifier: a box that enlarges; d-pad or sticks move it, R1 / L1 zoom, Y / X size, A centers, B closes |
+| Select + L1 | Magnifier: a box that enlarges; d-pad or sticks move it, R1 / L1 zoom, Y / X size, A centers, Start pins it (the gamepad goes back to the game) and unpins it, B closes |
+| Select + X / Y | Savestate: save / load (on the map; not in hardcore) |
+| Select + left / right | Savestate slot (1 to 4) |
 | Select + R1 | Screenshot (in `screenshots/`) |
 | Select + R2 | Back to the port menu |
 | Select + Start | Quit |
+
+Savestates (Select + X / Y) are experimental, at an early stage: keep saving
+with the game too.
 
 ## Compile
 
 ```
 git clone https://github.com/lowlevel-1989/quixjs.git
 cd quixjs
-make PLATFORM=portmaster PORT=lookoutside
+make portmaster PORT=lookoutside
 ```
 
-It builds `lookoutside.zip`.
+It builds `build/lookoutside.zip`.
 
 ## Install
 

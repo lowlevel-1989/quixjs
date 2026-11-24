@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- La app de Android (make PLATFORM=android, android/android.mk):
+<!-- La app de Android (make android, cmake/android/apk.cmake):
      MainActivity  la pantalla de inicio: los juegos importados e importar
                    uno desde un .zip, tambien al abrir un .zip con la app
      GameMenuActivity  el menu de un juego: el launcher de quixjs con vistas

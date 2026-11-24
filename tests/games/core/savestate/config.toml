@@ -1,0 +1,18 @@
+# Los savestates (quix.state): un juego minimo registra su estado (un
+# contador) y la partida de los trucos (los hooks de RPG Maker). Con el
+# backend sdl (args) y el mando virtual de SDL (quix.input.pressPad) para los
+# combos; sin ventana
+[game]
+rom       = "."
+width     = 64
+height    = 64
+
+[scripts]
+libs     = []
+includes = ["../lib/assert.js"]
+entry    = "main.js"
+
+[hooks]
+"DataManager.createGameObjects" = "rpgmaker/port/playthrough-new"
+"DataManager.makeSaveContents" = "rpgmaker/port/playthrough-save"
+"DataManager.extractSaveContents" = "rpgmaker/port/playthrough-load"

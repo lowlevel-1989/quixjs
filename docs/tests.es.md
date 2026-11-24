@@ -2,7 +2,7 @@
 
 [English](tests.md) | Español
 
-Los tests son juegos: cada carpeta de `games/tests` tiene un `config.toml` y un
+Los tests son juegos: cada carpeta de `tests/games` tiene un `config.toml` y un
 `main.js`, y la mayoria un `index.html`. Se ejecutan sin ventana (backend dummy) y
 con el reloj fijo, asi dan siempre el mismo resultado y tardan unos segundos. WebGL
 tambien funciona sin ventana (un contexto GL offscreen).
@@ -35,7 +35,7 @@ en cada push (`.github/workflows/tests.yml`), con libvpx y libopus instaladas pa
 | `FPS`     | `1`: muestra los frames por segundo de cada test |
 | `LOGDIR`  | carpeta de los logs (por defecto `cache/tests-logs`) |
 | `VERBOSE` | `1`: la salida completa de cada test |
-| `QUIXJS`  | el binario (por defecto `./quixjs`) |
+| `QUIXJS`  | el binario (por defecto `./build/quixjs`) |
 
 El primer argumento es un filtro: solo se ejecutan los tests con ese texto en la
 ruta. Un test puede tener un archivo `args` con sus propios argumentos para quixjs
@@ -64,11 +64,12 @@ leer. No forma parte de `make test` (necesita UDP en 127.0.0.1). El protocolo: [
 | `core/events`    | addEventListener, once, handleEvent, on<type>, Event, KeyboardEvent, teclado con `quix.input.pressKey` |
 | `core/dom`       | window, document, createElement, appendChild, getElementById (tambien con `el.id = ...`), instanceof, localStorage, mandos |
 | `core/local-storage` | `[saves] local_storage`: localStorage en disco (se escribe al poco de un cambio), `localStorage.x` y `localStorage['x'] = v` |
-| `core/construct2-hooks` | Construct 2: `clear-array` deja los arrays como `arr.length = n`; `effects-direct` dibuja directo solo un objeto que pre-dibuja con un efecto de color y opacidad 1; `include-sol` limpia solo los tipos de la hoja incluida, todos si hay condiciones por encima |
+| `core/construct2-hooks` | Construct 2: `extra/memory/clear-array` deja los arrays como `arr.length = n`; `extra/render/effects-direct` dibuja directo solo un objeto que pre-dibuja con un efecto de color y opacidad 1; `extra/logic/include-sol` limpia solo los tipos de la hoja incluida, todos si hay condiciones por encima |
 | `core/loose-names` | un archivo con nombre no ASCII que una tarjeta FAT no pudo guardar se encuentra con un nombre parecido |
 | `core/gamepad-frame` | con el backend sdl (`args`) y un mando virtual de SDL (`quix.input.pressPad`): los mandos se leen una vez por imagen y todas las lecturas de la imagen ven lo mismo; una pulsacion mas corta que una imagen se ve en esa imagen y no en la siguiente |
 | `core/lan` | `quix.lan` con un solo dispositivo: abrir, su id y su nombre, nadie mas, enviar sin nadie, cerrar |
 | `core/vibration` | `navigator.vibrate` (ms y patrones), `gamepad.vibrationActuator` (`playEffect` da `complete`, o `preempted` si otro lo corta; `reset`) y los presets de `lib/rumble` |
+| `core/magnifier-pin` | la lupa fija: Select + L1 la abre, Start la fija y la desfija, Select + L1 la desfija y otra vez la cierra; fija, el juego ve el mando, menos Start |
 | `core/pad-keys` | `[controls.keys]` con los botones de `controller.keys`: el boton pulsa su tecla (keydown y keyup con `code` y `keyCode`); un boton sin accion no da ninguna |
 | `core/nwjs-fs-text` | `fs` de nw.js: un texto escrito y leido con `utf8` vuelve entero, tambien con ceros dentro (las partidas de RPG Maker MZ) |
 | `core/xhr`       | XMLHttpRequest: json, texto, arraybuffer, 404, sincrono |
@@ -81,17 +82,19 @@ leer. No forma parte de `make test` (necesita UDP en 127.0.0.1). El protocolo: [
 | `core/steam-achievements` | greenworks en modo nw.js: `activateAchievement` desbloquea los `[[achievements]]` que leen `quix.steam.achievements`, y el id queda en `steam-achievements.txt` |
 | `core/cheats`    | un truco encendido: fija su simbolo (otra vez si el juego lo cambia), la partida queda marcada y no consigue logros |
 | `core/cheats-free` | un juego sin logros: el truco se aplica sin motor conocido, en cuanto existe su objeto, y otra vez si el juego lo cambia |
+| `core/hardcore`  | el modo hardcore: un truco de los ajustes no se aplica, la partida queda marcada hardcore (tambien en su guardado), sus logros son hardcore, un guardado tocado no, y no hay savestates |
+| `core/savestate` | `quix.state`: guardar, cambiar el juego y volver a cargarlo; las ranuras, una vacia, `busy`, los eventos de los mods; Select + derecha / X / Y con el mando de prueba; una peticion espera mientras el juego esta ocupado, otra se descarta, y se hace cuando es seguro; un motor con promesas; cargar un estado quita el hardcore a la partida |
 | `core/cheats-off` | sin trucos: una partida marcada no consigue logros y sus simbolos vuelven a su valor; una limpia si los consigue |
-| `core/achievements-menu` | el hook `rpgmaker-mv/achievements-menu`: la opcion Achievements del menu y su lista |
+| `core/achievements-menu` | el hook `rpgmaker-mv/port/achievements-menu`: la opcion Achievements del menu y su lista |
 | `core/hooks-engine` | `[hooks] engine = "rpgmaker-mv"`: los hooks del motor sin listarlos; mandan los del juego (`"off"` u otro) |
 | `core/hooks-mz` | `[hooks] engine = "rpgmaker-mz"`: los hooks de RPG Maker MZ sobre su código de verdad (ColorFilter en neutro, el desenfoque del menú una vez, Touch UI, `GeometrySystem.bind` sin VAO con las mismas llamadas a WebGL) |
-| `core/native-loading-mz` | `rpgmaker-mz/decrypt-image-native`: una imagen cifrada de RPG Maker MZ (`.png_`) leída y descifrada en C, por su ruta; los mismos píxeles que con la original (XHR y Blob) |
+| `core/native-loading-mz` | `rpgmaker-mz/load/decrypt-image-native`: una imagen cifrada de RPG Maker MZ (`.png_`) leída y descifrada en C, por su ruta; los mismos píxeles que con la original (XHR y Blob) |
 | `core/native-loading` | `decrypt-image-native` y `load-audio-native`: `.rpgmvp` y `.rpgmvo` cifrados, leidos y descifrados en segundo plano |
 | `core/pure-common-events` | `pure-common-events`: un proceso paralelo puro (evento comun o del mapa) no se repite si su ultima ejecucion no cambio nada y lo que lee sigue igual; una ejecucion que cambia algo (otra rama, sumar a una variable) se hace siempre |
 | `core/refresh-partial` | `refresh-on-net-change`: con cambios de verdad solo se refrescan los eventos que dependen de ellos; las paginas, las mismas que con el refresco completo (500 cambios al azar) |
 | `core/tint-native` | `tint-native`: los mismos pixeles que `Sprite.prototype._executeTint` |
 | `core/render-scale` | `render-scale`: con `render_scale = 0.5` PIXI dibuja a media resolucion (canvas de 100x50) y lo dibujado cae en su sitio |
-| `core/save-picture-small` | `save-picture-small`: la foto de la partida a un cuarto del tamano, con los colores de la escena en su sitio |
+| `core/save-picture-small` | `extra/render/save-picture-small`: la foto de la partida a un cuarto del tamano, con los colores de la escena en su sitio |
 | `core/yep-enemy-name` | `yep-enemy-name-refresh`: el nombre del enemigo solo se redibuja cuando cambia |
 | `canvas/style`   | fillStyle y las demas propiedades: lectura, escritura, valores invalidos, save/restore |
 | `canvas/rect`    | fillRect, clearRect, strokeRect, globalAlpha, translate, scale, rotate, setTransform |
@@ -114,14 +117,14 @@ leer. No forma parte de `make test` (necesita UDP en 127.0.0.1). El protocolo: [
 | `pixi_v4_webgl/*` | los mismos nueve tests de `pixi_v4` con el renderer WebGL (`lib/webgl.js`) |
 | `bench/canvas-lights` | benchmark: una mascara de luces como la de los plugins de iluminacion de RPG Maker MV (gradientes radiales en modo `lighter`); escribe los ms por mascara |
 
-Las imagenes, sonidos y archivos que usan estan en `games/tests/assets` (hechos para
+Las imagenes, sonidos y archivos que usan estan en `tests/games/assets` (hechos para
 los tests: `quad.png` es de 4x4 con un bloque rojo, uno verde, uno azul y uno
 blanco; `quad.rpgmvp` y `quad.png_` son ese PNG cifrado como en RPG Maker MV y
-MZ, con la clave de `core/native-loading`). PixiJS esta en `games/tests/lib/pixi_v4/pixi.js`.
+MZ, con la clave de `core/native-loading`). PixiJS esta en `tests/games/lib/pixi_v4/pixi.js`.
 
 ## Escribir un test
 
-Un test usa `games/tests/lib/assert.js` y termina con `T.done()`:
+Un test usa `tests/games/lib/assert.js` y termina con `T.done()`:
 
 ```js
 var canvas = document.createElement('canvas');
@@ -152,7 +155,7 @@ El `config.toml` de un test:
 
 ```toml
 [game]
-game_dir  = "games/tests/canvas/rect"
+game_dir  = "tests/games/canvas/rect"
 width     = 320
 height    = 240
 
@@ -191,18 +194,18 @@ llegan igual que las teclas del teclado real. Con `--launcher` los frames cuenta
 desde el primer frame del menu, y los del juego van despues.
 
 ```
-./quixjs -c mijuego.toml --script jugar.keys
+./build/quixjs -c mijuego.toml --script jugar.keys
 ```
 
 ## Consola de debug
 
-Heredada de tamatama (https://github.com/lowlevel-1989/tamatama). Con `--debug`
+Heredada de tamatama (https://github.com/lowlevel-1989/tamatama/tree/780b7e723f3dbe8a58bc54ed571f1518dac9191a). Con `--debug`
 quixjs escucha en un socket Unix (`quixjs.sock` en la carpeta actual, o
 `--debug=RUTA`) y ejecuta comandos de texto entre frames, cuando no corre JS.
 `tools/console.py` es el cliente: interactivo, o un comando por llamada.
 
 ```
-Terminal 1:  ./quixjs --debug -c mijuego.toml
+Terminal 1:  ./build/quixjs --debug -c mijuego.toml
 Terminal 2:  python3 tools/console.py
              python3 tools/console.py press Enter
              python3 tools/console.py eval "SceneManager._scene.constructor.name"
@@ -221,6 +224,8 @@ Terminal 2:  python3 tools/console.py
 | `run N`              | avanza N frames y pausa |
 | `ach`                | los logros del port y los valores de sus simbolos |
 | `ach reset`          | olvida los logros conseguidos |
+| `state`              | las ranuras de los savestates (`quix.state`) y la elegida |
+| `state save N` / `state load N` | guarda o carga la ranura N, como Select + X / Y: ya, o cuando sea seguro (con su aviso) |
 | `fps [N]`            | el tope de fps; `fps N` lo cambia ya (de 10 a 60) |
 | `prof start` / `prof stop` | sampling profiler: donde se va el tiempo (`prof [N]` ensena los N primeros) |
 | `prof save [ARCHIVO]` | escribe el informe en ARCHIVO (`quixjs-profile.txt`) |

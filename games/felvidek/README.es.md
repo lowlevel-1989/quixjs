@@ -25,7 +25,7 @@ Mods (apagados): [readable-font](mods/readable-font/README.es.md) (fuente más l
 | X | Dash (correr) |
 | Y | Menu (menú) |
 | L1 / R1 | Anterior / siguiente, en los menús |
-| Select + L1 | Lupa: un cuadro que amplía; la cruceta o las palancas lo mueven, R1 / L1 zoom, Y / X tamaño, A centra, B la cierra |
+| Select + L1 | Lupa: un cuadro que amplía; la cruceta o las palancas lo mueven, R1 / L1 zoom, Y / X tamaño, A centra, Start la fija (el mando vuelve al juego) y la desfija, B la cierra |
 | Select + R1 | Captura de pantalla (en `screenshots/`) |
 | Select + R2 | Volver al menú del port |
 | Select + Start | Salir |
@@ -35,10 +35,10 @@ Mods (apagados): [readable-font](mods/readable-font/README.es.md) (fuente más l
 ```
 git clone https://github.com/lowlevel-1989/quixjs.git
 cd quixjs
-make PLATFORM=portmaster PORT=felvidek
+make portmaster PORT=felvidek
 ```
 
-Construye `felvidek.zip`.
+Construye `build/felvidek.zip`.
 
 ## Instalar
 

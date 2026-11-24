@@ -22,10 +22,10 @@ of Felvidék: real time, with about a quarter of the pictures skipped).
 | file      | what it does |
 |-----------|--------------|
 | `video.h` | open, play, pause, volume, update, ended, time, decoded frames |
-| `video_internal.h` | the `Video` struct and what the parts share |
+| `common.h` | the `Video` struct and what the parts share |
 | `video.c` | the common part: open by format, play, pause, the queue of pictures, the decoder thread and YUV to RGBA; without video support every function is a stub |
-| `video_webm.c` | WebM: nestegg, libvpx and libopus (`QUIX_VIDEO_WEBM`) |
-| `video_mp4.c` | MP4: minimp4 and FFmpeg (`QUIX_VIDEO_MP4`); the only one in the Android app |
+| `webm.c` | WebM: nestegg, libvpx and libopus (`QUIX_VIDEO_WEBM`) |
+| `mp4.c` | MP4: minimp4 and FFmpeg (`QUIX_VIDEO_MP4`); the only one in the Android app |
 
 The JS side is `binding/video.c` (`__quixVideo`) and the `<video>` element of
 `binding/polyfill/media.js` ([polyfill](../binding/polyfill/README.md)).
@@ -58,7 +58,7 @@ it.
 
 ## Build
 
-The `Makefile` builds with video when `pkg-config` finds `vpx` and `opus`
+`make pc` builds with video when `pkg-config` finds `vpx` and `opus`
 (`VIDEO=1`). `make VIDEO=0` builds without it: `video_open` returns NULL and
 the `<video>` element is skipped (`loadeddata` and `ended` at once, so the
 game goes on).
@@ -69,9 +69,9 @@ sudo apt-get install libvpx-dev libopus-dev
 ```
 
 The PortMaster build always has video and carries `libvpx.so.5` and
-`libopus.so.0` in `libs.aarch64/` and `libs.armhf/`, with the licenses of libvpx5, libopus0 and nestegg.
+`libopus.so.0` in `libs.aarch64/`, with the licenses of libvpx5, libopus0 and nestegg.
 
-The test is `games/tests/media/video`: `clip.webm` (64x48, 1 s, 10 frames,
+The test is `tests/games/media/video`: `clip.webm` (64x48, 1 s, 10 frames,
 made with ffmpeg from `testsrc` and a `sine` tone) and `clip.mp4` (the same,
 H.264 with B frames and AAC) play to the end, `big.mp4` (1080p) is shown at
 half size, and a missing file is skipped.

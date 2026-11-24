@@ -27,6 +27,9 @@
 //   cheats   = ["no_encounters"]   los trucos activos (ids de [[cheat]])
 //   fullscreen = true  a pantalla completa (en el PC; --fullscreen tambien)
 //   vibration = false  no vibrar (el mando o el telefono; sin la clave, si)
+//   hardcore = true    Achievements: Hardcore (sin trucos; los logros que se
+//                      consiguen asi llevan una estrella dorada). Sin la
+//                      clave, Normal
 //   mods     = ["es"]  los mods activos (Mods), en orden: si dos traen el
 //                      mismo archivo, gana el ultimo. Sin la clave, los de
 //                      [game] mods del toml del juego
@@ -39,6 +42,7 @@ typedef struct {
   int profile;
   int fullscreen;   // en el PC: la ventana a pantalla completa
   int no_vibration; // Vibration: Off (vibration = false)
+  int hardcore;     // Achievements: Hardcore (hardcore = true)
   int scaling;           // Scaling: 1 + SCALING_* (backend.h); 0: el de [engine] scaling
   int quality;           // Quality: 1 low, 2 medium, 3 high (0: la de [engine] quality)
   int fps;               // FPS: 30 o 60 (0: el de [engine] fps)
@@ -51,11 +55,12 @@ typedef struct {
 
 void settings_load(Settings *s, const char *config_path);
 int  settings_save(const Settings *s, const char *config_path);
-// Los trucos activos de s, a runtime/cheats
+// El modo de los logros y los trucos activos de s, a runtime/game/cheats (en
+// hardcore, ningun truco)
 void settings_apply_cheats(const Settings *s);
 
 // Cheats y Mods: lo que cambia una opcion, igual en el launcher y en la app
-// de Android (platform/android/launcher.c). Sin guardar: settings_save.
+// de Android (platform/android/menu.c). Sin guardar: settings_save.
 // La posicion de un truco o un mod activo (por id o nombre), o -1
 int  settings_cheat_index(const Settings *s, const char *id);
 int  settings_mod_index(const Settings *s, const char *name);

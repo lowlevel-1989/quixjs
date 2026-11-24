@@ -1,0 +1,16 @@
+[game]
+rom       = "."
+width     = 64
+height    = 64
+
+[scripts]
+libs     = []
+includes = ["../lib/assert.js"]
+entry    = "main.js"
+
+# un plugin que se carga tarde pisa la funcion con hook: quixjs lo vuelve a
+# poner encima (hooks_check), y el hook no se llama a si mismo aunque el
+# plugin guardara la copia con hook como "la de antes"
+[hooks]
+"Game_Switches.prototype.value" = "rpgmaker-mv/logic/olivia-meta-fast"
+"Game_Switches.prototype.setValue" = "rpgmaker-mv/logic/olivia-meta-fast"

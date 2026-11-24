@@ -1,0 +1,79 @@
+{
+  "version": 6,
+  "configurePresets": [
+    {
+      "name": "pc",
+      "displayName": "PC (Linux)",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/obj/cmake/pc",
+      "cacheVariables": {
+        "QUIX_PLATFORM": "pc",
+        "CMAKE_C_COMPILER": "gcc",
+        "CMAKE_CXX_COMPILER": "g++"
+      }
+    },
+    {
+      "name": "portmaster",
+      "displayName": "PortMaster (aarch64)",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/obj/cmake/portmaster",
+      "toolchainFile": "${sourceDir}/cmake/toolchains/portmaster.cmake",
+      "cacheVariables": {
+        "QUIX_PLATFORM": "portmaster"
+      }
+    },
+    {
+      "name": "android-arm64",
+      "displayName": "Android (arm64-v8a)",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/obj/cmake/android-arm64",
+      "toolchainFile": "${sourceDir}/cmake/toolchains/android.cmake",
+      "cacheVariables": {
+        "QUIX_PLATFORM": "android",
+        "QUIX_ANDROID_ABI": "arm64-v8a",
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_POLICY_VERSION_MINIMUM": "3.5"
+      }
+    },
+    {
+      "name": "android-x86_64",
+      "displayName": "Android (x86_64)",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/obj/cmake/android-x86_64",
+      "toolchainFile": "${sourceDir}/cmake/toolchains/android.cmake",
+      "cacheVariables": {
+        "QUIX_PLATFORM": "android",
+        "QUIX_ANDROID_ABI": "x86_64",
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_POLICY_VERSION_MINIMUM": "3.5"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "pc",
+      "configurePreset": "pc"
+    },
+    {
+      "name": "portmaster",
+      "configurePreset": "portmaster"
+    },
+    {
+      "name": "android-arm64",
+      "configurePreset": "android-arm64"
+    },
+    {
+      "name": "android-x86_64",
+      "configurePreset": "android-x86_64"
+    }
+  ],
+  "testPresets": [
+    {
+      "name": "pc",
+      "configurePreset": "pc",
+      "output": {
+        "outputOnFailure": true
+      }
+    }
+  ]
+}

@@ -7,15 +7,13 @@ WebGL 1 sobre OpenGL ES 2.0, partido por temas para que se pueda leer.
 ## Por que ../webgl.c solo incluye estos archivos
 
 `binding/webgl.c` es un archivo indice: incluye las partes de esta carpeta en
-orden y se compila como un solo archivo. Las partes no se compilan solas (el
-`Makefile` solo conoce `webgl.c`).
+orden y se compila como un solo archivo. Las partes no se compilan solas (`cmake/sources.cmake` solo lista `webgl.c`).
 
 Asi el compilador ve el mismo texto que cuando era un solo archivo y genera el
 mismo codigo: mete dentro las funciones pequenas de una parte en otra
 (`webgl_get`, los lectores de argumentos `U`/`I`/`F`/`B`...), y los metodos de
 WebGL se llaman cientos de veces por imagen. Compiladas aparte, cada una de
-esas llamadas seria una llamada de funcion de verdad. El codigo maquina de
-`webgl.o` es identico byte a byte al del archivo unico de antes.
+esas llamadas seria una llamada de funcion de verdad.
 
 El orden importa: una parte usa lo que definen las anteriores (`args.h` define
 los macros con los que se escriben los metodos). Una parte nueva va en

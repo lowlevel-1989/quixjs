@@ -21,20 +21,25 @@ Needs Firework **1.0.4** for Windows (GOG or Steam).
 | B | Cancel |
 | X | Run (mod `run`); on a save, delete it (mod `delete-save`) |
 | Y | Menu |
-| Select + L1 | Magnifier: a box that enlarges; d-pad or sticks move it, R1 / L1 zoom, Y / X size, A centers, B closes |
+| Select + L1 | Magnifier: a box that enlarges; d-pad or sticks move it, R1 / L1 zoom, Y / X size, A centers, Start pins it (the gamepad goes back to the game) and unpins it, B closes |
+| Select + X / Y | Savestate: save / load (on the map; not in hardcore) |
+| Select + left / right | Savestate slot (1 to 4) |
 | Select + R1 | Screenshot (in `screenshots/`) |
 | Select + R2 | Back to the port menu |
 | Select + Start | Quit |
+
+Savestates (Select + X / Y) are experimental, at an early stage: keep saving
+with the game too.
 
 ## Compile
 
 ```
 git clone https://github.com/lowlevel-1989/quixjs.git
 cd quixjs
-make PLATFORM=portmaster PORT=firework-shiying
+make portmaster PORT=firework-shiying
 ```
 
-It builds `firework-shiying.zip`.
+It builds `build/firework-shiying.zip`.
 
 ## Install
 
@@ -155,7 +160,8 @@ You need the game and two files from the releases of quixjs
 In Mods, in the menu of the port:
 
 - `fast-start` (on): straight to the title, without the logos or the controls screen.
-- `big-text` (on): the message text bigger.
+- `big-text` (on): the text of the messages and of the save list bigger.
+- `readable-font` (on): the text with M+ 1m, easier to read on a small screen.
 - `run` (on): hold X to run, on every map (the game only lets you on 3).
 - `delete-save` (on): X twice on a save, in the save or load screen, deletes it.
 - `achievements` (on): the "Achievements" option in the menu of the game, with the achievements.

@@ -1,0 +1,3 @@
+# achievements: Start abre y cierra la lista de los logros en cualquier
+# momento de la partida. Ver README.md.
+scripts = ["achievements.js"]

@@ -84,7 +84,7 @@ static JSValue js_gl_detachShader(ARGS) {
 static JSValue js_gl_linkProgram(ARGS) {
   backend_loading_poke();   // un trabajo largo: el aviso de carga, si toca
   CTX();
-  // de la cache de disco si ya se enlazo otra vez (gfx/shader_cache.c)
+  // de la cache de disco si ya se enlazo otra vez (gfx/gl/shader_cache.c)
   if (argc > 0) shader_cache_link(obj_name(argv[0], OBJ_PROGRAM));
   return JS_UNDEFINED;
 }

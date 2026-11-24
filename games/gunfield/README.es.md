@@ -26,7 +26,7 @@ Mods (activos): [rumble](mods/rumble/README.es.md) (vibración), [performance-mo
 | L1 / L2 | Pestaña anterior, en los menús |
 | R1 / R2 | Pestaña siguiente, en los menús |
 | Start | Pausa |
-| Select + L1 | Lupa: un cuadro que amplía; la cruceta o las palancas lo mueven, R1 / L1 zoom, Y / X tamaño, A centra, B la cierra |
+| Select + L1 | Lupa: un cuadro que amplía; la cruceta o las palancas lo mueven, R1 / L1 zoom, Y / X tamaño, A centra, Start la fija (el mando vuelve al juego) y la desfija, B la cierra |
 | Select + R1 | Captura de pantalla (en `screenshots/`) |
 | Select + R2 | Volver al menú del port |
 | Select + Start | Salir |
@@ -38,10 +38,10 @@ La nave dispara sola.
 ```
 git clone https://github.com/lowlevel-1989/quixjs.git
 cd quixjs
-make PLATFORM=portmaster PORT=gunfield
+make portmaster PORT=gunfield
 ```
 
-Crea `gunfield.zip`.
+Construye `build/gunfield.zip`.
 
 ## Instalar
 

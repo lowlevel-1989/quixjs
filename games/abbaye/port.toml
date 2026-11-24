@@ -8,8 +8,8 @@
 # GitHub y copia su carpeta en gamedata/ (README.md).
 #
 # Los scripts son los <script> del index.html, en el mismo orden, sin Google
-# Analytics. El ultimo es entry.js, del port: el juego solo escucha el teclado,
-# y entry.js pulsa sus teclas con el mando.
+# Analytics. Antes del ultimo va scripts/gamepad-keys.js, del port: el juego
+# solo escucha el teclado, y ese script pulsa sus teclas con el mando.
 [engine]
 name    = "html5"
 nwjs    = false
@@ -20,7 +20,7 @@ scaling   = "sharp"           # nitido a toda la pantalla (Options > Scaling)
 
 [game]
 title     = "L'Abbaye des Morts"
-version   = "0.1.0"           # la del port
+version   = "1.0.0"           # la del port
 id        = "abbaye"
 # la rom: el zip del juego, tal cual se descarga de GitHub, junto a este
 # port.toml. game_dir: donde empieza el juego dentro de la rom (la carpeta del
@@ -66,9 +66,11 @@ includes = [
   "js/entities/movable_entity.js",
   "js/entities/shooter_entity.js",
   "js/entities/action_entity.js",
-  "js/entities/ghost.js"
+  # del port: el mando como el teclado que espera el juego (el ultimo antes
+  # del entry; window.onload, de js/main.js, arranca Phaser despues)
+  "../scripts/gamepad-keys.js"
 ]
-entry    = "../entry.js"   # games/abbaye/entry.js (en el zip, junto a port.toml)
+entry    = "js/entities/ghost.js"   # el ultimo <script> del index.html
 
 # los <div> del index.html que busca el juego: abbaye (donde Phaser pone su
 # canvas) y orientation (el aviso de girar el telefono)
@@ -86,7 +88,7 @@ screenshot = true
 magnifier  = true
 vibration  = true   # el mod rumble
 
-# lo que hace cada boton (entry.js)
+# lo que hace cada boton (scripts/gamepad-keys.js)
 [controls.buttons]
 dpleft  = "Left"
 dpright = "Right"
@@ -203,6 +205,11 @@ type        = "win_condition"
 conditions  = ["state == \"Sequence\"", "sequence == 1"]
 
 # ---------- PortMaster ----------
+# los savestates (quix.state): Select + X guarda, Select + Y carga; el juego
+# no tiene guardado, el estado se copia a mano (hooks/savestate.js)
+[hooks]
+"Abbaye.Game.prototype.create" = "hooks/savestate"
+
 [portmaster]
 script       = "Abbaye.sh"
 porter       = ["lowlevel.1989"]

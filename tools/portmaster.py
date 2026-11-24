@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """tools/portmaster.py: los archivos que pide PortMaster, desde el port.toml
 de un port (games/<port>/port.toml): [game] (lo comun) y [portmaster] (lo
-de PortMaster). Lo usa make PLATFORM=portmaster.
+de PortMaster). Lo usa make portmaster.
 
   python3 tools/portmaster.py games/fearandhunger/port.toml <carpeta>
 
@@ -89,8 +89,8 @@ def main():
             "store": [{"name": store["name"], "gameurl": store["url"]}] if store else [],
             "availability": p.get("availability", "full"),
             "reqs": [],
-            # las arquitecturas que lleva el zip (PM_ARCHES de portmaster.mk)
-            "arch": os.environ.get("PM_ARCHES", "aarch64").split(),
+            # el zip lleva solo aarch64 (cmake/portmaster.cmake)
+            "arch": ["aarch64"],
             "min_glibc": "2.28",
         },
     }

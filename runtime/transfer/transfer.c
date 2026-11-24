@@ -25,7 +25,7 @@
 
 #include <stdio.h>
 #include <string.h>
-#include "launcher/ui.h"
+#include "launcher/ui/ui.h"
 #include "receiver.h"
 #include "sender.h"
 #include "transfer.h"
@@ -251,6 +251,29 @@ static int restore(void) {
   return ui_message(LOGO, "restore backup", ok ? "backup restored" : "cannot restore the backup", NULL, NULL, NULL);
 }
 
+// ---------- Delete Save ----------
+
+// las partidas al backup, con confirmacion (Restore Backup las devuelve)
+static int delete_save(void) {
+  SaveSet now;
+  if (!saves_find(0, &now)) return ui_message(LOGO, "delete save", "there are no saves", NULL, NULL, NULL);
+  Screen s;
+  ui_reset(&s, LOGO, "delete save");
+  ui_line(&s, c()->text, "the game starts from zero;");
+  ui_line(&s, c()->text, "restore backup brings");
+  ui_line(&s, c()->text, "the saves back");
+  ui_line(&s, c()->notice, "the old backup is lost");
+  ui_item(&s, "Back");
+  ui_item(&s, "Delete");
+  int chosen = ui_run(&s, NULL, NULL);
+  if (chosen == SCREEN_QUIT) return SCREEN_QUIT;
+  if (chosen != 1) return 0;
+  int r = saves_delete();
+  printf("[transfer] delete save: %s\n", r > 0 ? "done" : r < 0 ? "no saves" : "failed");
+  return ui_message(LOGO, "delete save", r > 0 ? "saves deleted" : r < 0 ? "there are no saves" : "cannot delete the saves",
+                    NULL, NULL, NULL);
+}
+
 // ---------- la primera ----------
 
 int transfer_screen(const char *game) {
@@ -262,6 +285,7 @@ int transfer_screen(const char *game) {
   ui_item(&s, "Send Save");
   ui_item(&s, "Receive Save");
   ui_item(&s, "Restore Backup");
+  ui_item(&s, "Delete Save");
   ui_item(&s, "Back");
   s.fixed = 1;
   s.list_top = 220;
@@ -271,6 +295,7 @@ int transfer_screen(const char *game) {
     if (chosen == 0) r = send_save(game);
     else if (chosen == 1) r = receive_save(game);
     else if (chosen == 2) r = restore();
+    else if (chosen == 3) r = delete_save();
     else return chosen == SCREEN_QUIT ? SCREEN_QUIT : 0;
     if (r == SCREEN_QUIT) return SCREEN_QUIT;
   }

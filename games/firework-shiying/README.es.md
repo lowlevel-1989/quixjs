@@ -21,20 +21,25 @@ Necesita Firework **1.0.4** para Windows (GOG o Steam).
 | B | Cancel (cancelar) |
 | X | Correr (mod `run`); sobre una partida, borrarla (mod `delete-save`) |
 | Y | Menu (menú) |
-| Select + L1 | Lupa: un cuadro que amplía; la cruceta o las palancas lo mueven, R1 / L1 zoom, Y / X tamaño, A centra, B la cierra |
+| Select + L1 | Lupa: un cuadro que amplía; la cruceta o las palancas lo mueven, R1 / L1 zoom, Y / X tamaño, A centra, Start la fija (el mando vuelve al juego) y la desfija, B la cierra |
+| Select + X / Y | Savestate: guardar / cargar (en el mapa; no en hardcore) |
+| Select + izquierda / derecha | Ranura del savestate (1 a 4) |
 | Select + R1 | Captura de pantalla (en `screenshots/`) |
 | Select + R2 | Volver al menú del port |
 | Select + Start | Salir |
+
+Los savestates (Select + X / Y) son experimentales, en fase temprana: sigue
+guardando también con el juego.
 
 ## Compilar
 
 ```
 git clone https://github.com/lowlevel-1989/quixjs.git
 cd quixjs
-make PLATFORM=portmaster PORT=firework-shiying
+make portmaster PORT=firework-shiying
 ```
 
-Crea `firework-shiying.zip`.
+Construye `build/firework-shiying.zip`.
 
 ## Instalar
 
@@ -153,7 +158,8 @@ Necesitas el juego y dos archivos de las releases de quixjs
 En Mods, en el menú del port:
 
 - `fast-start` (activo): directo al título, sin los logos ni la pantalla de controles.
-- `big-text` (activo): el texto de los mensajes más grande.
+- `big-text` (activo): el texto de los mensajes y de la lista de partidas más grande.
+- `readable-font` (activo): el texto con M+ 1m, que se lee mejor en una pantalla pequeña.
 - `run` (activo): mantén X para correr, en todos los mapas (el juego solo deja en 3).
 - `delete-save` (activo): X dos veces sobre una partida, en guardar o cargar, la borra.
 - `achievements` (activo): la opción "Achievements" en el menú del juego, con los logros.

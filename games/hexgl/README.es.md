@@ -28,7 +28,7 @@ Cheats: No damage (los choques no quitan escudo).
 | L2 / R2 | Frenos de aire |
 | Select | Empezar la carrera otra vez |
 | Start | Pausa: seguir, reiniciar o volver al menú |
-| Select + L1 | Lupa: un cuadro que amplía; la cruceta o las palancas lo mueven, R1 / L1 zoom, Y / X tamaño, A centra, B la cierra |
+| Select + L1 | Lupa: un cuadro que amplía; la cruceta o las palancas lo mueven, R1 / L1 zoom, Y / X tamaño, A centra, Start la fija (el mando vuelve al juego) y la desfija, B la cierra |
 | Select + R1 | Captura de pantalla (en `screenshots/`) |
 | Select + R2 | Volver al menú del port |
 | Select + Start | Salir |
@@ -41,10 +41,10 @@ opción, A para aceptar, B para volver.
 ```
 git clone https://github.com/lowlevel-1989/quixjs.git
 cd quixjs
-make PLATFORM=portmaster PORT=hexgl
+make portmaster PORT=hexgl
 ```
 
-Genera `hexgl.zip`.
+Construye `build/hexgl.zip`.
 
 ## Instalar
 

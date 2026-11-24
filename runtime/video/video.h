@@ -36,7 +36,7 @@
 // Sin libvpx y libopus al compilar (make VIDEO=0) no hay video: video_open
 // devuelve NULL y el <video> dice que no lo puede reproducir.
 
-#include "gfx/surface.h"
+#include "gfx/soft/surface.h"
 
 typedef struct Video Video;
 

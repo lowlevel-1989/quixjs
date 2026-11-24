@@ -2,14 +2,14 @@
 
 English | [Español](README.es.md)
 
-The audio mixer, made for handhelds. `binding/audio.c` keeps the WebAudio
+The audio mixer, made for handhelds. `binding/audio/audio.c` keeps the WebAudio
 graph in JS (source -> gain -> panner -> ...) and, every frame, passes the
 volume, pan and speed of each voice to this mixer, which mixes them in the SDL
 audio thread.
 
 | file        | what it does |
 |-------------|--------------|
-| `mixer.h/.c` | clips (the compressed file), voices (play, set, stop, loop), the PCM stream of a video, mixing in the SDL audio callback |
+| `mixer.h/.c` | clips (the compressed file), voices (play, set, stop, loop), the PCM stream of a video, mixing in the SDL audio callback; index file of `mixer/` ([README](mixer/README.md)) |
 | `decoder.h/.c` | a sound from memory without knowing its format: picks it by its first bytes and converts to 1 or 2 channels |
 | `vorbis.c`  | ogg vorbis, with stb_vorbis (`thirdparty/stb/`) built here, reading from memory only; the LOOPSTART / LOOPLENGTH comments |
 | `mp3.c`     | mp3, with minimp3 (`thirdparty/minimp3/`) |

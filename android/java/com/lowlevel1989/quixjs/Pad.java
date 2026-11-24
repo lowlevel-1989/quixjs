@@ -51,7 +51,7 @@ final class Pad {
     /* lo que devuelven key, button y axis (launcher.c) */
     private static final int NONE = 0, UP = 1, DOWN = 2, LEFT = 3, RIGHT = 4, ACCEPT = 5, BACK = 6;
 
-    /* runtime/platform/android/launcher.c */
+    /* runtime/platform/android/pad.c */
     private static native boolean load(String desc, int vendor, int product, int buttons, int axes, int hats,
                                        String[] maps);
     private static native int key(int keycode);

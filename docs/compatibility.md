@@ -9,7 +9,7 @@ cases work, but not everything; the note says what is missing.
 
 Everything is drawn by software in an RGBA buffer per canvas, so offscreen canvas,
 `getImageData` and the tests work the same with and without a window. A canvas
-created inside a `gpu-canvas` hook ([runtime/hooks](../runtime/hooks/README.md))
+created inside a `gpu-canvas` hook ([runtime/game/hooks](../runtime/game/hooks/README.md))
 draws fillRect, clearRect, fill and stroke with colors and gradients on the GPU;
 anything else moves it back to the software path.
 
@@ -127,9 +127,9 @@ Relative paths are relative to `game_dir`.
 
 ## PixiJS
 
-PixiJS v4 is tested with 4.5.4 (`games/tests/lib/pixi_v4/pixi.js`), with both
-renderers: `games/tests/pixi_v4` with the `CanvasRenderer` and
-`games/tests/pixi_v4_webgl` with the `WebGLRenderer`. They cover Application,
+PixiJS v4 is tested with 4.5.4 (`tests/games/lib/pixi_v4/pixi.js`), with both
+renderers: `tests/games/pixi_v4` with the `CanvasRenderer` and
+`tests/games/pixi_v4_webgl` with the `WebGLRenderer`. They cover Application,
 ticker, Sprite, Container, Graphics, Text, tint, blend modes, TilingSprite,
 RenderTexture, the loader and keyboard input.
 

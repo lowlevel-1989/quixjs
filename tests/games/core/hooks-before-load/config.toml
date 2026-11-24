@@ -1,0 +1,14 @@
+[game]
+rom       = "."
+width     = 64
+height    = 64
+
+[scripts]
+libs     = []
+includes = ["../lib/assert.js"]
+entry    = "main.js"
+
+# una funcion que crea un <script> del arranque ya tiene su hook cuando llega
+# window load (RPG Maker MZ llama ahi a effekseer.initRuntime)
+[hooks]
+"effekseer.initRuntime" = "rpgmaker-mz/load/effekseer-wasm-off"

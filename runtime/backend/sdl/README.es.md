@@ -9,8 +9,7 @@ encima, el teclado y los mandos.
 ## Por que ../sdl.c solo incluye estos archivos
 
 `backend/sdl.c` es un archivo indice: incluye las partes de esta carpeta en
-orden y se compila como un solo archivo. Las partes no se compilan solas (el
-`Makefile` solo conoce `sdl.c`); `mapper.c` no es una parte: se compila
+orden y se compila como un solo archivo. Las partes no se compilan solas (`cmake/sources.cmake` solo lista `sdl.c`); `mapper.c` no es una parte: se compila
 aparte, como siempre.
 
 El orden importa: una parte usa lo que definen las anteriores. Una parte nueva
@@ -27,9 +26,9 @@ por separado.
 | `input.c` | teclado y mandos: las teclas de SDL como `KeyboardEvent.code`, la asignacion de un mando (Controls del launcher), pantalla completa, titulo, refresco y la cola de eventos (`sdl_process_events`) |
 | `overlay.c` | lo que se dibuja encima del juego a la resolucion de la ventana: el contador de `--fps`, el aviso de un logro y el de carga |
 | `draw.c` | mostrar una imagen: las capas de los canvas escaladas a la ventana y el cambio de buffer |
-| `magnifier.c` | la lupa (Select + L1): abrirla y cerrarla, sus botones, moverla, esconder el mando al juego, el cuadro y su icono |
+| `magnifier.c` | la lupa (Select + L1): abrirla, fijarla y cerrarla, sus botones, moverla, esconder el mando al juego (fija, solo los botones que la fijaron), el cuadro y su icono (fija, con un candado) |
 | `thread.c` | el thread que presenta (`[engine] present_ahead`): recibe cada imagen con su momento y la muestra a su hora, sin que el juego espere |
-| `present.c` | entregar una imagen: con el thread o sin el (`gpu_present` y el `Presenter` del driver), repintar durante una carga, y las tres entradas del backend (`present_layers`, `present`, `present_gl`) |
+| `present.c` | entregar una imagen: con el thread o sin el (`gpu_driver_present` y el `Presenter` del driver), repintar durante una carga, y las tres entradas del backend (`present_layers`, `present`, `present_gl`) |
 | `gamepads.c` | `getGamepads`: el estado de los mandos en el mapeo "standard", leido de SDL una vez por imagen (el mismo hasta los eventos de la siguiente; una pulsacion mas corta que una imagen se ve en todas las lecturas de esa imagen), y el mando de prueba (`quix.input.pressPad`) |
 | `api.c` | cerrar, la tabla `BackendInterface` y `sdl_backend_create` |
 

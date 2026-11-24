@@ -22,7 +22,7 @@
 #include <string.h>
 #include "context2d.h"
 #include "backend/backend.h"
-#include "binding/image.h"
+#include "binding/image/image.h"
 
 static JSValue imagedata_proto = { 0 };
 static int     imagedata_ready = 0;
@@ -131,7 +131,7 @@ JSValue js_ctx2d_drawImage(JSContext *ctx, JSValueConst this_val, int argc, JSVa
     return JS_ThrowTypeError(ctx, "drawImage: 3, 5 or 9 arguments required");
   }
 
-  const Surface *src = js_get_image_source(ctx, argv[0]);
+  const Surface *src = js_canvas_image_source(ctx, argv[0]);
   if (!src || src->w == 0 || src->h == 0) return JS_UNDEFINED;   // sin cargar: no dibuja
   Surface *dst = context2d_surface(ctx, c);
   if (!dst) return JS_UNDEFINED;

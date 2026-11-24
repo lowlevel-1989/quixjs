@@ -84,13 +84,13 @@ STEP int finish(Run *r, Loop *l) {
     exit_code = EXIT_TEST_TIMEOUT;
   }
 
-  free_script_bundle(&r->bundle);
+  scripts_free(&r->bundle);
   timer_free(ctx);
   video_free_all();
   mixer_shutdown();
   audio_free(ctx);
   script_free(ctx);
-  free_element_registry(ctx);
+  document_free(ctx);
   events_free(ctx);
 
   JS_FreeContext(ctx);

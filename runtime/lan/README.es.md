@@ -27,7 +27,7 @@ de la lista. Mensajes de hasta 4 KB.
 | archivo  | qué hace |
 |----------|----------|
 | `lan.c`  | los dispositivos del mismo juego y la cola de mensajes, sobre `transfer/net.c` |
-| `../binding/lan.c` | `quix.lan` en JS |
+| `../binding/quix/lan.c` | `quix.lan` en JS |
 
-Lo usa el port de HexGL (`games/hexgl/multiplayer.js`): carreras entre
+Lo usa el port de HexGL (`games/hexgl/mods/multiplayer/`): carreras entre
 dispositivos, con las naves de los demás como fantasmas.

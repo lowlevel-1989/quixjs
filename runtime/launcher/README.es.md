@@ -4,7 +4,7 @@
 
 Las pantallas propias de quixjs, las que no son del juego: el menú de
 `--launcher` y las pantallas que abre (Transfer Save, logros). Vienen de
-tamatama (https://github.com/lowlevel-1989/tamatama): el menú de su opción
+tamatama (https://github.com/lowlevel-1989/tamatama/tree/780b7e723f3dbe8a58bc54ed571f1518dac9191a): el menú de su opción
 `--menu` (`src/shared/menu.c`) y sus pantallas (`src/shared/screen.c`).
 
 El menú enseña el título del juego (`[game] title`, o `[engine] name`) y
@@ -26,20 +26,25 @@ achievements. No hay opción de fps: el port fija `[engine] fps`. Lo que se
 cambia en Options, Mods y Cheats se guarda enseguida en `quixjs-settings.toml`,
 junto al config. Controls asigna todos los botones y palancas del mando y lo
 guarda en `controller.map`, el formato de PortMaster (`backend/sdl/mapper.c`).
-Con `[controls.buttons]` pide Start, esos botones por el nombre que les da el
-port ("Confirm (A)") y siempre las dos palancas; los que no pide siguen como
-estaban. Select se pide siempre (Select + Start cierra el juego), y también
-la cruceta, A y B, que usa este menú. Las acciones
+Pide siempre todos los botones, en el orden del mando estándar (Start, Select,
+la cruceta, A, B, X, Y, L1, R1, L2, R2...), y las dos palancas: los combos de
+quixjs (Select + Start, L1, R1, R2, X, Y, izquierda y derecha) los usan, y en
+algunas consolas están en otro orden. Con `[controls.buttons]` un botón sale
+con el nombre que le da el port ("Confirm (A)"). Las acciones
 de `[controls.keys]` van al final, por su nombre, y se guardan en
 `controller.keys`; con `[controls] screenshot = true` y `magnifier = true`, tambien
 Screenshot y Magnifier (un botón suelto además de sus combos).
 
 | archivo      | de qué se encarga |
 |--------------|-------------------|
-| `launcher.c` | el menú: sus opciones, las pantallas de logros, opciones y trucos, y lo que se elige; después de Transfer Save vuelve a leer los logros |
+| `launcher.h` | lo que usa el resto de quixjs: el menú, Controls, abrir las pantallas y montar la rom |
+| `common.h` | lo que comparten las partes del launcher: las funciones de cada pantalla |
+| `launcher.c` | el menú: sus opciones, con los colores de `[launcher]`, y lo que se elige; después de Transfer Save vuelve a leer los logros |
+| `screens.c` | las pantallas del menú: Achievements, Options (con Reset achievements), Cheats y Mods |
+| `controls.c` | Controls: asignar el mando entrada a entrada y guardarlo en `controller.map` |
 | `rom.c` | montar la rom (`[game] rom`) al empezar el juego; si el zip va comprimido, la pantalla "preparing the game" con el porcentaje mientras se descomprime una vez |
-| `settings.c` | `quixjs-settings.toml`: `show_fps`, `profile`, `fullscreen`, `vibration`, `cheats` y `mods`, y lo que cambia elegir un truco o un mod (lo usa también el menú de Android, `platform/android/launcher.c`) |
-| `ui.c`       | dibuja una pantalla (logo, título, líneas, una lista que se desliza si no cabe, un aviso y la ayuda) y espera a que se elija: teclado, la cruceta y el stick del mando, y `--script` |
+| `settings.c` | `quixjs-settings.toml`: `show_fps`, `profile`, `fullscreen`, `vibration`, `cheats` y `mods`, y lo que cambia elegir un truco o un mod (lo usa también el menú de Android, `platform/android/menu.c`) |
+| `ui/`         | las pantallas propias (heredado de tamatama): `ui.c` las abre, las monta y las corre (`ui_run`), `draw.c` las dibuja (logo, título, líneas, la lista que se desliza, la leyenda, el aviso y la ayuda) e `input.c` lee lo que se pulsa (teclado, cruceta y stick del mando, `--script`); lo comparten en `common.h` |
 
 ## Cómo se dibuja
 

@@ -1,0 +1,13 @@
+[game]
+rom       = "."
+width     = 64
+height    = 64
+# las imagenes de img/big de 64 px o mas, a la mitad (gfx/soft/image_scale.h)
+image_scale      = 0.5
+image_scale_min  = 64
+image_scale_dirs = ["img/big"]
+
+[scripts]
+libs     = []
+includes = ["../lib/assert.js"]
+entry    = "main.js"

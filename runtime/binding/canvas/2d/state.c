@@ -22,7 +22,7 @@
 #include <string.h>
 #include "context2d.h"
 
-void context2d_state_default(Context2DState *s) {
+void ctx2d_state_default(Context2DState *s) {
   memset(s, 0, sizeof(*s));
   matrix_identity(&s->transform);
   s->fill.type = PAINT_COLOR;
@@ -46,7 +46,7 @@ void context2d_state_default(Context2DState *s) {
   s->shadow_color = (Color){ 0, 0, 0, 0 };
 }
 
-void context2d_state_release(JSRuntime *rt, Context2DState *s) {
+void ctx2d_state_release(JSRuntime *rt, Context2DState *s) {
   JS_FreeValueRT(rt, s->fill_obj);
   JS_FreeValueRT(rt, s->stroke_obj);
   s->fill_obj = JS_UNDEFINED;
@@ -93,7 +93,7 @@ JSValue js_ctx2d_restore(JSContext *ctx, JSValueConst this_val, int argc, JSValu
   }
   if (c->depth == 0) return JS_UNDEFINED;   // restore sin save: no hace nada
 
-  context2d_state_release(JS_GetRuntime(ctx), &c->stack[c->depth]);
+  ctx2d_state_release(JS_GetRuntime(ctx), &c->stack[c->depth]);
   c->depth--;
   return JS_UNDEFINED;
 }

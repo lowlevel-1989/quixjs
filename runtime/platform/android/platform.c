@@ -17,7 +17,7 @@
  */
 
 // platform/android: Android (bionic), para la app de android/ (make
-// PLATFORM=android). Implementa platform/platform.h y SDL_main, por donde
+// android). Implementa platform/platform.h y SDL_main, por donde
 // entra GameActivity (android/java): argv trae la carpeta del juego
 // importado ({files}/games/<id>, con su port.toml) y la de la app ({files}).
 //
@@ -206,7 +206,7 @@ static void exit_now(void) {
   _exit(0);
 }
 
-// el main de quixjs (runtime/core/main.c), renombrado en android/CMakeLists.txt
+// el main de quixjs (runtime/core/main.c), renombrado en cmake/android/native.cmake
 int quixjs_main(int argc, char **argv);
 
 static char *program_args[6];

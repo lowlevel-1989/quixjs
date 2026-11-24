@@ -8,10 +8,10 @@
 //
 // La clave vale tambien fuera del mapa (x o y negativas, hasta +-32768).
 // No sabe de ningun motor: lo que se guarda y cuando se rehace lo decide el
-// hook que lo usa (rpgmaker-mv/find-path-index). Ver runtime/engines/README.md.
+// hook que lo usa (rpgmaker-mv/logic/find-path-index). Ver runtime/engines/README.md.
 //
 // El archivo es una funcion que devuelve lo que exporta; la llama
-// quix.engine.lib la primera vez que se pide (runtime/hooks/hooks.c).
+// quix.engine.lib la primera vez que se pide (runtime/game/hooks/hooks.c).
 function () {
   function key(x, y) {
     return (x + 32768) * 65536 + (y + 32768);

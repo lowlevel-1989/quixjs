@@ -28,7 +28,7 @@ option: No damage (crashes do not take shield).
 | L2 / R2 | Air brakes |
 | Select | Restart the race |
 | Start | Pause: continue, restart or back to the menu |
-| Select + L1 | Magnifier: a box that enlarges; d-pad or sticks move it, R1 / L1 zoom, Y / X size, A centers, B closes |
+| Select + L1 | Magnifier: a box that enlarges; d-pad or sticks move it, R1 / L1 zoom, Y / X size, A centers, Start pins it (the gamepad goes back to the game) and unpins it, B closes |
 | Select + R1 | Screenshot (in `screenshots/`) |
 | Select + R2 | Back to the port menu |
 | Select + Start | Quit |
@@ -41,10 +41,10 @@ accept, B to go back.
 ```
 git clone https://github.com/lowlevel-1989/quixjs.git
 cd quixjs
-make PLATFORM=portmaster PORT=hexgl
+make portmaster PORT=hexgl
 ```
 
-It builds `hexgl.zip`.
+It builds `build/hexgl.zip`.
 
 ## Install
 

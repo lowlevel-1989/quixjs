@@ -13,8 +13,8 @@
 #
 # Los ports son los de games/ que tienen [portmaster] en su port.toml
 # (PORTS="a b" para elegir otros). Compila lo que falte: el binario del PC
-# (make), el de PortMaster de cada port (make PLATFORM=portmaster PORT=...) y
-# la app de Android (make PLATFORM=android, con el SDK y el NDK de Android).
+# (make pc), el de PortMaster de cada port (make portmaster PORT=...) y
+# la app de Android (make android, con el SDK y el NDK de Android).
 #
 #   tools/release.sh            todo
 #   tools/release.sh --ports    solo los ports (sin quixjs solo ni la app),
@@ -37,8 +37,8 @@ fi
 V=$(tr -d ' \n' < VERSION)
 OUT=release
 
-make -j"$(nproc)"
-[ "$ONLY_PORTS" = 1 ] || make PLATFORM=android
+make pc
+[ "$ONLY_PORTS" = 1 ] || make android
 
 rm -rf "$OUT"
 mkdir -p "$OUT"
@@ -58,19 +58,18 @@ licenses() {   # licenses <carpeta> <arquitectura>
   fi
 }
 
-# Un port: su zip de PortMaster y su paquete para el PC. make
-# PLATFORM=portmaster deja su carpeta en $PM y la vacia con el siguiente
-# port: se empaqueta enseguida
+# Un port: su zip de PortMaster y su paquete para el PC. El paquete sale de
+# lo que lleva el zip (descomprimido en $PM): lo mismo que se publica
 port_release() {   # port_release <port>
   PORT=$1
-  PM=obj/portmaster/zip/$PORT
-  # -W: se rehace aunque el zip ya estuviera (su carpeta en $PM es la del
-  # ultimo port que se hizo)
-  make PLATFORM=portmaster PORT="$PORT" -W "games/$PORT/port.toml"
+  make portmaster PORT="$PORT"
+  rm -rf obj/release && mkdir -p obj/release
+  unzip -q "build/$PORT.zip" -d obj/release
+  PM=obj/release/$PORT
 
-  # el port para PortMaster, tal cual lo hace make PLATFORM=portmaster
+  # el port para PortMaster, tal cual lo hace make portmaster
   # (PortMaster lo instala por el port.json de dentro, no por el nombre del zip)
-  cp "$PORT.zip" "$OUT/$PORT-$V-portmaster.zip"
+  cp "build/$PORT.zip" "$OUT/$PORT-$V-portmaster.zip"
 
   # el port para el PC: quixjs del PC con el port.toml, los mods, los
   # scripts y los README del port, gamedata/ vacia (ahi guarda el juego), el
@@ -78,10 +77,11 @@ port_release() {   # port_release <port>
   d="$OUT/$PORT"
   mkdir -p "$d/gamedata"
   cp "$PM/COPY_THE_GAME_HERE.txt" "$d/"
-  cp quixjs "$d/"
+  cp build/quixjs "$d/"
   cp "$PM/port.toml" "$PM"/README*.md "$d/"
   for f in "$PM"/*.js; do if [ -f "$f" ]; then cp "$f" "$d/"; fi; done
-  if [ -d "$PM/mods" ]; then cp -r "$PM/mods" "$d/"; fi
+  # lo propio del port (games/README.md): scripts/, hooks/ y mods/
+  for x in scripts hooks mods; do if [ -d "$PM/$x" ]; then cp -r "$PM/$x" "$d/"; fi; done
   cp -r "$PM/fonts" "$d/fonts"
   licenses "$d" x86_64
   # el titulo de PortMaster si tiene uno propio (Firework (Shiying Studio)); si no, el del juego
@@ -114,7 +114,7 @@ if [ "$ONLY_PORTS" = 0 ]; then
   # quixjs para el PC: el binario de make, con las librerias del sistema
   d="$OUT/quixjs-$V-linux-x86_64"
   mkdir -p "$d"
-  cp quixjs "$d/"
+  cp build/quixjs "$d/"
   licenses "$d" x86_64
   cat > "$d/README.txt" <<EOF
 quixjs $V for Linux x86_64 (PC)
@@ -159,8 +159,8 @@ EOF
     rm -rf "$d"
   done
 
-  # la app de Android, tal cual la hace make PLATFORM=android
-  cp quixjs.apk "$OUT/quixjs-$V-android-arm64.apk"
+  # la app de Android, tal cual la hace make android
+  cp build/quixjs.apk "$OUT/quixjs-$V-android-arm64.apk"
 fi
 
 (cd "$OUT" && sha256sum -- *.tar.gz *.zip $(ls -- *.apk 2>/dev/null || true)) > obj/SHA256SUMS

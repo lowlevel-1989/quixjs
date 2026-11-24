@@ -1,5 +1,5 @@
 # compilacion
-/quixjs
+/build/
 *.o
 # la cache de Python de los generadores de JavaScriptCore
 __pycache__/
@@ -10,16 +10,22 @@ cache/
 # juegos de terceros para probar en local: nunca van al repositorio
 tmp/
 games/*/gamedata/*
+# los ajustes del launcher de cada port (Options, Mods...): de quien juega
+games/*/quixjs-settings.toml
+# el mando y el teclado asignados en Controls
+games/*/*.map
+games/*/*.keys
 # la carpeta gamedata/ de quixjs en los tests (lo que escribe el juego)
-games/tests/**/gamedata/
+tests/games/**/gamedata/
 # lo que tests/run.sh copia dentro de cada test (el sandbox no deja salir)
-games/tests/*/*/lib/
-games/tests/*/*/assets/
-games/tests/pixi_v4_webgl/*/rom/
-# la rom de cada juego (su .zip o package.nw, junto a port.toml): la copia
+tests/games/*/*/lib/
+tests/games/*/*/assets/
+tests/games/pixi_v4_webgl/*/rom/
+# la rom de cada juego (su .zip, package.nw o app.asar, junto a port.toml): la copia
 # cada uno
 games/*/*.zip
 games/*/*.nw
+games/*/*.asar
 
 # editores
 .idea/
@@ -27,15 +33,14 @@ games/*/*.nw
 *.swp
 *~
 
-# dependencias y objetos de make PLATFORM=portmaster, y los .zip de los ports
+# lo descargado (obj/deps), los objetos (obj/cmake) y los .zip de los ports
 obj/
 *.zip
 # make release
 release/
 # make bench (tools/h5bench.sh)
 results/
-# make PLATFORM=android: el .apk y las fuentes de SDL que descarga
+# make android: el .apk
 *.apk
 *.apk.idsig
-/android/deps/
 games/*/screenshots/

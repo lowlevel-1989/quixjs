@@ -2,7 +2,7 @@
 
 English | [Español](tests.es.md)
 
-The tests are games: each folder in `games/tests` has a `config.toml` and a
+The tests are games: each folder in `tests/games` has a `config.toml` and a
 `main.js`, and most of them an `index.html`. They run without a window (dummy
 backend) and with a fixed clock, so they always give the same result and take a few
 seconds. WebGL works without a window too (an offscreen GL context).
@@ -35,7 +35,7 @@ every push (`.github/workflows/tests.yml`), with libvpx and libopus installed so
 | `FPS`     | `1`: shows the frames per second of each test |
 | `LOGDIR`  | folder of the logs (default `cache/tests-logs`) |
 | `VERBOSE` | `1`: the full output of each test |
-| `QUIXJS`  | the binary (default `./quixjs`) |
+| `QUIXJS`  | the binary (default `./build/quixjs`) |
 
 The first argument is a filter: only the tests with that text in their path run.
 A test can have an `args` file with its own arguments for quixjs (`core/gamepad-frame`
@@ -65,11 +65,12 @@ on 127.0.0.1). The protocol: [runtime/transfer](../runtime/transfer/README.md).
 | `core/events`    | addEventListener, once, handleEvent, on<type>, Event, KeyboardEvent, keyboard with `quix.input.pressKey` |
 | `core/dom`       | window, document, createElement, appendChild, getElementById (also with `el.id = ...`), instanceof, localStorage, gamepads |
 | `core/local-storage` | `[saves] local_storage`: localStorage on disk (written a moment after a change), `localStorage.x` and `localStorage['x'] = v` |
-| `core/construct2-hooks` | Construct 2: `clear-array` leaves the arrays as `arr.length = n`; `effects-direct` draws directly only a pre-drawing object with one colour-only effect and opacity 1; `include-sol` cleans only the types of the included sheet, all of them with conditions above |
+| `core/construct2-hooks` | Construct 2: `extra/memory/clear-array` leaves the arrays as `arr.length = n`; `extra/render/effects-direct` draws directly only a pre-drawing object with one colour-only effect and opacity 1; `extra/logic/include-sol` cleans only the types of the included sheet, all of them with conditions above |
 | `core/loose-names` | a file with a non-ASCII name that a FAT card could not store is found under a similar name |
 | `core/gamepad-frame` | with the sdl backend (`args`) and a virtual SDL gamepad (`quix.input.pressPad`): the gamepads are read once per frame and every read of the frame sees the same; a press shorter than a frame is seen in that frame and not in the next |
 | `core/lan` | `quix.lan` with one device: open, its id and name, nobody else, send to nobody, close |
 | `core/vibration` | `navigator.vibrate` (ms and patterns), `gamepad.vibrationActuator` (`playEffect` resolves `complete`, or `preempted` when cut; `reset`) and the presets of `lib/rumble` |
+| `core/magnifier-pin` | the pinned magnifier: Select + L1 opens it, Start pins and unpins it, Select + L1 unpins it and again closes it; pinned, the game sees the gamepad, except Start |
 | `core/pad-keys` | `[controls.keys]` with the buttons of `controller.keys`: the button presses its key (keydown and keyup with `code` and `keyCode`); a button without an action gives none |
 | `core/nwjs-fs-text` | nw.js `fs`: a text written and read back with `utf8` stays whole, also with zeros inside (the saves of RPG Maker MZ) |
 | `core/xhr`       | XMLHttpRequest: json, text, arraybuffer, 404, synchronous |
@@ -82,17 +83,19 @@ on 127.0.0.1). The protocol: [runtime/transfer](../runtime/transfer/README.md).
 | `core/steam-achievements` | greenworks in nw.js mode: `activateAchievement` unlocks the `[[achievements]]` that read `quix.steam.achievements`, and the id is noted in `steam-achievements.txt` |
 | `core/cheats`    | a cheat that is on: it sets its symbol (again if the game changes it), the playthrough is marked and gets no achievements |
 | `core/cheats-free` | a game without achievements: the cheat applies with no known engine, once its object exists, and again when the game changes it |
+| `core/hardcore`  | hardcore mode: a cheat in the settings is not applied, the playthrough is marked hardcore (also in its save), its achievements are hardcore, a touched save is not, and there are no savestates |
+| `core/savestate` | `quix.state`: save, change the game and load it back; the slots, an empty one, `busy`, the events of the mods; Select + right / X / Y with the test gamepad; a request waits while the game is busy, another one is discarded, and it is done when it is safe; an engine with promises; loading a state takes hardcore away from the playthrough |
 | `core/cheats-off` | no cheats on: a marked save gets no achievements and its symbols go back to their value; a clean one gets them |
-| `core/achievements-menu` | the hook `rpgmaker-mv/achievements-menu`: the Achievements option in the menu and its list |
+| `core/achievements-menu` | the hook `rpgmaker-mv/port/achievements-menu`: the Achievements option in the menu and its list |
 | `core/hooks-engine` | `[hooks] engine = "rpgmaker-mv"`: the engine hooks without listing them; the game's own (`"off"` or another) win |
 | `core/hooks-mz` | `[hooks] engine = "rpgmaker-mz"`: the RPG Maker MZ hooks over its real code (neutral ColorFilter, the menu blur once, Touch UI, `GeometrySystem.bind` without VAO with the same WebGL calls) |
-| `core/native-loading-mz` | `rpgmaker-mz/decrypt-image-native`: an encrypted RPG Maker MZ image (`.png_`) read and decrypted in C, by its path; the same pixels as with the original (XHR and Blob) |
+| `core/native-loading-mz` | `rpgmaker-mz/load/decrypt-image-native`: an encrypted RPG Maker MZ image (`.png_`) read and decrypted in C, by its path; the same pixels as with the original (XHR and Blob) |
 | `core/native-loading` | `decrypt-image-native` and `load-audio-native`: encrypted `.rpgmvp` and `.rpgmvo` read and decrypted in the background |
 | `core/pure-common-events` | `pure-common-events`: a pure parallel process (common or map event) is not run again if its last run changed nothing and what it reads stays the same; a run that changes something (another branch, adding to a variable) is always done |
 | `core/refresh-partial` | `refresh-on-net-change`: with real changes only the events that depend on them are refreshed; the pages, the same as with a full refresh (500 random changes) |
 | `core/tint-native` | `tint-native`: the same pixels as `Sprite.prototype._executeTint` |
 | `core/render-scale` | `render-scale`: with `render_scale = 0.5` PIXI draws at half the resolution (canvas 100x50) and the drawing lands in place |
-| `core/save-picture-small` | `save-picture-small`: the save picture at a quarter of the size, with the colors of the scene in place |
+| `core/save-picture-small` | `extra/render/save-picture-small`: the save picture at a quarter of the size, with the colors of the scene in place |
 | `core/yep-enemy-name` | `yep-enemy-name-refresh`: the enemy name is redrawn only when it changes |
 | `canvas/style`   | fillStyle and the other properties: parsing, serialization, invalid values, save/restore |
 | `canvas/rect`    | fillRect, clearRect, strokeRect, globalAlpha, translate, scale, rotate, setTransform |
@@ -115,15 +118,15 @@ on 127.0.0.1). The protocol: [runtime/transfer](../runtime/transfer/README.md).
 | `pixi_v4_webgl/*` | the same nine `pixi_v4` tests with the WebGL renderer (`lib/webgl.js`) |
 | `bench/canvas-lights` | benchmark: a light mask like the lighting plugins of RPG Maker MV (radial gradients in `lighter` mode); prints ms per mask |
 
-The images, sounds and files they use are in `games/tests/assets` (made for the
+The images, sounds and files they use are in `tests/games/assets` (made for the
 tests: `quad.png` is 4x4 with a red, a green, a blue and a white block;
 `quad.rpgmvp` and `quad.png_` are that PNG encrypted as in RPG Maker MV and
 MZ, with the key of `core/native-loading`). PixiJS is
-`games/tests/lib/pixi_v4/pixi.js`.
+`tests/games/lib/pixi_v4/pixi.js`.
 
 ## Write a test
 
-A test uses `games/tests/lib/assert.js` and ends with `T.done()`:
+A test uses `tests/games/lib/assert.js` and ends with `T.done()`:
 
 ```js
 var canvas = document.createElement('canvas');
@@ -154,7 +157,7 @@ The `config.toml` of a test:
 
 ```toml
 [game]
-game_dir  = "games/tests/canvas/rect"
+game_dir  = "tests/games/canvas/rect"
 width     = 320
 height    = 240
 
@@ -193,18 +196,18 @@ arrive as keys of the real keyboard. With `--launcher` the frames count from the
 first frame of the menu, and the ones of the game come after them.
 
 ```
-./quixjs -c mygame.toml --script play.keys
+./build/quixjs -c mygame.toml --script play.keys
 ```
 
 ## Debug console
 
-Inherited from tamatama (https://github.com/lowlevel-1989/tamatama). With
+Inherited from tamatama (https://github.com/lowlevel-1989/tamatama/tree/780b7e723f3dbe8a58bc54ed571f1518dac9191a). With
 `--debug` quixjs listens on a Unix socket (`quixjs.sock` in the current folder, or
 `--debug=PATH`) and runs text commands between frames, when no JS is running.
 `tools/console.py` is the client: interactive, or one command per call.
 
 ```
-Terminal 1:  ./quixjs --debug -c mygame.toml
+Terminal 1:  ./build/quixjs --debug -c mygame.toml
 Terminal 2:  python3 tools/console.py
              python3 tools/console.py press Enter
              python3 tools/console.py eval "SceneManager._scene.constructor.name"
@@ -223,6 +226,8 @@ Terminal 2:  python3 tools/console.py
 | `run N`              | advance N frames and pause |
 | `ach`                | the achievements of the port and the values of their symbols |
 | `ach reset`          | forget the unlocked achievements |
+| `state`              | the savestate slots (`quix.state`) and the chosen one |
+| `state save N` / `state load N` | save or load slot N, as Select + X / Y: now, or when it is safe (with its notice) |
 | `fps [N]`            | the frame rate cap; `fps N` changes it now (10 to 60) |
 | `prof start` / `prof stop` | sampling profiler: where the time goes (`prof [N]` shows the top N) |
 | `prof save [FILE]`   | write the report to FILE (`quixjs-profile.txt`) |

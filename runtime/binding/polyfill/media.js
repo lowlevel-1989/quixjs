@@ -1,10 +1,12 @@
 // <audio> / new Audio() y <video>. <audio>: de momento solo canPlayType
-// (los juegos lo usan para elegir el formato: quixjs decodifica ogg, mp3 y wav).
+// (los juegos lo usan para elegir el formato: quixjs decodifica ogg, mp3, wav
+// y, si el binario lleva libopus, Opus en WebM; runtime/audio/webm.c).
 // <video>: WebM (VP8/VP9 + Opus) y MP4 (H.264 + AAC) con __quixVideo
 // (runtime/video).
 (function (g) {
   function canPlayType(t) {
     t = String(t);
+    if (g.__quixAudioWebm && /webm/i.test(t) && !/vorbis|vp8|vp9|av01/i.test(t)) return 'probably';
     if (/opus|flac|webm|mp4|m4a|aac/i.test(t)) return '';
     return /ogg|vorbis|mpeg|mp3|wav/i.test(t) ? 'probably' : '';
   }
@@ -16,7 +18,7 @@
   }
 
   // <audio> / new Audio(): suena con el WebAudio de quixjs
-  // (runtime/binding/webaudio.js), un AudioContext para todos. Construct 2
+  // (runtime/binding/audio/webaudio.js), un AudioContext para todos. Construct 2
   // pone ahi su musica. El archivo se abre entero (quixLoadFile, en
   // segundo plano) al poner src.
   var shared = null;
@@ -34,6 +36,7 @@
     var volume = 1;
     var muted = false;
     var seq = 0;       // cada src nuevo: las cargas viejas no cuentan
+    var route = null;  // createMediaElementSource: el nodo al que va el sonido
 
     function level() {
       if (gain) gain.gain.value = muted ? 0 : volume;
@@ -59,7 +62,7 @@
       stopSource();
       if (!gain) {
         gain = ctx.createGain();
-        gain.connect(ctx.destination);
+        gain.connect(route || ctx.destination);
       }
       level();
       source = ctx.createBufferSource();
@@ -77,6 +80,16 @@
       startedAt = ctx.currentTime;
       source.start(0, offset);
     }
+    // createMediaElementSource (runtime/binding/audio/webaudio.js): el sonido del
+    // elemento va a node en lugar de directo a los altavoces (Construct 3
+    // pasa asi su musica por sus volumenes)
+    el.__quixRoute = function (node) {
+      route = node;
+      if (gain) {
+        gain.disconnect();
+        gain.connect(node);
+      }
+    };
     el.ended = false;
     el.load = function () {
       var self = this;

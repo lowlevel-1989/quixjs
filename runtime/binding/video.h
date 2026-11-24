@@ -23,7 +23,7 @@
 // (video_tick) y el visible se muestra encima de los canvas.
 
 #include "js/js.h"
-#include "gfx/surface.h"
+#include "gfx/soft/surface.h"
 
 void js_api_add_video(JSContext *ctx);
 // Una vez por imagen: avanza los videos que suenan

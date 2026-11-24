@@ -22,20 +22,20 @@ Mods (on): [controller](mods/controller/README.md), [big-text](mods/big-text/REA
 |--|--|
 | D-pad / left stick | Move the cursor to the next button that way |
 | A | Click where the cursor is |
-| Select + L1 | Magnifier: a box that enlarges; d-pad or sticks move it, R1 / R2 zoom in, L1 / L2 zoom out, Y / X size, A centers, B closes |
+| Select + L1 | Magnifier: a box that enlarges; d-pad or sticks move it, R1 / R2 zoom in, L1 / L2 zoom out, Y / X size, A centers, Start pins it (the gamepad goes back to the game) and unpins it, B closes |
 | Select + R1 | Screenshot (in `screenshots/`) |
 | Select + R2 | Back to the menu of the port |
 | Select + Start | Exit |
 
-## Build
+## Compile
 
 ```
 git clone https://github.com/lowlevel-1989/quixjs.git
 cd quixjs
-make PLATFORM=portmaster PORT=supersmilingdungeon
+make portmaster PORT=supersmilingdungeon
 ```
 
-It makes `supersmilingdungeon.zip`.
+It builds `build/supersmilingdungeon.zip`.
 
 ## Install
 

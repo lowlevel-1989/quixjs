@@ -23,10 +23,10 @@
 #include <string.h>
 #include "core/app_context.h"
 #include "document.h"
-#include "image.h"
+#include "image/image.h"
 #include "canvas.h"
 #include "webgl.h"
-#include "gfx/gpu2d.h"
+#include "gfx/gl/gpu2d.h"
 
 static JSClassID js_canvas_class_id;
 
@@ -94,7 +94,7 @@ void canvas_leave_gpu(CanvasData *cd, const char *why) {
   printf("[gpu-canvas] %dx%d canvas back to the CPU (%s)\n", cd->surface.w, cd->surface.h, why);
 }
 
-const Surface *js_get_image_source(JSContext *ctx, JSValueConst val) {
+const Surface *js_canvas_image_source(JSContext *ctx, JSValueConst val) {
   CanvasData *cd = js_canvas_get(ctx, val);
   if (cd) {
     canvas_sync_cpu(cd);                    // lo dibujado en la GPU (gpu-canvas)

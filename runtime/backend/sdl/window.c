@@ -64,7 +64,7 @@ static GLuint sdl_shader(GLenum type, const char *src) {
 }
 
 static int sdl_gl_setup(SDLPlatformData* data) {
-  // runtime/shaders/present.vert y .frag
+  // runtime/gfx/gl/shaders/present.vert y .frag
   const char *vs = SHADER_PRESENT_VERT;
   const char *fs = SHADER_PRESENT_FRAG;
   data->program = qgl.CreateProgram();

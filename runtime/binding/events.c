@@ -68,7 +68,7 @@ static int listener_options_once(JSContext *ctx, JSValueConst options) {
   return r;
 }
 
-static JSValue js_addEventListener(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+static JSValue js_events_addEventListener(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
   if (argc < 2 || !(JS_IsFunction(ctx, argv[1]) || JS_IsObject(argv[1]))) return JS_UNDEFINED;
   const char *type = JS_ToCString(ctx, argv[0]);
   if (!type) return JS_EXCEPTION;
@@ -121,7 +121,7 @@ static void remove_listener(JSContext *ctx, JSValueConst list, JSValueConst fn) 
   }
 }
 
-static JSValue js_removeEventListener(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+static JSValue js_events_removeEventListener(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
   if (argc < 2) return JS_UNDEFINED;
   const char *type = JS_ToCString(ctx, argv[0]);
   if (!type) return JS_EXCEPTION;
@@ -218,7 +218,7 @@ int events_dispatch(JSContext *ctx, JSValueConst target, JSValueConst event) {
   return result;
 }
 
-static JSValue js_dispatchEvent(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+static JSValue js_events_dispatchEvent(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
   if (argc < 1 || !JS_IsObject(argv[0])) return JS_ThrowTypeError(ctx, "dispatchEvent: event required");
   JSValue target = resolve_target(ctx, this_val);
   events_dispatch(ctx, target, argv[0]);
@@ -227,9 +227,9 @@ static JSValue js_dispatchEvent(JSContext *ctx, JSValueConst this_val, int argc,
 }
 
 static const JSCFunctionListEntry js_event_target_funcs[] = {
-  JS_CFUNC_DEF("addEventListener",    2, js_addEventListener),
-  JS_CFUNC_DEF("removeEventListener", 2, js_removeEventListener),
-  JS_CFUNC_DEF("dispatchEvent",       1, js_dispatchEvent),
+  JS_CFUNC_DEF("addEventListener",    2, js_events_addEventListener),
+  JS_CFUNC_DEF("removeEventListener", 2, js_events_removeEventListener),
+  JS_CFUNC_DEF("dispatchEvent",       1, js_events_dispatchEvent),
 };
 
 void js_event_target_setup(JSContext *ctx, JSValueConst obj) {

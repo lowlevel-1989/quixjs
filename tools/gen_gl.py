@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""tools/gen_gl.py: genera runtime/gfx/gl_funcs.h (tabla de funciones de
-OpenGL ES 2.0) y runtime/binding/webgl_constants.h (las constantes de WebGL 1)
+"""tools/gen_gl.py: genera runtime/gfx/gl/funcs/gl2.h (tabla de funciones de
+OpenGL ES 2.0) y runtime/binding/webgl/constants/webgl1.h (las constantes de WebGL 1)
 a partir de la cabecera GLES2 que trae SDL2 (SDL_opengles2_gl2.h).
 
   python3 tools/gen_gl.py [/usr/include/SDL2/SDL_opengles2_gl2.h]
@@ -27,14 +27,14 @@ webgl_extra = [
 
 lic = open(os.path.join(root, "runtime/core/main.c")).read().split("*/", 1)[0] + "*/\n"
 
-with open(os.path.join(root, "runtime/gfx/gl_funcs.h"), "w") as f:
+with open(os.path.join(root, "runtime/gfx/gl/funcs/gl2.h"), "w") as f:
     f.write(lic)
     f.write("\n// Generado por tools/gen_gl.py: no editar a mano.\n")
     f.write("// Las funciones de OpenGL ES 2.0: QX_GL(TIPO_PFN, Nombre)\n\n")
     for name in funcs:
         f.write("QX_GL(PFNGL%sPROC, %s)\n" % (name.upper(), name))
 
-with open(os.path.join(root, "runtime/binding/webgl_constants.h"), "w") as f:
+with open(os.path.join(root, "runtime/binding/webgl/constants/webgl1.h"), "w") as f:
     f.write(lic)
     f.write("\n// Generado por tools/gen_gl.py: no editar a mano.\n")
     f.write("// Las constantes de WebGL 1 (las de OpenGL ES 2.0 sin GL_ y las propias)\n\n")
@@ -51,9 +51,9 @@ with open(os.path.join(root, "runtime/binding/webgl_constants.h"), "w") as f:
 print("%d functions, %d constants" % (len(funcs), len(seen)))
 
 # ---- OpenGL ES 3.0 (WebGL 2): python3 tools/gen_gl.py ES2.h /usr/include/GLES3/gl3.h
-# runtime/gfx/gl3_funcs.h (las funciones que ES 3.0 agrega, sus tipos y
+# runtime/gfx/gl/funcs/gl3.h (las funciones que ES 3.0 agrega, sus tipos y
 # constantes, sin necesitar GLES3 en el sistema) y
-# runtime/binding/webgl2_constants.h (las constantes que WebGL 2 agrega)
+# runtime/binding/webgl/constants/webgl2.h (las constantes que WebGL 2 agrega)
 if len(sys.argv) > 2:
     t3 = open(sys.argv[2]).read()
     es3 = t3[t3.index("#ifndef GL_ES_VERSION_3_0"):]
@@ -62,7 +62,7 @@ if len(sys.argv) > 2:
     lines = re.findall(r"(typedef [^;]*\(GL_APIENTRYP PFNGL\w+PROC\)[^;]*;)", es3)
     consts3 = re.findall(r"#define\s+GL_(\w+)\s+(0x[0-9A-Fa-f]+u?|\d+u?)\b", es3)
     have = set(n for n, _ in consts)
-    with open(os.path.join(root, "runtime/gfx/gl3_funcs.h"), "w") as f:
+    with open(os.path.join(root, "runtime/gfx/gl/funcs/gl3.h"), "w") as f:
         f.write(lic)
         f.write("\n// Generado por tools/gen_gl.py: no editar a mano.\n")
         f.write("// Lo que OpenGL ES 3.0 agrega a ES 2.0 (de GLES3/gl3.h de Khronos): sus\n")
@@ -81,7 +81,7 @@ if len(sys.argv) > 2:
         for name in typedefs:
             f.write("QX_GL3(%s, %s)\n" % (name, protos[name[5:-4]]))
         f.write("#endif\n")
-    with open(os.path.join(root, "runtime/binding/webgl2_constants.h"), "w") as f:
+    with open(os.path.join(root, "runtime/binding/webgl/constants/webgl2.h"), "w") as f:
         f.write(lic)
         f.write("\n// Generado por tools/gen_gl.py: no editar a mano.\n")
         f.write("// Las constantes que WebGL 2 agrega a WebGL 1 (las de OpenGL ES 3.0)\n\n")

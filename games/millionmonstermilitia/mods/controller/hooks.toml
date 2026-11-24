@@ -1,0 +1,3 @@
+# controller: jugar con mando, como en Super Smiling Dungeon: el puntero salta
+# entre lo que se puede pulsar en pantalla y A lo pulsa. Ver README.md.
+scripts = ["targets.js", "move.js", "pointer.js", "screens.js", "pad.js"]

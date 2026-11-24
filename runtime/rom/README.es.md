@@ -23,8 +23,8 @@ progreso (`launcher/rom.c`); despues arranca enseguida.
 |-------------|-------------------|
 | `rom.h`     | la API de la rom (leer, abrir, datos, listar, mapear) y la interfaz de cada tipo |
 | `rom.c`     | montarla y pasar cada ruta del juego a su tipo, sin saber cual es |
-| `rom_zip.c` | la rom en un `.zip` (`zip/`): descomprimirla una vez si hace falta, archivos y carpetas de dentro |
-| `rom_dir.c` | la rom en una carpeta (los tests, o un juego descomprimido en el PC) |
+| `zip.c` | la rom en un `.zip` (`zip/`): descomprimirla una vez si hace falta, archivos y carpetas de dentro |
+| `dir.c` | la rom en una carpeta (los tests, o un juego descomprimido en el PC) |
 
-Solo la llama `core/url.c`: todo archivo que lee el juego pasa por `url.c`
+Solo la llama `core/url/`: todo archivo que lee el juego pasa por `core/url/`
 (scripts, imagenes, sonidos, videos, fuentes, `fs` de nw.js).

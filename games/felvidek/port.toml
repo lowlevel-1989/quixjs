@@ -4,7 +4,7 @@
 # ([engine], [game], [saves], [fonts], [scripts]) salio de quixjs
 # --gen-config sobre Felvidék 1.04 (GOG), revisada a mano. Sirve en cualquier
 # sitio donde corre quixjs, con el juego copiado en gamedata/. [portmaster]
-# es lo que pide PortMaster (make PLATFORM=portmaster PORT=felvidek genera con
+# es lo que pide PortMaster (make portmaster PORT=felvidek genera con
 # ella su port.json, su gameinfo.xml y el script .sh del port).
 #
 # [game] title es el de su data/System.json ("Felvidek", sin tilde: la app
@@ -25,7 +25,7 @@ fps = 60
 
 [game]
 title     = "Felvidek"
-version   = "0.1.0"           # la del port
+version   = "0.1.1"           # la del port
 id        = "felvidek"
 # la rom: la carpeta www/ del juego comprimida en un .zip, junto a este
 # port.toml. game_dir: donde empieza el juego dentro de la rom (la carpeta

@@ -24,7 +24,7 @@ Necesita Fear & Hunger **1.4.1** para Windows (itch.io o Steam).
 | L1 / R1 | Personaje o página anterior / siguiente, en los menús |
 | (lo eliges en Controls) | Torch (antorcha) |
 | (lo eliges en Controls) | Phase |
-| Select + L1 | Lupa: un cuadro que amplía; la cruceta o las palancas lo mueven, R1 / L1 zoom, Y / X tamaño, A centra, B la cierra |
+| Select + L1 | Lupa: un cuadro que amplía; la cruceta o las palancas lo mueven, R1 / L1 zoom, Y / X tamaño, A centra, Start la fija (el mando vuelve al juego) y la desfija, B la cierra |
 | Select + R1 | Captura de pantalla (en `screenshots/`) |
 | Select + R2 | Volver al menú del port |
 | Select + Start | Salir |
@@ -36,10 +36,10 @@ Mods (activos): [rumble](mods/rumble/README.es.md) (vibración), [party-bars](mo
 ```
 git clone https://github.com/lowlevel-1989/quixjs.git
 cd quixjs
-make PLATFORM=portmaster PORT=fearandhunger
+make portmaster PORT=fearandhunger
 ```
 
-Construye `fearandhunger.zip`.
+Construye `build/fearandhunger.zip`.
 
 ## Instalar
 

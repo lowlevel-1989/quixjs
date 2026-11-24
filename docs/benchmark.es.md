@@ -128,7 +128,7 @@ Medidas en los puntos criticos del runtime, que solo se compilan si se piden:
 
 ```
 make TRACE=1                                   # PC
-make PLATFORM=portmaster PORT=fearandhunger TRACE=1   # la de las portatiles
+make portmaster PORT=fearandhunger TRACE=1   # la de las portatiles
 ```
 
 Cada punto escribe `[trace] <que>: <ms> ms` cuando tarda al menos su minimo.
@@ -142,12 +142,12 @@ linea en el binario. Cambiar `TRACE` recompila todo.
 | `texSubImage2D WxH` | 1 ms | volver a subir un canvas (el contenido de una ventana, texto) |
 | `bufferSubData N bytes` | 1 ms | escribir vertices; si tarda, el driver espero a la GPU |
 | `readPixels WxH` | 1 ms | leer de la GPU (la foto detras del menu) |
-| `image decode WxH (worker)` | 5 ms | decodificar un PNG en su thread (`binding/image.c`) |
+| `image decode WxH (worker)` | 5 ms | decodificar un PNG en su thread (`binding/image/decode.c`) |
 | `collectGarbage full/due` | 1 ms | un GC pedido desde JS (`quix.memory.collect`: los hooks del GC) |
-| `blur WxH` | 1 ms | el desenfoque nativo de RPG Maker MV (`engines/rpgmaker-mv/blur.c`) |
+| `blur WxH` | 1 ms | el desenfoque nativo de RPG Maker MV (`engines/rpgmaker-mv/natives/blur.c`) |
 
 Un punto nuevo: `TRACE_START(t)` y `TRACE_END(t, min_ms, "que", ...)` de
-`runtime/core/trace.h` alrededor del codigo, y una fila en esta tabla.
+`runtime/core/debug/trace.h` alrededor del codigo, y una fila en esta tabla.
 
 ### Memoria
 
@@ -169,6 +169,6 @@ lo que hace comparables el antes y el despues. Los comandos:
 
 - [Motor de JavaScript](javascript-engine.es.md): JavaScriptCore, su JIT y los
   cambios que le hace quixjs.
-- [runtime/hooks](../runtime/hooks/README.es.md): cambiar una funcion lenta de un
+- [runtime/game/hooks](../runtime/game/hooks/README.es.md): cambiar una funcion lenta de un
   juego o motor por C, sin tocar sus archivos.
 - [Codigo](../runtime/README.es.md): que hace cada parte del runtime.

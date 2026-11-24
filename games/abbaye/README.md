@@ -25,20 +25,25 @@ Mods (on): [achievements](mods/achievements/README.md) (the pause shows the achi
 | A | Jump; start, on the title |
 | Select | Info, on the title |
 | Start | Pause: shows the achievements (mod `achievements`); Start or B goes on |
-| Select + L1 | Magnifier: a box that enlarges; d-pad or sticks move it, R1 / L1 zoom, Y / X size, A centers, B closes |
+| Select + L1 | Magnifier: a box that enlarges; d-pad or sticks move it, R1 / L1 zoom, Y / X size, A centers, Start pins it (the gamepad goes back to the game) and unpins it, B closes |
+| Select + X / Y | Savestate: save (when Jean enters the next room) / load (not in hardcore) |
+| Select + left / right | Savestate slot (1 to 4) |
 | Select + R1 | Screenshot (in `screenshots/`) |
 | Select + R2 | Back to the port menu |
 | Select + Start | Quit |
+
+Savestates (Select + X / Y) are experimental, at an early stage: keep saving
+with the game too.
 
 ## Compile
 
 ```
 git clone https://github.com/lowlevel-1989/quixjs.git
 cd quixjs
-make PLATFORM=portmaster PORT=abbaye
+make portmaster PORT=abbaye
 ```
 
-It builds `abbaye.zip`.
+It builds `build/abbaye.zip`.
 
 ## Install
 

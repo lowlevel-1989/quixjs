@@ -2,10 +2,10 @@
 """tools/console.py: consola para la consola de debug de quixjs. Solo usa la
 libreria estandar.
 
-Heredada de tamatama (https://github.com/lowlevel-1989/tamatama,
-tools/console.py), igual que el servidor (runtime/core/debug_server.c).
+Heredada de tamatama (https://github.com/lowlevel-1989/tamatama/tree/780b7e723f3dbe8a58bc54ed571f1518dac9191a,
+tools/console.py), igual que el servidor (runtime/core/debug/debug_server/debug_server.c).
 
-Terminal 1:  ./quixjs --debug -c juego/config.toml
+Terminal 1:  ./build/quixjs --debug -c juego/config.toml
 Terminal 2:  python3 tools/console.py
 
 Tambien un comando suelto (para automatizar pruebas):
@@ -16,7 +16,7 @@ Tambien un comando suelto (para automatizar pruebas):
   python3 tools/console.py -w 1.5 press ArrowDown   # espera 1.5 s despues
 
 Habla con quixjs.sock (lo crea quixjs en la carpeta donde se ejecuta) con los
-comandos de texto de runtime/core/debug_server.c. Cada respuesta termina en una
+comandos de texto de runtime/core/debug/debug_server/debug_server.c. Cada respuesta termina en una
 linea "ok" o "err MENSAJE".
 """
 import argparse

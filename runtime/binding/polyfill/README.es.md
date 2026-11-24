@@ -4,8 +4,8 @@
 
 Las APIs del navegador que no necesitan C están escritas en JS en esta
 carpeta, una por archivo. No se leen al arrancar: `tools/embed_js.py`
-las mete en `obj/gen/polyfills.h` antes de compilar (lo hace el `Makefile`
-cuando cambia un archivo), y `binding/polyfill.c` las ejecuta todas al
+las mete en `obj/cmake/<plataforma>/gen/polyfills.h` antes de compilar (lo hace
+`cmake/generated.cmake` cuando cambia un archivo), y `binding/polyfill.c` las ejecuta todas al
 arrancar, antes que los scripts del juego. Cada archivo es su propia función
 sobre `globalThis`: el orden no importa, y un error dice de qué archivo viene
 (`<quix-polyfill/media.js>`). Sí necesitan las APIs escritas en C, y se
@@ -26,12 +26,14 @@ ejecutan después de ellas (`core/main/start.c`): `fonts.js` y `media.js` usan
 | `text.js`     | `TextDecoder` / `TextEncoder` (UTF-8) y `structuredClone` |
 | `fetch.js`    | `fetch()` sobre `XMLHttpRequest` (archivos, `data:` y `blob:`), con `Response` y `Headers` |
 | `url.js`      | `URLSearchParams` (los parámetros `?a=b` de una dirección) y `URL.prototype.searchParams` |
+| `worker.js`   | `Worker`, `MessageChannel` y `MessagePort` en el mismo hilo: cada worker con su propio `self`, los mensajes en la siguiente vuelta del loop (Construct 3) |
+| `imagebitmap.js` | `createImageBitmap` (un `Image` o un canvas con `close()`) e `ImageBitmap` |
 
 ## Agregar una API
 
 Se crea un archivo `.js` aquí con el código dentro de
-`(function (g) { ... })(globalThis);` y se agrega a la tabla de arriba: el
-`Makefile` lo mete en la siguiente compilación. No debe depender de otro
+`(function (g) { ... })(globalThis);` y se agrega a la tabla de arriba: la
+siguiente compilación lo mete. No debe depender de otro
 archivo de esta carpeta. Si la API necesita C, va en un `binding/*.c` (ver
 [C o JS](../README.es.md#c-o-js)).
 
@@ -54,13 +56,13 @@ archivo de esta carpeta. Si la API necesita C, va en un `binding/*.c` (ver
 ## JS antiguo
 
 `RegExp.$1..$9`, `lastMatch`, `leftContext`..., que usan muchos plugins de RPG
-Maker, vienen con JavaScriptCore (el test `games/tests/core/legacy` lo
+Maker, vienen con JavaScriptCore (el test `tests/games/core/legacy` lo
 comprueba).
 
 ## Audio
 
 `<audio>` y `new Audio()` (`media.js`) suenan con el WebAudio de quixjs
-(`binding/webaudio.js`), el mismo mezclador que los efectos: poner `src` abre
+(`binding/audio/webaudio.js`), el mismo mezclador que los efectos: poner `src` abre
 el archivo entero en segundo plano (`quixLoadFile`) y lanza `canplay` y
 `canplaythrough`; funcionan `play()`, `pause()`, `loop`, `volume`, `muted` y
 `currentTime`, y al terminar lanza `ended`. Construct 2 pone así su música.

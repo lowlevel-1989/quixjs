@@ -24,8 +24,8 @@
 #include <string.h>
 #include <time.h>
 #include "backend/dummy/backend.h"
-#include "backend/sdl/backend.h"
-#include "core/args.h"
+#include "backend/sdl/sdl.h"
+#include "core/config/args.h"
 #include "backend.h"
 #include "core/dispatch.h"
 

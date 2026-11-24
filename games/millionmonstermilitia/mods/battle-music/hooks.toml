@@ -1,0 +1,3 @@
+# battle-music: musica de fondo en la batalla, que en el juego solo tiene el
+# ambiente (muy bajo). Ver README.md.
+scripts = ["music.js"]

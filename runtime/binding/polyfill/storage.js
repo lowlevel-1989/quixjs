@@ -7,7 +7,7 @@
 // Entonces se lee del disco la primera vez que el juego lo usa y, despues de
 // cada cambio, se escribe entero (JSON) al poco (SAVE_MS): varios setItem
 // seguidos son una sola escritura (quix.storage.read y quix.storage.write,
-// runtime/binding/quix.c).
+// runtime/binding/quix/quix.c).
 (function (g) {
   var SAVE_MS = 100;
 
@@ -45,12 +45,18 @@
     }, SAVE_MS);
   }
 
+  // --trace-saves: quien lee y escribe el localStorage que se guarda
+  function trace(s, op, k) {
+    if (s._persist && g.quix && g.quix.tracingSaves) g.quix.traceSave(op, 'localStorage "' + k + '"');
+  }
   Storage.prototype.getItem = function (k) {
     var d = data(this);
     k = String(k);
+    trace(this, 'read', k);
     return Object.prototype.hasOwnProperty.call(d, k) ? d[k] : null;
   };
   Storage.prototype.setItem = function (k, v) {
+    trace(this, 'write', String(k));
     data(this)[String(k)] = String(v);
     changed(this);
   };
