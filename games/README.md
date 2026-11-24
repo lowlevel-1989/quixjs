@@ -15,6 +15,7 @@ Android). The test games are in [tests/games](../tests/games).
 | `hexgl/`                 | HexGL ([README](hexgl/README.md)) |
 | `lookoutside/`           | Look Outside ([README](lookoutside/README.md)) |
 | `millionmonstermilitia/` | Million Monster Militia ([README](millionmonstermilitia/README.md)) |
+| `muffleslifesentence/`   | Muffles' Life Sentence ([README](muffleslifesentence/README.md)) |
 | `supersmilingdungeon/`   | Super Smiling Dungeon ([README](supersmilingdungeon/README.md)) |
 
 ## The shape of a port

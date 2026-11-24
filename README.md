@@ -17,16 +17,21 @@ A port is a game packaged for [PortMaster](https://portmaster.games), the
 tool that installs games on Linux handhelds. The game files are not included:
 the player copies them from their own copy.
 
-| port | engine | how to install it |
-|------|--------|-------------------|
-| Fear & Hunger 1.4.1 | RPG Maker MV | [games/fearandhunger](games/fearandhunger/README.md) |
-| Firework | RPG Maker MV | [games/firework-shiying](games/firework-shiying/README.md) |
-| Look Outside | RPG Maker MZ | [games/lookoutside](games/lookoutside/README.md) |
-| Felvidék | RPG Maker MV | [games/felvidek](games/felvidek/README.md) |
-| HexGL (races between handhelds on the same network) | three.js | [games/hexgl](games/hexgl/README.md) |
-| Gunfield | Construct 2 | [games/gunfield](games/gunfield/README.md) |
-| L'Abbaye des Morts | Phaser 2 | [games/abbaye](games/abbaye/README.md) |
-| Super Smiling Dungeon | GDevelop 5 | [games/supersmilingdungeon](games/supersmilingdungeon/README.md) |
+| port | where to get the game | engine | savestates | how to install it |
+|------|-----------------------|--------|------------|-------------------|
+| Fear & Hunger 1.4.1 | [itch.io](https://mirohaver.itch.io/fear-hunger) | RPG Maker MV | no | [games/fearandhunger](games/fearandhunger/README.md) |
+| Firework | [GOG](https://www.gog.com/game/firework) | RPG Maker MV | experimental | [games/firework-shiying](games/firework-shiying/README.md) |
+| Look Outside | [GOG](https://www.gog.com/game/look_outside) | RPG Maker MZ | experimental | [games/lookoutside](games/lookoutside/README.md) |
+| Felvidék | [GOG](https://www.gog.com/game/felvidek) | RPG Maker MV | no | [games/felvidek](games/felvidek/README.md) |
+| Muffles' Life Sentence | [Steam](https://store.steampowered.com/app/3145370/Muffles_Life_Sentence/) | RPG Maker MV | no | [games/muffleslifesentence](games/muffleslifesentence/README.md) |
+| HexGL (races between handhelds on the same network) | free, [GitHub](https://github.com/BKcore/HexGL) | three.js | no | [games/hexgl](games/hexgl/README.md) |
+| Gunfield | [Steam](https://store.steampowered.com/app/2305900/) | Construct 2 | no | [games/gunfield](games/gunfield/README.md) |
+| Million Monster Militia | [Steam](https://store.steampowered.com/app/2358770/) | Construct 3 | experimental | [games/millionmonstermilitia](games/millionmonstermilitia/README.md) |
+| L'Abbaye des Morts | free, [GitHub](https://github.com/luceraproject/abbaye-des-morts) | Phaser 2 | experimental | [games/abbaye](games/abbaye/README.md) |
+| Super Smiling Dungeon | [Steam](https://store.steampowered.com/app/3539970/) | GDevelop 5 | no | [games/supersmilingdungeon](games/supersmilingdungeon/README.md) |
+
+Savestates (Select + X / Y) are experimental, at an early stage: keep saving
+with the game too.
 
 ## Play a game on Linux
 
