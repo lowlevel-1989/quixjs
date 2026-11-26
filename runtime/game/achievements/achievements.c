@@ -30,11 +30,16 @@
 Achievement ach_list[MAX_ACHIEVEMENTS];
 int         ach_total = 0;
 int         ach_icon = 0;
+char        ach_menu_name[64];
 char        ach_store_path[1024];
 char        ach_game_id[128];
 
 int achievements_menu_icon(void) {
   return ach_icon;
+}
+
+const char *achievements_menu_name(void) {
+  return ach_menu_name;
 }
 
 void achievements_free(void) {

@@ -1,5 +1,5 @@
-// Buffer de Node, lo minimo: bytes (un Uint8Array) y toString (utf8 o
-// base64).
+// Buffer de Node, lo minimo: bytes (un Uint8Array), concat y toString
+// (utf8 o base64).
 (function (N) {
   function Buffer() {}
   Buffer.from = function (data, enc) {
@@ -17,6 +17,13 @@
   };
   Buffer.isBuffer = function (b) {
     return b instanceof Uint8Array && Object.getPrototypeOf(b) === BufferProto;
+  };
+  Buffer.concat = function (list) {             // unir varios en uno
+    var n = 0, i;
+    for (i = 0; i < list.length; i++) n += list[i].length;
+    var b = Buffer.alloc(n), at = 0;
+    for (i = 0; i < list.length; i++) { b.set(list[i], at); at += list[i].length; }
+    return b;
   };
   Buffer.alloc = function (n) {
     return Buffer.from(new ArrayBuffer(n));

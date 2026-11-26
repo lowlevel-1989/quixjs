@@ -1,4 +1,4 @@
-English | [Español](README.es.md)
+English | [Español](https://github.com/lowlevel-1989/quixjs/blob/master/games/millionmonstermilitia/README.es.md)
 
 [![Buy Me A Coffee](https://raw.githubusercontent.com/lowlevel-1989/quixjs/master/docs/coffee.svg)](https://ko-fi.com/lowlevel1989)
 
@@ -41,16 +41,6 @@ with the game too.
 
 On the board the d-pad is turned 45 degrees: up goes up-right, right goes
 down-right, down goes down-left and left goes up-left.
-
-## Compile
-
-```
-git clone https://github.com/lowlevel-1989/quixjs.git
-cd quixjs
-make portmaster PORT=millionmonstermilitia
-```
-
-It builds `build/millionmonstermilitia.zip`.
 
 ## Install
 

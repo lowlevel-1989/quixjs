@@ -1,4 +1,4 @@
-English | [Español](README.es.md)
+English | [Español](https://github.com/lowlevel-1989/quixjs/blob/master/games/abbaye/README.es.md)
 
 [![Buy Me A Coffee](https://raw.githubusercontent.com/lowlevel-1989/quixjs/master/docs/coffee.svg)](https://ko-fi.com/lowlevel1989)
 
@@ -34,16 +34,6 @@ Mods (on): [achievements](mods/achievements/README.md) (the pause shows the achi
 
 Savestates (Select + X / Y) are experimental, at an early stage: keep saving
 with the game too.
-
-## Compile
-
-```
-git clone https://github.com/lowlevel-1989/quixjs.git
-cd quixjs
-make portmaster PORT=abbaye
-```
-
-It builds `build/abbaye.zip`.
 
 ## Install
 

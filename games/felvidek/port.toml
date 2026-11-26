@@ -86,6 +86,8 @@ availability = "paid"
 # Los de RPG Maker MV (runtime/engines/rpgmaker-mv/hooks.toml)
 [hooks]
 engine = "rpgmaker-mv"
+# los savestates (Select + X guarda, Select + Y carga): experimentales
+"Scene_Boot.prototype.start" = "rpgmaker/extra/port/savestate"
 
 [controls]
 gamepad = true

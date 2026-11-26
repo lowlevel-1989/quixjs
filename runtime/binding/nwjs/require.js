@@ -27,6 +27,7 @@
     path: path,
     events: N.EventEmitter,
     os: N.os,
+    crypto: N.crypto,
     'nw.gui': N.nw,
     buffer: { Buffer: N.Buffer },
     electron: N.electron,
@@ -90,7 +91,10 @@
   process.arch = 'x64';
   process.argv = ['quixjs', GAME_DIR + '/index.html'];
   process.execPath = '/quixjs';
-  process.env = {};
+  // las carpetas de datos de Windows (%LOCALAPPDATA%, %APPDATA%) y HOME: la de
+  // las partidas, donde el sandbox deja escribir (OMORI guarda ahi su
+  // CUTSCENE.json)
+  process.env = N.SAVES_DIR ? { HOME: N.SAVES_DIR, LOCALAPPDATA: N.SAVES_DIR, APPDATA: N.SAVES_DIR } : {};
   process.versions = { quixjs: N.VERSION };
   process.version = 'v0.0.0-quixjs';
   process.pid = 1;

@@ -1,0 +1,6 @@
+# controller-mode: el modo mando de OMORI siempre activo (los iconos del mando
+# en vez de las teclas). Cada funcion con el archivo del mod que la envuelve
+# (runtime/game/hooks/hooks.h, hooks_load_mods). Ver README.md.
+[hooks]
+"ConfigManager.applyData"           = "controller-mode"   # al leer las opciones guardadas
+"ConfigManager.restoreDefaultConfig" = "controller-mode"   # al volver a las de fabrica

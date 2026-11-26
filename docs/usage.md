@@ -696,6 +696,7 @@ Only exists in quixjs (`typeof quix !== 'undefined'`).
 | `quix.fonts.register(f, url or bytes)` | registers a font: a file or its bytes (FontFace and @font-face use it) |
 | `quix.fonts.has(f)` | `true` if the family is registered |
 | `quix.storage.read()` / `quix.storage.write(json)` | the `localStorage` on disk (`[saves] local_storage`) |
+| `quix.storage.sign(text)` | the signature of a text (16 hex digits), the same one as the achievements: the game saves the text with it and checks it when reading, so editing the save by hand is not enough |
 | `quix.achievements.list()` | the achievements (id, title, description, type, color, unlocked, hardcore) |
 | `quix.achievements.unlocked(id)` | `true` if the achievement of the toml is unlocked |
 | `quix.achievements.icon` | `[achievements_menu] icon` (0 if none) |

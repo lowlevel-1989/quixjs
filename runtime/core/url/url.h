@@ -67,8 +67,12 @@ void url_set_mods(const char *data_dir, const char *root, char names[][64], int 
 // Un FILE* de solo lectura del archivo (en disco, o si no, de la rom)
 FILE *url_fopen(const char *path);
 // Solo en disco, y si su nombre tiene caracteres no ASCII que no estan, el
-// que se le parece en su carpeta (ver url.c: una SD FAT)
+// que se le parece en su carpeta (ver runtime/core/url/read.c: una SD FAT, y
+// las mayusculas de Windows)
 FILE *url_fopen_loose(const char *path);
+// la ruta en disco que se le parece a path (url_fopen_loose: parte a parte,
+// carpetas incluidas) en out; 0 si no hay
+int  url_loose_path(const char *path, char *out, size_t n);
 // 0 si existe (en disco o en la rom); size, mtime (segundos unix) e is_dir
 // pueden ser NULL
 int  url_stat(const char *path, long long *size, long long *mtime, int *is_dir);

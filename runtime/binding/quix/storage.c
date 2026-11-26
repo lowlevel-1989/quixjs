@@ -19,6 +19,7 @@
 // runtime/binding/quix/storage.c: quix.storage, el localStorage del juego en
 // disco ([saves] local_storage del toml): leerlo y guardarlo, dentro de la
 // carpeta de las partidas (el sandbox) y por el canal save (core/save.h).
+// Y firmar lo que guarda el juego, con la firma de los logros.
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -27,6 +28,7 @@
 #include "core/save.h"
 #include "core/sandbox.h"
 #include "core/url/url.h"
+#include "game/achievements/achievements.h"
 #include "common.h"
 
 // ---- localStorage en disco ([saves] local_storage del toml)
@@ -39,14 +41,16 @@ static int storage_path(AppContext *app, char *out, size_t size) {
   return 1;
 }
 
-// crea las carpetas que faltan hasta la de path (sin el archivo)
+// crea las carpetas que faltan hasta la de path (sin el archivo); las que
+// ya estan no se tocan (pedirlas al sandbox avisaria de cada una de fuera)
 static void make_parent_dirs(const char *path) {
   char dir[MAX_PATH_LEN * 2 + 2];
+  struct stat st;
   snprintf(dir, sizeof(dir), "%s", path);
   for (char *p = dir + 1; *p; p++) {
     if (*p != '/') continue;
     *p = 0;
-    sandbox_mkdir(dir, 0755, "[saves] local_storage");
+    if (stat(dir, &st) != 0) sandbox_mkdir(dir, 0755, "[saves] local_storage");
     *p = '/';
   }
 }
@@ -86,9 +90,27 @@ static JSValue js_quix_storage_write(JSContext *ctx, JSValueConst this_val, int 
   return JS_NewBool(ctx, ok);
 }
 
+// quix.storage.sign(text): la firma de text, 16 cifras hex. Es la de los
+// logros (achievements_sign: FNV-1a de 64 bits sobre "quixjs", el id del
+// juego y text): el juego guarda el texto con su firma y, al leerlo, la
+// vuelve a calcular; si no cuadra, lo han tocado a mano o es de otro juego.
+// No es criptografia (quixjs es codigo abierto), pero editar el guardado ya
+// no basta.
+static JSValue js_quix_storage_sign(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+  (void)this_val;
+  if (argc < 1) return JS_NULL;
+  const char *text = JS_ToCString(ctx, argv[0]);
+  if (!text) return JS_EXCEPTION;
+  char sig[17];
+  snprintf(sig, sizeof sig, "%016llx", achievements_sign(text));
+  JS_FreeCString(ctx, text);
+  return JS_NewString(ctx, sig);
+}
+
 static const JSCFunctionListEntry js_quix_storage[] = {
   JS_CFUNC_DEF("read", 0, js_quix_storage_read),
   JS_CFUNC_DEF("write", 1, js_quix_storage_write),
+  JS_CFUNC_DEF("sign", 1, js_quix_storage_sign),
 };
 
 void quix_add_storage(JSContext *ctx, JSValueConst quix) {

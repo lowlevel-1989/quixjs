@@ -14,6 +14,7 @@
 // plugins de iconos en el menu, p. ej. ARP_CommandIcons):
 //   [achievements_menu]
 //   icon = 5
+//   name = "ACHIEVEMENTS"   # opcional: el texto de la opcion (por defecto Achievements)
 //
 // Uso (config.toml o port.toml):
 //   [hooks]
@@ -53,7 +54,7 @@ function (original) {
         }
       }
     }
-    w._list.splice(at, 0, { name: 'Achievements', symbol: SYMBOL, enabled: true, ext: null });
+    w._list.splice(at, 0, { name: quix.achievements.menuName || 'Achievements', symbol: SYMBOL, enabled: true, ext: null });
     w.setHandler(SYMBOL, function () {
       SceneManager.push(Scene_QuixAchievements);
     });

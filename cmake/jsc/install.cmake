@@ -17,12 +17,15 @@ function(copy from to)
 endfunction()
 
 # las .a de WebKit: WebKit las deja "thin" (solo rutas a los .o del build); se
-# rehacen como archivos normales, con los objetos dentro
+# rehacen como archivos normales, con los objetos dentro (solo si cambiaron)
 file(GLOB _archives ${BUILD}/lib/*.a)
 foreach(_a ${_archives})
   get_filename_component(_name ${_a} NAME)
   file(READ ${_a} _magic LIMIT 8 HEX)
-  if(_magic STREQUAL "213c7468696e3e0a")   # "!<thin>\n"
+  if(_magic STREQUAL "213c7468696e3e0a" AND EXISTS ${OUT}/lib/${_name} AND ${OUT}/lib/${_name} IS_NEWER_THAN ${_a})
+    # ya rehecha y la de WebKit no cambio: rehacerla es un ar de un solo
+    # nucleo (lento) en cada compilacion, y la release compila port por port
+  elseif(_magic STREQUAL "213c7468696e3e0a")   # "!<thin>\n"
     execute_process(COMMAND ${AR} t ${_a} OUTPUT_VARIABLE _objs WORKING_DIRECTORY ${BUILD}/lib)
     string(REPLACE "\n" ";" _objs "${_objs}")
     list(FILTER _objs EXCLUDE REGEX "^$")

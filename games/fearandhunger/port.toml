@@ -108,6 +108,8 @@ availability = "paid"
 # la funcion es la de RPG Maker MV o la del plugin; si no, dejan la original.
 [hooks]
 engine = "rpgmaker-mv"
+# los savestates (Select + X guarda, Select + Y carga): experimentales
+"Scene_Boot.prototype.start" = "rpgmaker/extra/port/savestate"
 # Los de este juego (los demas vienen con engine = "rpgmaker-mv"); lo que
 # hace cada uno, en runtime/engines/rpgmaker-mv. TerraxLighting: su mascara
 # de luces en la GPU, y solo con los eventos que tienen luz

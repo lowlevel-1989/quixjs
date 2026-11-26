@@ -1,3 +1,52 @@
+0.7.0
+
+Soccer Chapa
+- juego nuevo, de ejemplo y dentro del repositorio (games/soccer-chapa): futbol de chapas por
+  turnos para una o dos personas, contra la maquina o por la red local
+- sobres de cartas: chapas con stats por posicion, mitica (5 modelos), franelas, bolas,
+  porterias y cartas de cambio de nombre; lo repetido es una carta basura
+- partido rapido, Modo Leyenda, torneo por la red local de hasta 16 equipos (entre partidos se
+  cambian chapas; el desgaste baja la fuerza y se recupera al acabar el torneo), historial con
+  repeticiones y practica (situaciones preparadas y colocar las chapas y la bola a mano)
+- el que mira un partido del torneo lo simula en su pantalla con la misma fisica (fluido aunque
+  la red llegue a saltos); el clima es el mismo en todas las handhelds
+
+Savestates
+- en modo hardcore se puede guardar un savestate (Select + X); lo que no se puede es cargarlo
+  (Select + Y dice "Loading is off in hardcore mode")
+- Fear & Hunger, Felvidek y Muffles' Life Sentence: savestates experimentales, como los demas
+  ports de RPG Maker
+- RPG Maker: no se guarda ni carga un savestate mientras la escena cambia, hay un mensaje o el
+  jugador va de un mapa a otro (al cargar al volver de una batalla se colgaba)
+
+Motor
+- [game] fit = "screen": a pantalla completa el juego toma la forma de la pantalla (el alto del
+  toml se queda; el ancho crece o se encoge)
+- quix.lan: hasta 16 handhelds en la misma red
+- quix.storage.sign(text): una firma del texto guardado, para notar si se edito a mano
+- nw.js: require('crypto') con AES-CTR (createDecipheriv, createCipheriv), Buffer.concat y
+  process.env (HOME, APPDATA, LOCALAPPDATA: la carpeta de las partidas)
+- un <script> en linea se ejecuta tambien si el codigo viene en text o innerHTML
+- los archivos se encuentran aunque la carpeta tenga otras mayusculas; todo dentro del sandbox
+- KeyboardEvent y MouseEvent: getModifierState
+- [achievements_menu] name: el texto de la opcion de logros en el menu del juego
+- la lista de logros de RPG Maker MV no se sale por la derecha en juegos que cambian los
+  margenes de sus ventanas
+
+PortMaster
+- el script del port usa DEVICE_ARCH de PortMaster (quixjs.${DEVICE_ARCH}, libs.${DEVICE_ARCH}) en
+  vez de fijar aarch64 en el script
+- gameinfo.xml: la portada como imagen y la captura como thumbnail, como los demas ports de
+  PortMaster
+- make portmaster-pr PORT=...: deja el port en el fork de PortMaster-New (tmp/PortMaster-New) con
+  la forma de un pull request
+
+Documentacion
+- los README de los ports enlazan el otro idioma con la direccion completa del repositorio
+- el README dice todos los motores (Construct 3, GDevelop 5, Phaser 2, nw.js y Electron) y lista
+  los ports, con donde conseguir cada juego y cuales tienen savestates
+- los README de los ports ya no explican como compilarlos: el port se baja de las releases
+
 0.6.0
 
 Ports

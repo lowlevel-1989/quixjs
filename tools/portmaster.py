@@ -56,7 +56,9 @@ def main():
             shutil.copy(os.path.join(os.path.dirname(toml_path), name), os.path.join(out, port, name))
             break
 
-    # la portada (cover.png o .jpg junto al port.toml): la de PortMaster
+    # la portada (cover.png o .jpg junto al port.toml): la de PortMaster y
+    # la imagen de gameinfo.xml, como en los ports de PortMaster-New
+    # (./<port>/cover.jpg; sin portada, la captura)
     covers = []
     for name in ("cover.png", "cover.jpg"):
         if os.path.exists(os.path.join(os.path.dirname(toml_path), name)):
@@ -109,7 +111,8 @@ def main():
         + (f"    <releasedate>{escape(p['releasedate'])}</releasedate>\n" if p.get("releasedate") else "")
         +
         f"    <genre>{escape(genre.upper() if len(genre) <= 3 else genre.capitalize())}</genre>\n"
-        + (f"    <image>./{escape(port)}/{shot}</image>\n" if shot else "")
+        + (f"    <image>./{escape(port)}/{(covers or [shot])[0]}</image>\n" if covers or shot else "")
+        + (f"    <thumbnail>./{escape(port)}/{shot}</thumbnail>\n" if covers and shot else "")
         +
         "  </game>\n</gameList>\n"
     )

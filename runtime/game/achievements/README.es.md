@@ -120,11 +120,13 @@ a leer (`achievements_reload`), así el siguiente logro no pisa los que han lleg
 
 En RPG Maker MV el hook `rpgmaker-mv/port/achievements-menu` (de los del motor)
 agrega una opción "Achievements" al menú del juego: la lista, la fecha de los
-conseguidos y la descripción. Su icono es uno del IconSet:
+conseguidos y la descripción. Su icono es uno del IconSet, y su texto se
+puede cambiar para que encaje con el menú del juego:
 
 ```
 [achievements_menu]
-icon = 87    # 0 o sin poner: sin icono
+icon = 87             # 0 o sin poner: sin icono
+name = "ACHIEVEMENTS"  # sin poner: Achievements
 ```
 
 ## Para escribirlos

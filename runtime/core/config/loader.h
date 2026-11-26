@@ -69,6 +69,9 @@ typedef struct {
   char player[64];                // el nombre del jugador que da Steam (greenworks): [game] player, por defecto "Master"
   int width;
   int height;
+  // [game] fit = "screen": a pantalla completa (o en una portatil) el ancho
+  // sigue la forma de la pantalla; height se queda (core/main/window.c)
+  int fit_screen;
   // imagenes grandes a menos resolucion (gfx/soft/image_scale.h): image_scale
   // (0 o 1: no; -1: "auto"), image_scale_min (px de un lado) y image_scale_dirs
   double image_scale;

@@ -1,4 +1,4 @@
-[English](README.md) | Español
+[English](https://github.com/lowlevel-1989/quixjs/blob/master/games/millionmonstermilitia/README.md) | Español
 
 [![Buy Me A Coffee](https://raw.githubusercontent.com/lowlevel-1989/quixjs/master/docs/coffee.svg)](https://ko-fi.com/lowlevel1989)
 
@@ -42,16 +42,6 @@ guardando también con el juego.
 En el tablero la cruceta va girada 45 grados: arriba sube a la derecha,
 derecha baja a la derecha, abajo baja a la izquierda e izquierda sube a la
 izquierda.
-
-## Compilar
-
-```
-git clone https://github.com/lowlevel-1989/quixjs.git
-cd quixjs
-make portmaster PORT=millionmonstermilitia
-```
-
-Construye `build/millionmonstermilitia.zip`.
 
 ## Instalar
 

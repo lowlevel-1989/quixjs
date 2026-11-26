@@ -34,10 +34,16 @@ function step() {
     T.ok(quix.achievements.unlocked('rich'), 'unlocked');
     T.equal(rich().hardcore, true, 'in hardcore (the gold star)');
   });
-  if (frame === 12) T.test('hardcore: no savestates', function () {
-    T.equal(quix.state.save(1), 'off', 'save: off');
+  if (frame === 12) T.test('hardcore: save yes, load no', function () {
+    quix.state.register({
+      can: function () { return true; },
+      save: function () { return '{"room":1}'; },
+      load: function () {}
+    });
+    T.equal(quix.state.save(1), 'saved', 'save: allowed');
+    T.equal(quix.state.available, true, 'available (to save)');
     T.equal(quix.state.load(1), 'off', 'load: off');
-    T.equal(quix.state.available, false, 'not available');
+    T.equal(quix.playthrough.data().hardcore, true, 'saving keeps the playthrough hardcore');
   });
   if (frame === 13) {
     saved = JSON.parse(JSON.stringify(DataManager.makeSaveContents()));

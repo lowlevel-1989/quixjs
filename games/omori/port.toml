@@ -1,0 +1,797 @@
+# port.toml: el port de OMORI a quixjs.
+#
+# Es el archivo que describe el juego: quixjs -c port.toml. La primera parte
+# ([engine], [game], [saves], [fonts], [scripts]) salio de quixjs
+# --gen-config sobre OMORI 1.0.0 (la rama v1.0.0 de Steam, la que pide el
+# port), revisada a mano; despues, los controles, los hooks y los logros.
+# Sirve en cualquier sitio donde corre quixjs (Linux de escritorio,
+# portatiles...), con el juego copiado junto a este archivo.
+#
+# Cada forma de empaquetarlo tiene su seccion: [portmaster] es lo que pide
+# PortMaster (make portmaster PORT=omori genera con ella su port.json, su
+# gameinfo.xml y el script .sh del port).
+#
+# OMORI guarda sus plugins y datos cifrados (.OMORI, .KEL) con una clave que
+# lleva dentro, y los descifra el mismo al arrancar con require('crypto'): el
+# crypto de quixjs (runtime/binding/nwjs/crypto.js) hace eso, como nw.js.
+
+[engine]
+name    = "rpgmaker-mv"
+version = "1.6.1"
+pixi    = "4.8.9"
+nwjs    = true   # package.json de nw.js: require('fs'), process...
+
+[game]
+title     = "OMORI"             # el del menu y el de PortMaster
+version   = "1.0.0"             # la del port: subirla con cada cambio del port
+id        = "omori"             # el id del juego: Transfer Save solo pasa partidas del mismo
+# la rom: la carpeta www/ del juego comprimida en un .zip, junto a este
+# port.toml. game_dir: donde empieza el juego dentro de la rom (la carpeta
+# www/ de dentro). Lo que el juego escribe (partidas) va a gamedata/, la
+# carpeta de quixjs junto a este port.toml
+rom       = "www.zip"
+game_dir  = "www"
+width     = 640   # el juego dibuja a 640 (el package.json dice 680: la ventana)
+height    = 480
+mods      = ["controller-mode"]   # mods activos (mods/<nombre>/ junto al port.toml);
+                                # controller-mode (el modo mando de OMORI siempre
+                                # activo) viene activo
+developer = "OMOCAT"
+publisher = "OMOCAT"            # publisher y releasedate: van en gameinfo.xml (EmulationStation)
+releasedate = "20201225T000000" # el 25 de diciembre de 2020, en Steam
+genres    = ["rpg"]
+desc      = "A psychological horror RPG: explore a strange world full of colorful friends and foes, and face your fears when the time comes."
+
+# Transfer Save: que archivos pasa a otro dispositivo.
+#   dir    la carpeta de las partidas, desde [game] game_dir
+#   files  los archivos de esa carpeta (las partidas y las opciones)
+[saves]
+dir   = "save"   # en gamedata/: gamedata/www/save
+files = ["*.rpgsave"]
+
+# fuentes de los @font-face de su CSS
+[fonts]
+"GameFont" = "fonts/OMORI_GAME2.ttf"
+
+# los <script> del index.html, en el mismo orden
+[scripts]
+libs     = [
+  "js/libs/pixi.js",
+  "js/libs/pixi-tilemap.js",
+  "js/libs/pixi-picture.js",
+  "js/libs/lz-string.js",
+  "js/libs/iphone-inline-video.browser.js"
+]
+includes = [
+  "js/rpg_core.js",
+  "js/rpg_managers.js",
+  "js/rpg_objects.js",
+  "js/rpg_scenes.js",
+  "js/rpg_sprites.js",
+  "js/rpg_windows.js",
+  "js/plugins.js"
+]
+entry    = "js/main.js"
+
+[portmaster]
+script       = "OMORI.sh"
+porter       = ["lowlevel.1989"]
+inst         = "Needs OMORI 1.0.0 for Windows (Steam: the v1.0.0 branch in Properties, Betas). Compress its folder www/ into www.zip (a zip without compression is best; a compressed one also works, the first start takes longer) and copy it into ports/omori/, next to port.toml."
+store        = { name = "Steam", url = "https://store.steampowered.com/app/1150690/" }
+availability = "paid"
+
+# el mando: Controls en el launcher. OMORI usa sus teclas (Z aceptar, X menu
+# y volver, Shift correr, Q / W paginas, A etiqueta; Enter y Escape no)
+[controls]
+gamepad = true
+
+[controls.buttons]
+dpup     = "Move up"
+dpdown   = "Move down"
+dpleft   = "Move left"
+dpright  = "Move right"
+a        = "OK (Z)"
+b        = "Menu / Back (X)"
+x        = "Run (Shift)"
+y        = "Tag (A)"
+l1       = "Page up (Q)"
+r1       = "Page down (W)"
+
+# los hooks de RPG Maker MV (runtime/engines/rpgmaker-mv/hooks.toml): entre
+# ellos la opcion Achievements del menu del juego
+[hooks]
+engine = "rpgmaker-mv"
+# los savestates (Select + X guarda, Select + Y carga): experimentales
+"Scene_Boot.prototype.start" = "rpgmaker/extra/port/savestate"
+
+# la opcion del menu, en mayusculas como las de OMORI
+[achievements_menu]
+name = "TROPHIES"
+
+# ---------- logros ----------
+# Los 85 de Steam, con sus nombres y descripciones (en ingles, del esquema de
+# Steam). El juego los pide con steamworks.activateAchievement(id) desde sus
+# eventos (plugin Archeia_Steamworks) y el greenworks de quixjs
+# (runtime/binding/nwjs/greenworks.js) los deja en quix.steam.achievements.
+# Los de vencer a alguien son progression; el resto, secondary
+[symbols]
+good_morning = "path:quix.steam.achievements.GOOD_MORNING"
+oyasumi = "path:quix.steam.achievements.OYASUMI"
+alt_f4 = "path:quix.steam.achievements.ALT_F4"
+see_you_space_boyfriend = "path:quix.steam.achievements.SEE_YOU_SPACE_BOYFRIEND"
+ohohohoho = "path:quix.steam.achievements.OHOHOHOHO"
+buy_high_sell_low = "path:quix.steam.achievements.BUY_HIGH_SELL_LOW"
+when_i_flex_i_feel_my_best = "path:quix.steam.achievements.WHEN_I_FLEX_I_FEEL_MY_BEST"
+slime_time_is_over = "path:quix.steam.achievements.SLIME_TIME_IS_OVER"
+whale_done = "path:quix.steam.achievements.WHALE_DONE"
+good_boy = "path:quix.steam.achievements.GOOD_BOY"
+one_more_day = "path:quix.steam.achievements.ONE_MORE_DAY"
+close_your_eyes = "path:quix.steam.achievements.CLOSE_YOUR_EYES"
+there_is_something_behind_you = "path:quix.steam.achievements.THERE_IS_SOMETHING_BEHIND_YOU"
+green_thumb = "path:quix.steam.achievements.GREEN_THUMB"
+so_majestic_so_beautiful = "path:quix.steam.achievements.SO_MAJESTIC_SO_BEAUTIFUL"
+recycling_is_a_concept = "path:quix.steam.achievements.RECYCLING_IS_A_CONCEPT"
+what_is_the_big_idea = "path:quix.steam.achievements.WHAT_IS_THE_BIG_IDEA"
+xd = "path:quix.steam.achievements.XD"
+christmas_crusher = "path:quix.steam.achievements.CHRISTMAS_CRUSHER"
+spring_sympathizer = "path:quix.steam.achievements.SPRING_SYMPATHIZER"
+summer_sympathizer = "path:quix.steam.achievements.SUMMER_SYMPATHIZER"
+fall_sympathizer = "path:quix.steam.achievements.FALL_SYMPATHIZER"
+winter_sympathizer = "path:quix.steam.achievements.WINTER_SYMPATHIZER"
+sous_chef = "path:quix.steam.achievements.SOUS_CHEF"
+everyone_is_a_critic = "path:quix.steam.achievements.EVERYONE_IS_A_CRITIC"
+as_expected_from_professionals = "path:quix.steam.achievements.AS_EXPECTED_FROM_PROFESSIONALS"
+hope_and_vigor = "path:quix.steam.achievements.HOPE_AND_VIGOR"
+the_chosen_one = "path:quix.steam.achievements.THE_CHOSEN_ONE"
+aint_nobody_here_but_us_chickens = "path:quix.steam.achievements.AINT_NOBODY_HERE_BUT_US_CHICKENS"
+the_currency_of_the_future = "path:quix.steam.achievements.THE_CURRENCY_OF_THE_FUTURE"
+ghost_party = "path:quix.steam.achievements.GHOST_PARTY"
+good_dog_2 = "path:quix.steam.achievements.GOOD_DOG_2"
+sweetheart_i_mean_tofu = "path:quix.steam.achievements.SWEETHEART_I_MEAN_TOFU"
+bunny_exterminator = "path:quix.steam.achievements.BUNNY_EXTERMINATOR"
+squizzard_exterminator = "path:quix.steam.achievements.SQUIZZARD_EXTERMINATOR"
+thank_you = "path:quix.steam.achievements.THANK_YOU"
+patron_of_the_arts = "path:quix.steam.achievements.PATRON_OF_THE_ARTS"
+a_bit_less_lonely = "path:quix.steam.achievements.A_BIT_LESS_LONELY"
+take_me_to_the_river = "path:quix.steam.achievements.TAKE_ME_TO_THE_RIVER"
+welcome_home = "path:quix.steam.achievements.WELCOME_HOME"
+i_ll_cherish_you_all_forever = "path:quix.steam.achievements.I_LL_CHERISH_YOU_ALL_FOREVER"
+anytime_is_a_good_time_for_a_picnic = "path:quix.steam.achievements.ANYTIME_IS_A_GOOD_TIME_FOR_A_PICNIC"
+we_ll_always_be_there_for_you_omori = "path:quix.steam.achievements.WE_LL_ALWAYS_BE_THERE_FOR_YOU_OMORI"
+the_view_is_pretty_nice = "path:quix.steam.achievements.THE_VIEW_IS_PRETTY_NICE"
+power_of_friendship = "path:quix.steam.achievements.POWER_OF_FRIENDSHIP"
+one_for_the_road = "path:quix.steam.achievements.ONE_FOR_THE_ROAD"
+perfect_weather_conditions = "path:quix.steam.achievements.PERFECT_WEATHER_CONDITIONS"
+gwahahaha = "path:quix.steam.achievements.GWAHAHAHA"
+goodbye_world = "path:quix.steam.achievements.GOODBYE_WORLD"
+unbread_twins = "path:quix.steam.achievements.UNBREAD_TWINS"
+see_you_space_husband = "path:quix.steam.achievements.SEE_YOU_SPACE_HUSBAND"
+the_brightest_stars = "path:quix.steam.achievements.THE_BRIGHTEST_STARS"
+the_first_law = "path:quix.steam.achievements.THE_FIRST_LAW"
+inhuman = "path:quix.steam.achievements.INHUMAN"
+minor_imperfection = "path:quix.steam.achievements.MINOR_IMPERFECTION"
+seriously_you_re_the_coolest = "path:quix.steam.achievements.SERIOUSLY_YOU_RE_THE_COOLEST"
+repressed = "path:quix.steam.achievements.REPRESSED"
+up_high = "path:quix.steam.achievements.UP_HIGH"
+down_low = "path:quix.steam.achievements.DOWN_LOW"
+too_slow = "path:quix.steam.achievements.TOO_SLOW"
+minty_fresh = "path:quix.steam.achievements.MINTY_FRESH"
+i_ll_just_take_that = "path:quix.steam.achievements.I_LL_JUST_TAKE_THAT"
+it_is_honest_work = "path:quix.steam.achievements.IT_IS_HONEST_WORK"
+against_all_odds = "path:quix.steam.achievements.AGAINST_ALL_ODDS"
+that_cant_be_good_for_business = "path:quix.steam.achievements.THAT_CANT_BE_GOOD_FOR_BUSINESS"
+good_company = "path:quix.steam.achievements.GOOD_COMPANY"
+math_whiz = "path:quix.steam.achievements.MATH_WHIZ"
+grammar_whiz = "path:quix.steam.achievements.GRAMMAR_WHIZ"
+good_dog = "path:quix.steam.achievements.GOOD_DOG"
+tummy_full_of_fish = "path:quix.steam.achievements.TUMMY_FULL_OF_FISH"
+nerd = "path:quix.steam.achievements.NERD"
+the_art_of_self_defense = "path:quix.steam.achievements.THE_ART_OF_SELF_DEFENSE"
+bees = "path:quix.steam.achievements.BEES"
+music_connoisseur_of_sorts = "path:quix.steam.achievements.MUSIC_CONNOISSEUR_OF_SORTS"
+the_very_best = "path:quix.steam.achievements.THE_VERY_BEST"
+reduce_reuse_and_recycle = "path:quix.steam.achievements.REDUCE_REUSE_AND_RECYCLE"
+littering_is_bad_recycling_is_better = "path:quix.steam.achievements.LITTERING_IS_BAD_RECYCLING_IS_BETTER"
+universally_loved = "path:quix.steam.achievements.UNIVERSALLY_LOVED"
+rip = "path:quix.steam.achievements.RIP"
+you_think_you_re_clever_huh = "path:quix.steam.achievements.YOU_THINK_YOU_RE_CLEVER_HUH"
+it_is_all_a_dream = "path:quix.steam.achievements.IT_IS_ALL_A_DREAM"
+when_she_was_here = "path:quix.steam.achievements.WHEN_SHE_WAS_HERE"
+foes_filed = "path:quix.steam.achievements.FOES_FILED"
+they_call_me_scarethrow = "path:quix.steam.achievements.THEY_CALL_ME_SCARETHROW"
+achievements_count = "path:quix.steam.achievements.ACHIEVEMENTS_COUNT"
+
+[[achievements]]
+id          = "good_morning"
+title       = "Good Morning!"
+description = "Wake up in the morning."
+type        = "secondary"
+conditions  = ["good_morning"]
+
+[[achievements]]
+id          = "oyasumi"
+title       = "Oyasumi."
+description = "Go to sleep after a long day."
+type        = "secondary"
+conditions  = ["oyasumi"]
+
+[[achievements]]
+id          = "alt_f4"
+title       = "Alt+F4"
+description = "Defeat DOWNLOAD WINDOW."
+type        = "progression"
+conditions  = ["alt_f4"]
+
+[[achievements]]
+id          = "see_you_space_boyfriend"
+title       = "See you, Space Boyfriend..."
+description = "Defeat SPACE EX-BOYFRIEND."
+type        = "progression"
+conditions  = ["see_you_space_boyfriend"]
+
+[[achievements]]
+id          = "ohohohoho"
+title       = "OHOHOHOHO!!"
+description = "Defeat SWEETHEART."
+type        = "progression"
+conditions  = ["ohohohoho"]
+
+[[achievements]]
+id          = "buy_high_sell_low"
+title       = "Buy high, sell low."
+description = "Defeat MR. JAWSUM."
+type        = "progression"
+conditions  = ["buy_high_sell_low"]
+
+[[achievements]]
+id          = "when_i_flex_i_feel_my_best"
+title       = "When I flex, I feel my best!"
+description = "Defeat PLUTO (EXPANDED)."
+type        = "progression"
+conditions  = ["when_i_flex_i_feel_my_best"]
+
+[[achievements]]
+id          = "slime_time_is_over"
+title       = "Slime Time is Over!"
+description = "Defeat SLIME GIRLS."
+type        = "progression"
+conditions  = ["slime_time_is_over"]
+
+[[achievements]]
+id          = "whale_done"
+title       = "Whale done."
+description = "Defeat HUMPHREY."
+type        = "progression"
+conditions  = ["whale_done"]
+
+[[achievements]]
+id          = "good_boy"
+title       = "Good Boy"
+description = "Complete your TO-DO LIST."
+type        = "secondary"
+conditions  = ["good_boy"]
+
+[[achievements]]
+id          = "one_more_day"
+title       = "One more day..."
+description = "Reach the good ending."
+type        = "secondary"
+conditions  = ["one_more_day"]
+
+[[achievements]]
+id          = "close_your_eyes"
+title       = "Close your eyes..."
+description = "Reach the bad ending."
+type        = "secondary"
+conditions  = ["close_your_eyes"]
+
+[[achievements]]
+id          = "there_is_something_behind_you"
+title       = "There's something behind you..."
+description = "Reach the other ending."
+type        = "secondary"
+conditions  = ["there_is_something_behind_you"]
+
+[[achievements]]
+id          = "green_thumb"
+title       = "Green Thumb"
+description = "Water a plant back to life in BASIL's garden."
+type        = "secondary"
+conditions  = ["green_thumb"]
+
+[[achievements]]
+id          = "so_majestic_so_beautiful"
+title       = "So majestic... so beautiful..."
+description = "Fly the BUTT CERTIFICATE in CATTAIL FIELD."
+type        = "secondary"
+conditions  = ["so_majestic_so_beautiful"]
+
+[[achievements]]
+id          = "recycling_is_a_concept"
+title       = "Recycling is a concept."
+description = "Get all rewards from the RECYCLING MACHINE."
+type        = "secondary"
+conditions  = ["recycling_is_a_concept"]
+
+[[achievements]]
+id          = "what_is_the_big_idea"
+title       = "WHAT'S THE BIG IDEA!?!?"
+description = "Make your way and talk to LONE MOLE."
+type        = "secondary"
+conditions  = ["what_is_the_big_idea"]
+
+[[achievements]]
+id          = "xd"
+title       = "xD"
+description = "Get the LOL SWORD."
+type        = "secondary"
+conditions  = ["xd"]
+
+[[achievements]]
+id          = "christmas_crusher"
+title       = "Christmas Crusher"
+description = "Ruin Christmas."
+type        = "secondary"
+conditions  = ["christmas_crusher"]
+
+[[achievements]]
+id          = "spring_sympathizer"
+title       = "Spring Sympathizer"
+description = "Choose the SPRING MOLE."
+type        = "secondary"
+conditions  = ["spring_sympathizer"]
+
+[[achievements]]
+id          = "summer_sympathizer"
+title       = "Summer Sympathizer"
+description = "Choose the SUMMER MOLE."
+type        = "secondary"
+conditions  = ["summer_sympathizer"]
+
+[[achievements]]
+id          = "fall_sympathizer"
+title       = "Fall Sympathizer"
+description = "Choose the FALL MOLE."
+type        = "secondary"
+conditions  = ["fall_sympathizer"]
+
+[[achievements]]
+id          = "winter_sympathizer"
+title       = "Winter Sympathizer"
+description = "Choose the WINTER MOLE."
+type        = "secondary"
+conditions  = ["winter_sympathizer"]
+
+[[achievements]]
+id          = "sous_chef"
+title       = "AWEKJRLKJFLKASNFAWIJGAWEFJAWEKFJAKFAASJFKA!"
+description = "Kill the first SOUS CHEF."
+type        = "secondary"
+conditions  = ["sous_chef"]
+
+[[achievements]]
+id          = "everyone_is_a_critic"
+title       = "Everyone's a critic."
+description = "Watch all movies in SWEETHEART'S \"throne room\"."
+type        = "secondary"
+conditions  = ["everyone_is_a_critic"]
+
+[[achievements]]
+id          = "as_expected_from_professionals"
+title       = "As expected from professionals!"
+description = "Perfectly train the SPROUT MOLE choir."
+type        = "secondary"
+conditions  = ["as_expected_from_professionals"]
+
+[[achievements]]
+id          = "hope_and_vigor"
+title       = "Hope and Vigor!"
+description = "Complete ORANGE JOE's quest."
+type        = "secondary"
+conditions  = ["hope_and_vigor"]
+
+[[achievements]]
+id          = "the_chosen_one"
+title       = "The Chosen One"
+description = "Turn the valve to the right in RAIN TOWN."
+type        = "secondary"
+conditions  = ["the_chosen_one"]
+
+[[achievements]]
+id          = "aint_nobody_here_but_us_chickens"
+title       = "Ain't nobody here but us chickens."
+description = "Defeat the CHICKEN? at the top of DINO'S DIG."
+type        = "progression"
+conditions  = ["aint_nobody_here_but_us_chickens"]
+
+[[achievements]]
+id          = "the_currency_of_the_future"
+title       = "The currency of the future..."
+description = "Trade CLAMS for CLEMS."
+type        = "secondary"
+conditions  = ["the_currency_of_the_future"]
+
+[[achievements]]
+id          = "ghost_party"
+title       = "Ghost Party!"
+description = "Have a ghost party."
+type        = "secondary"
+conditions  = ["ghost_party"]
+
+[[achievements]]
+id          = "good_dog_2"
+title       = "Good Dog?"
+description = "Pet all the creatures in MARINA's sector in HUMPHREY."
+type        = "secondary"
+conditions  = ["good_dog_2"]
+
+[[achievements]]
+id          = "sweetheart_i_mean_tofu"
+title       = "Mmm... SWEETHEART, I mean, TOFU."
+description = "Hold 99 TOFU."
+type        = "secondary"
+conditions  = ["sweetheart_i_mean_tofu"]
+
+[[achievements]]
+id          = "bunny_exterminator"
+title       = "Bunny Exterminator"
+description = "Defeat 100 BUNNIES."
+type        = "progression"
+conditions  = ["bunny_exterminator"]
+
+[[achievements]]
+id          = "squizzard_exterminator"
+title       = "Squizzard Exterminator"
+description = "Defeat 100 SQUIZZARDS."
+type        = "progression"
+conditions  = ["squizzard_exterminator"]
+
+[[achievements]]
+id          = "thank_you"
+title       = "THANK YOU! THANK YOU! THANK YOU!"
+description = "Commission ROCOCO."
+type        = "secondary"
+conditions  = ["thank_you"]
+
+[[achievements]]
+id          = "patron_of_the_arts"
+title       = "Patron of the Arts"
+description = "Commission all of ROCOCO's art."
+type        = "secondary"
+conditions  = ["patron_of_the_arts"]
+
+[[achievements]]
+id          = "a_bit_less_lonely"
+title       = "A Bit Less Lonely"
+description = "Commission all of GATOR GUY's statues."
+type        = "secondary"
+conditions  = ["a_bit_less_lonely"]
+
+[[achievements]]
+id          = "take_me_to_the_river"
+title       = "Take Me to The River!"
+description = "Let the plastic fish finish its song."
+type        = "secondary"
+conditions  = ["take_me_to_the_river"]
+
+[[achievements]]
+id          = "welcome_home"
+title       = "Welcome Home"
+description = "Take the KEEPER OF THE CASTLE's power."
+type        = "secondary"
+conditions  = ["welcome_home"]
+
+[[achievements]]
+id          = "i_ll_cherish_you_all_forever"
+title       = "I'll cherish you all forever."
+description = "Get the FLOWER CROWN from BASIL."
+type        = "secondary"
+conditions  = ["i_ll_cherish_you_all_forever"]
+
+[[achievements]]
+id          = "anytime_is_a_good_time_for_a_picnic"
+title       = "Anytime is a good time for a picnic!"
+description = "Recover at all of MARI's picnics."
+type        = "secondary"
+conditions  = ["anytime_is_a_good_time_for_a_picnic"]
+
+[[achievements]]
+id          = "we_ll_always_be_there_for_you_omori"
+title       = "We'll always be there for you, OMORI."
+description = "Visit all mirrors."
+type        = "secondary"
+conditions  = ["we_ll_always_be_there_for_you_omori"]
+
+[[achievements]]
+id          = "the_view_is_pretty_nice"
+title       = "The view is pretty nice..."
+description = "Look through all telescopes."
+type        = "secondary"
+conditions  = ["the_view_is_pretty_nice"]
+
+[[achievements]]
+id          = "power_of_friendship"
+title       = "Power of Friendship!"
+description = "RELEASE ENERGY on your foes."
+type        = "secondary"
+conditions  = ["power_of_friendship"]
+
+[[achievements]]
+id          = "one_for_the_road"
+title       = "One for the Road"
+description = "Gain BREAD using BREAD SLICE."
+type        = "secondary"
+conditions  = ["one_for_the_road"]
+
+[[achievements]]
+id          = "perfect_weather_conditions"
+title       = "Perfect Weather Conditions"
+description = "Defeat KITE KID."
+type        = "progression"
+conditions  = ["perfect_weather_conditions"]
+
+[[achievements]]
+id          = "gwahahaha"
+title       = "GWAHAHAHA!!"
+description = "Defeat ???."
+type        = "progression"
+conditions  = ["gwahahaha"]
+
+[[achievements]]
+id          = "goodbye_world"
+title       = "Goodbye, World!"
+description = "Defeat THE EARTH."
+type        = "progression"
+conditions  = ["goodbye_world"]
+
+[[achievements]]
+id          = "unbread_twins"
+title       = "Ohoooooooooo..."
+description = "Defeat UNBREAD TWINS."
+type        = "progression"
+conditions  = ["unbread_twins"]
+
+[[achievements]]
+id          = "see_you_space_husband"
+title       = "See you, Space Husband..."
+description = "Defeat SPACE EX-HUSBAND."
+type        = "progression"
+conditions  = ["see_you_space_husband"]
+
+[[achievements]]
+id          = "the_brightest_stars"
+title       = "The Brightest Stars"
+description = "Defeat PLUTO and THE EARTH."
+type        = "progression"
+conditions  = ["the_brightest_stars"]
+
+[[achievements]]
+id          = "the_first_law"
+title       = "The First Law"
+description = "Defeat ROBOHEART."
+type        = "progression"
+conditions  = ["the_first_law"]
+
+[[achievements]]
+id          = "inhuman"
+title       = "Inhuman"
+description = "Defeat MUTANTHEART."
+type        = "progression"
+conditions  = ["inhuman"]
+
+[[achievements]]
+id          = "minor_imperfection"
+title       = "Minor Imperfection"
+description = "Defeat PERFECTHEART."
+type        = "progression"
+conditions  = ["minor_imperfection"]
+
+[[achievements]]
+id          = "seriously_you_re_the_coolest"
+title       = "Seriously, you're the coolest!"
+description = "Beat the BOSS RUSH."
+type        = "secondary"
+conditions  = ["seriously_you_re_the_coolest"]
+
+[[achievements]]
+id          = "repressed"
+title       = "Repressed"
+description = "Defeat every SOMETHING at the bottom of the LOST LIBRARY."
+type        = "progression"
+conditions  = ["repressed"]
+
+[[achievements]]
+id          = "up_high"
+title       = "Up high..."
+description = "High-five KEL."
+type        = "secondary"
+conditions  = ["up_high"]
+
+[[achievements]]
+id          = "down_low"
+title       = "Down low..."
+description = "High-five KEL three times."
+type        = "secondary"
+conditions  = ["down_low"]
+
+[[achievements]]
+id          = "too_slow"
+title       = "Too slow!"
+description = "Don't high-five KEL."
+type        = "secondary"
+conditions  = ["too_slow"]
+
+[[achievements]]
+id          = "minty_fresh"
+title       = "Minty Fresh"
+description = "Brush your teeth every day."
+type        = "secondary"
+conditions  = ["minty_fresh"]
+
+[[achievements]]
+id          = "i_ll_just_take_that"
+title       = "I'll just take that..."
+description = "Take $20.00 from KEL's wardrobe."
+type        = "secondary"
+conditions  = ["i_ll_just_take_that"]
+
+[[achievements]]
+id          = "it_is_honest_work"
+title       = "It's honest work."
+description = "Complete all part-time jobs once."
+type        = "secondary"
+conditions  = ["it_is_honest_work"]
+
+[[achievements]]
+id          = "against_all_odds"
+title       = "Against all odds..."
+description = "Get a perfect score delivering PIZZA."
+type        = "secondary"
+conditions  = ["against_all_odds"]
+
+[[achievements]]
+id          = "that_cant_be_good_for_business"
+title       = "That can't be good for business."
+description = "Quit in the middle of a part-time job."
+type        = "secondary"
+conditions  = ["that_cant_be_good_for_business"]
+
+[[achievements]]
+id          = "good_company"
+title       = "Good Company"
+description = "Go to SEAN and KAREN's housewarming party."
+type        = "secondary"
+conditions  = ["good_company"]
+
+[[achievements]]
+id          = "math_whiz"
+title       = "Math Whiz"
+description = "Complete the math worksheet correctly."
+type        = "secondary"
+conditions  = ["math_whiz"]
+
+[[achievements]]
+id          = "grammar_whiz"
+title       = "Grammar Whiz"
+description = "Complete the grammar worksheet correctly."
+type        = "secondary"
+conditions  = ["grammar_whiz"]
+
+[[achievements]]
+id          = "good_dog"
+title       = "Good Dog"
+description = "Pet a dog."
+type        = "secondary"
+conditions  = ["good_dog"]
+
+[[achievements]]
+id          = "tummy_full_of_fish"
+title       = "Tummy Full of Fish"
+description = "Feed the STRAY CAT every day and sunset."
+type        = "secondary"
+conditions  = ["tummy_full_of_fish"]
+
+[[achievements]]
+id          = "nerd"
+title       = "NEEERRRDDDDD!!!"
+description = "Lose to KIM and VANCE."
+type        = "secondary"
+conditions  = ["nerd"]
+
+[[achievements]]
+id          = "the_art_of_self_defense"
+title       = "The Art of Self-defense"
+description = "Defeat the HOOLIGANS with PEPPER SPRAY."
+type        = "progression"
+conditions  = ["the_art_of_self_defense"]
+
+[[achievements]]
+id          = "bees"
+title       = "Bees?"
+description = "Battle the \"bees\"."
+type        = "secondary"
+conditions  = ["bees"]
+
+[[achievements]]
+id          = "music_connoisseur_of_sorts"
+title       = "Music Connoisseur Of Sorts"
+description = "Insert every song into GINO'S JUKEBOX."
+type        = "secondary"
+conditions  = ["music_connoisseur_of_sorts"]
+
+[[achievements]]
+id          = "the_very_best"
+title       = "The Very Best"
+description = "Defeat the PET ROCK champion."
+type        = "progression"
+conditions  = ["the_very_best"]
+
+[[achievements]]
+id          = "reduce_reuse_and_recycle"
+title       = "Reduce, reuse, and recycle!"
+description = "Defeat the RECYCLEPATH."
+type        = "progression"
+conditions  = ["reduce_reuse_and_recycle"]
+
+[[achievements]]
+id          = "littering_is_bad_recycling_is_better"
+title       = "Littering is bad, recycling is better."
+description = "Throw away something."
+type        = "secondary"
+conditions  = ["littering_is_bad_recycling_is_better"]
+
+[[achievements]]
+id          = "universally_loved"
+title       = "Universally Loved"
+description = "Receive all FLOWERS in the hospital."
+type        = "secondary"
+conditions  = ["universally_loved"]
+
+[[achievements]]
+id          = "rip"
+title       = "R.I.P."
+description = "Read all the tombstones in the... dev room..."
+type        = "secondary"
+conditions  = ["rip"]
+
+[[achievements]]
+id          = "you_think_you_re_clever_huh"
+title       = "You think you're clever, huh..."
+description = "Enter code: haveadollariguess at www.omocat-shop.com for $1.00 off."
+type        = "secondary"
+conditions  = ["you_think_you_re_clever_huh"]
+
+[[achievements]]
+id          = "it_is_all_a_dream"
+title       = "It's all a dream..."
+description = "Unlock all achievements. Thank you for playing OMORI."
+type        = "secondary"
+conditions  = ["it_is_all_a_dream"]
+
+[[achievements]]
+id          = "when_she_was_here"
+title       = "When she was here..."
+description = "Give FLOWERS to MARI."
+type        = "secondary"
+conditions  = ["when_she_was_here"]
+
+[[achievements]]
+id          = "foes_filed"
+title       = "Foes Filed!"
+description = "Complete the FOE FACTS! journal."
+type        = "secondary"
+conditions  = ["foes_filed"]
+
+[[achievements]]
+id          = "they_call_me_scarethrow"
+title       = "They call me SCARETHROW."
+description = "Listen to MR. SCARETHROW's rant."
+type        = "secondary"
+conditions  = ["they_call_me_scarethrow"]
+
+[[achievements]]
+id          = "achievements_count"
+title       = "ACHIEVEMENTS_COUNT"
+description = ""
+type        = "secondary"
+conditions  = ["achievements_count"]

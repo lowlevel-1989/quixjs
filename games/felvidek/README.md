@@ -1,4 +1,4 @@
-English | [Español](README.es.md)
+English | [Español](https://github.com/lowlevel-1989/quixjs/blob/master/games/felvidek/README.es.md)
 
 [![Buy Me A Coffee](https://raw.githubusercontent.com/lowlevel-1989/quixjs/master/docs/coffee.svg)](https://ko-fi.com/lowlevel1989)
 
@@ -26,19 +26,14 @@ Mods (off): [readable-font](mods/readable-font/README.md) (easier to read font).
 | Y | Menu |
 | L1 / R1 | Previous / next, in the menus |
 | Select + L1 | Magnifier: a box that enlarges; d-pad or sticks move it, R1 / L1 zoom, Y / X size, A centers, Start pins it (the gamepad goes back to the game) and unpins it, B closes |
+| Select + X / Y | Savestate: save / load (on the map; not in hardcore) |
+| Select + left / right | Savestate slot (1 to 4) |
 | Select + R1 | Screenshot (in `screenshots/`) |
 | Select + R2 | Back to the port menu |
 | Select + Start | Quit |
 
-## Compile
-
-```
-git clone https://github.com/lowlevel-1989/quixjs.git
-cd quixjs
-make portmaster PORT=felvidek
-```
-
-It builds `build/felvidek.zip`.
+Savestates (Select + X / Y) are experimental, at an early stage: keep saving
+with the game too.
 
 ## Install
 

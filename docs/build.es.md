@@ -31,6 +31,7 @@ make <plataforma>-clean      limpiar una plataforma; make clean, todas
 make test                    los tests (en el PC)
 make bench                   el benchmark h5bench (en el PC)
 make release                 los archivos de una release (release/)
+make portmaster-pr PORT=...  el port en tu fork de PortMaster-New, para un pull request
 ```
 
 Opciones: `TRACE=1` (las medidas `[trace]`), `VIDEO=0` (sin video),

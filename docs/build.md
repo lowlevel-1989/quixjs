@@ -29,6 +29,7 @@ make <platform>-clean        clean one platform; make clean, all of them
 make test                    the tests (on the PC)
 make bench                   the h5bench benchmark (on the PC)
 make release                 the files of a release (release/)
+make portmaster-pr PORT=...  the port in your fork of PortMaster-New, for a pull request
 ```
 
 Options: `TRACE=1` (the `[trace]` measures), `VIDEO=0` (no video),

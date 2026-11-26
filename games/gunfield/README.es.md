@@ -1,4 +1,4 @@
-[English](README.md) | Español
+[English](https://github.com/lowlevel-1989/quixjs/blob/master/games/gunfield/README.md) | Español
 
 [![Buy Me A Coffee](https://raw.githubusercontent.com/lowlevel-1989/quixjs/master/docs/coffee.svg)](https://ko-fi.com/lowlevel1989)
 
@@ -32,16 +32,6 @@ Mods (activos): [rumble](mods/rumble/README.es.md) (vibración), [performance-mo
 | Select + Start | Salir |
 
 La nave dispara sola.
-
-## Compilar
-
-```
-git clone https://github.com/lowlevel-1989/quixjs.git
-cd quixjs
-make portmaster PORT=gunfield
-```
-
-Construye `build/gunfield.zip`.
 
 ## Instalar
 

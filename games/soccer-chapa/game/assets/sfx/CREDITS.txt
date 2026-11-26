@@ -1,0 +1,7 @@
+crowd.ogg, cheer.ogg, rise.ogg, ooh.ogg, chant.ogg
+  Trozos de "Free Crowd Cheering Sounds" de Gregor Quendel (www.gregorquendel.com)
+  https://opengameart.org/content/free-crowd-cheering-sounds
+  Licencia CC-BY 4.0: https://creativecommons.org/licenses/by/4.0/
+  Cortados y con el volumen igualado (games/soccer-chapa/game/tools/sound/crowd_rec.py).
+
+El resto de sonidos: sintetizados (games/soccer-chapa/game/tools/sound/sfx.py).

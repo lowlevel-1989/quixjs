@@ -1,4 +1,4 @@
-[English](README.md) | Español
+[English](https://github.com/lowlevel-1989/quixjs/blob/master/games/lookoutside/README.md) | Español
 
 [![Buy Me A Coffee](https://raw.githubusercontent.com/lowlevel-1989/quixjs/master/docs/coffee.svg)](https://ko-fi.com/lowlevel1989)
 
@@ -32,16 +32,6 @@ Necesita Look Outside **2.3** para Windows (GOG o Steam).
 
 Los savestates (Select + X / Y) son experimentales, en fase temprana: sigue
 guardando también con el juego.
-
-## Compilar
-
-```
-git clone https://github.com/lowlevel-1989/quixjs.git
-cd quixjs
-make portmaster PORT=lookoutside
-```
-
-Construye `build/lookoutside.zip`.
 
 ## Instalar
 

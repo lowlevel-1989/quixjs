@@ -53,10 +53,14 @@ function () {
     this.changePaintOpacity(got);
     this.resetTextColor();
     var right = got ? date(a.unlocked) : 'Locked';
-    var rw = this.textWidth('0000-00-00') + 8;
-    this.drawText(a.title, rect.x + size + 10, rect.y, rect.width - size - 10 - rw);
+    var rw = Math.max(this.textWidth('0000-00-00'), this.textWidth('Locked')) + 8;
+    // el borde derecho: el del rectangulo, o el del dibujo si es mas estrecho
+    // (un plugin que cambia los margenes de las ventanas, como en OMORI)
+    var pad = typeof this.textPadding === 'function' ? this.textPadding() : 6;   // 6: el de RPG Maker MV
+    var end = Math.min(rect.x + rect.width, this.contents.width - pad);
+    this.drawText(a.title, rect.x + size + 10, rect.y, end - rect.x - size - 10 - rw);
     if (!got) this.changeTextColor(this.textColor(8));
-    this.drawText(right, rect.x + rect.width - rw, rect.y, rw, 'right');
+    this.drawText(right, end - rw, rect.y, rw, 'right');
     this.resetTextColor();
     this.changePaintOpacity(true);
   };

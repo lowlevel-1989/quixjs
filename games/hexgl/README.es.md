@@ -1,4 +1,4 @@
-[English](README.md) | Español
+[English](https://github.com/lowlevel-1989/quixjs/blob/master/games/hexgl/README.md) | Español
 
 [![Buy Me A Coffee](https://raw.githubusercontent.com/lowlevel-1989/quixjs/master/docs/coffee.svg)](https://ko-fi.com/lowlevel1989)
 
@@ -35,16 +35,6 @@ Cheats: No damage (los choques no quitan escudo).
 
 En el menú: la cruceta para elegir, izquierda y derecha para cambiar una
 opción, A para aceptar, B para volver.
-
-## Compilar
-
-```
-git clone https://github.com/lowlevel-1989/quixjs.git
-cd quixjs
-make portmaster PORT=hexgl
-```
-
-Construye `build/hexgl.zip`.
 
 ## Instalar
 

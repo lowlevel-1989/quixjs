@@ -1,10 +1,12 @@
-# quixjs 0.6.0
+# quixjs 0.7.0
 
 English | [Español](README.es.md)
 
-quixjs runs JavaScript games (RPG Maker MV and MZ, Construct 2, PixiJS v4, three.js, vanilla JS) on Linux
-handhelds, without a browser and without X11. It uses JavaScriptCore, SDL2 and
-OpenGL ES 2, and the browser APIs the games need are written in C.
+quixjs runs JavaScript games (RPG Maker MV and MZ, Construct 2 and 3,
+GDevelop 5, Phaser 2, PixiJS v4, three.js, vanilla JS; also games packaged
+with nw.js or Electron) on Linux handhelds, the PC and Android, without a
+browser and without X11. It uses JavaScriptCore, SDL2 and OpenGL ES 2, and the
+browser APIs the games need are written in C.
 
 [!["Buy Me A Coffee"](docs/coffee.svg)](https://ko-fi.com/lowlevel1989)
 
@@ -17,18 +19,20 @@ A port is a game packaged for [PortMaster](https://portmaster.games), the
 tool that installs games on Linux handhelds. The game files are not included:
 the player copies them from their own copy.
 
-| port | where to get the game | engine | savestates | how to install it |
-|------|-----------------------|--------|------------|-------------------|
-| Fear & Hunger 1.4.1 | [itch.io](https://mirohaver.itch.io/fear-hunger) | RPG Maker MV | no | [games/fearandhunger](games/fearandhunger/README.md) |
-| Firework | [GOG](https://www.gog.com/game/firework) | RPG Maker MV | experimental | [games/firework-shiying](games/firework-shiying/README.md) |
-| Look Outside | [GOG](https://www.gog.com/game/look_outside) | RPG Maker MZ | experimental | [games/lookoutside](games/lookoutside/README.md) |
-| Felvidék | [GOG](https://www.gog.com/game/felvidek) | RPG Maker MV | no | [games/felvidek](games/felvidek/README.md) |
-| Muffles' Life Sentence | [Steam](https://store.steampowered.com/app/3145370/Muffles_Life_Sentence/) | RPG Maker MV | no | [games/muffleslifesentence](games/muffleslifesentence/README.md) |
-| HexGL (races between handhelds on the same network) | free, [GitHub](https://github.com/BKcore/HexGL) | three.js | no | [games/hexgl](games/hexgl/README.md) |
-| Gunfield | [Steam](https://store.steampowered.com/app/2305900/) | Construct 2 | no | [games/gunfield](games/gunfield/README.md) |
-| Million Monster Militia | [Steam](https://store.steampowered.com/app/2358770/) | Construct 3 | experimental | [games/millionmonstermilitia](games/millionmonstermilitia/README.md) |
-| L'Abbaye des Morts | free, [GitHub](https://github.com/luceraproject/abbaye-des-morts) | Phaser 2 | experimental | [games/abbaye](games/abbaye/README.md) |
-| Super Smiling Dungeon | [Steam](https://store.steampowered.com/app/3539970/) | GDevelop 5 | no | [games/supersmilingdungeon](games/supersmilingdungeon/README.md) |
+| port | where to get the game | engine | savestates | achievements | how to install it |
+|------|-----------------------|--------|------------|--------------|-------------------|
+| Fear & Hunger 1.4.1 | [itch.io](https://mirohaver.itch.io/fear-hunger) | RPG Maker MV | experimental | yes | [games/fearandhunger](games/fearandhunger/README.md) |
+| Firework | [GOG](https://www.gog.com/game/firework) | RPG Maker MV | experimental | yes | [games/firework-shiying](games/firework-shiying/README.md) |
+| Look Outside | [GOG](https://www.gog.com/game/look_outside) | RPG Maker MZ | experimental | yes | [games/lookoutside](games/lookoutside/README.md) |
+| Felvidék | [GOG](https://www.gog.com/game/felvidek) | RPG Maker MV | experimental | no | [games/felvidek](games/felvidek/README.md) |
+| Muffles' Life Sentence | [Steam](https://store.steampowered.com/app/3145370/Muffles_Life_Sentence/) | RPG Maker MV | experimental | no | [games/muffleslifesentence](games/muffleslifesentence/README.md) |
+| OMORI 1.0.0 | [Steam](https://store.steampowered.com/app/1150690/) (`v1.0.0` branch) | RPG Maker MV | experimental | yes | [games/omori](games/omori/README.md) |
+| HexGL (races between handhelds on the same network) | free, [GitHub](https://github.com/BKcore/HexGL) | three.js | no | no | [games/hexgl](games/hexgl/README.md) |
+| Soccer Chapa (bottle-cap football; tournaments between handhelds on the same network) | comes with the port | PixiJS | no | no | [games/soccer-chapa](games/soccer-chapa/README.md) |
+| Gunfield | [Steam](https://store.steampowered.com/app/2305900/) | Construct 2 | no | yes | [games/gunfield](games/gunfield/README.md) |
+| Million Monster Militia | [Steam](https://store.steampowered.com/app/2358770/) | Construct 3 | experimental | yes | [games/millionmonstermilitia](games/millionmonstermilitia/README.md) |
+| L'Abbaye des Morts | free, [GitHub](https://github.com/luceraproject/abbaye-des-morts) | Phaser 2 | experimental | yes | [games/abbaye](games/abbaye/README.md) |
+| Super Smiling Dungeon | [Steam](https://store.steampowered.com/app/3539970/) | GDevelop 5 | no | yes | [games/supersmilingdungeon](games/supersmilingdungeon/README.md) |
 
 Savestates (Select + X / Y) are experimental, at an early stage: keep saving
 with the game too.
@@ -72,6 +76,10 @@ Using a toml file to configure each game is inspired by bogodroid
 - [Knifethrower](https://github.com/Knifethrower): for sharing
   [h5bench](https://github.com/Knifethrower/h5bench), the benchmark of HTML5
   runtimes
+- [bbbreaddd](https://github.com/bbbreaddd), pancito: for pointing out that
+  OMORI 1.0.0 has no DRM and can be ported. He makes
+  [pmjs](https://github.com/bbbreaddd/pmjs/tree/575917a030daff8df7af47da83156a903310e419), another native runtime
+  for RPG Maker MV and MZ games: give it a try
 - KADOKAWA: the core of RPG Maker MV is MIT
   ([corescript](https://github.com/rpgtkoolmv/corescript)); the RPG Maker MV
   hooks reproduce parts of it, and of some plugins (Yanfly, Fallen Angel

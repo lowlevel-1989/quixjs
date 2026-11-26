@@ -30,7 +30,7 @@
 #include "lan.h"
 
 #define PEER_GONE_MS 4000   // sin anuncios ni mensajes en este tiempo: se fue
-#define QUEUE        64     // mensajes recibidos que esperan a que el juego los lea
+#define QUEUE        128    // mensajes recibidos que esperan a que el juego los lea
 
 typedef struct {
   LanPeer peer;

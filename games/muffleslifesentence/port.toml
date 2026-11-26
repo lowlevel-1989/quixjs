@@ -70,6 +70,8 @@ availability = "paid"
 
 [hooks]
 engine = "rpgmaker-mv"
+# los savestates (Select + X guarda, Select + Y carga): experimentales
+"Scene_Boot.prototype.start" = "rpgmaker/extra/port/savestate"
 
 # El mando: RPG Maker MV lo lee el mismo (Gamepad API). En el launcher,
 # Controls deja asignar todos los botones y las palancas (controller.map).

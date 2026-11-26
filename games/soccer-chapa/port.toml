@@ -1,0 +1,180 @@
+# Soccer Chapa: el futbol de chapas, el primer juego hecho para quixjs.
+# Es el toml del juego: quixjs -c port.toml. El juego viene dentro, en game/.
+
+[engine]
+name = "html5"
+fps  = 60
+
+[game]
+title     = "Soccer Chapa"
+version   = "0.9.0"
+id        = "soccer-chapa"
+rom       = "game"            # el juego va en game/ (la rom de este port)
+game_dir  = ""
+language  = "en"              # el juego empieza en ingles; el español, en Opciones
+width     = 1280
+height    = 720
+# a pantalla completa el ancho sigue la forma de la pantalla y la camara
+# ensena mas o menos campo (runtime/core/main/window.c)
+fit       = "screen"
+developer = "lowlevel.1989"
+publisher = "lowlevel.1989"
+genres    = ["sports"]
+desc      = "Bottle cap football: flick your caps, one shot each, and score. Tournaments for up to 16 players, local or over the network."
+
+# la partida (perfiles, cartas, ajustes): el localStorage en disco, firmado
+# por el juego con quix.storage.sign (src/save/store.js)
+[saves]
+dir           = "save"
+files         = ["localstorage.json"]
+local_storage = "localstorage.json"
+
+# Montserrat (OFL, fonts/Montserrat-OFL.txt): la letra de la interfaz
+[fonts]
+"Montserrat Black"        = "fonts/Montserrat-Black.otf"
+"Montserrat Black Italic" = "fonts/Montserrat-BlackItalic.otf"
+"Montserrat Bold"         = "fonts/Montserrat-Bold.otf"
+"Montserrat SemiBold"     = "fonts/Montserrat-SemiBold.otf"
+
+[scripts]
+libs     = ["lib/pixi_v4/pixi.js"]
+# en orden: lo que usan los siguientes va antes
+includes = [
+  "src/sc.js",
+  "src/lang/lang.js",
+  "src/lang/es.js",
+  "src/lang/en.js",
+  "src/data/random.js",
+  "src/data/names.js",
+  "src/data/balls.js",
+  "src/data/goals.js",
+  "src/legend/clubs.js",
+  "src/legend/league.js",
+  "src/legend/legend.js",
+  "src/cup/bracket.js",
+  "src/cup/room.js",
+  "src/cup/net.js",
+  "src/cup/remote.js",
+  "src/cup/cup.js",
+  "src/cup/host.js",
+  "src/cup/pause.js",
+  "src/cup/play.js",
+  "src/save/store.js",
+  "src/save/settings.js",
+  "src/gacha/positions.js",
+  "src/gacha/rarity.js",
+  "src/gacha/cards.js",
+  "src/gacha/items.js",
+  "src/gacha/pack.js",
+  "src/world/pitch.js",
+  "src/world/weather.js",
+  "src/world/wind.js",
+  "src/world/ground.js",
+  "src/caps/designs.js",
+  "src/caps/cap.js",
+  "src/match/physics.js",
+  "src/match/rules.js",
+  "src/match/colors.js",
+  "src/match/practice/setup.js",
+  "src/match/practice/edit.js",
+  "src/match/step.js",
+  "src/match/record.js",
+  "src/match/area.js",
+  "src/match/stuck.js",
+  "src/match/clock.js",
+  "src/match/shot.js",
+  "src/match/aim.js",
+  "src/match/wear.js",
+  "src/match/lineup.js",
+  "src/save/profile.js",
+  "src/save/history.js",
+  "src/match/stats.js",
+  "src/match/ai/levels.js",
+  "src/match/ai/sim.js",
+  "src/match/ai/choose.js",
+  "src/match/ai/keeper.js",
+  "src/match/ai/team.js",
+  "src/match/camera.js",
+  "src/match/ball.js",
+  "src/ui/ui.js",
+  "src/ui/scoreboard.js",
+  "src/ui/wind.js",
+  "src/ui/meter.js",
+  "src/ui/buttons.js",
+  "src/ui/goal.js",
+  "src/ui/pass.js",
+  "src/ui/toss.js",
+  "src/ui/net-pause.js",
+  "src/ui/card/layout.js",
+  "src/ui/card/fx.js",
+  "src/ui/card/card.js",
+  "src/ui/pad.js",
+  "src/ui/remember.js",
+  "src/ui/pack-view.js",
+  "src/ui/reveal.js",
+  "src/match/peek.js",
+  "src/match/guide.js",
+  "src/ui/impact.js",
+  "src/ui/feel.js",
+  "src/audio/sfx.js",
+  "src/audio/match.js",
+  "src/audio/nav.js",
+  "src/match/hud.js",
+  "src/ui/clock.js",
+  "src/match/view.js",
+  "src/scenes/match.js",
+  "src/scenes/packs.js",
+  "src/scenes/rename.js",
+  "src/ui/menu/table.js",
+  "src/ui/menu/hand.js",
+  "src/ui/card/rename.js",
+  "src/ui/lineup-board.js",
+  "src/ui/cap/deck.js",
+  "src/ui/cap/picker.js",
+  "src/ui/cap/discard.js",
+  "src/scenes/menu/menu.js",
+  "src/scenes/menu/art.js",
+  "src/scenes/menu/pages.js",
+  "src/scenes/menu/actions.js",
+  "src/scenes/legend/legend.js",
+  "src/scenes/legend/table.js",
+  "src/scenes/legend/end.js",
+  "src/scenes/cup/menu.js",
+  "src/ui/badge.js",
+  "src/ui/cup/grid.js",
+  "src/scenes/cup/find.js",
+  "src/scenes/cup/room.js",
+  "src/scenes/cup/team.js",
+  "src/scenes/cup/bracket.js",
+  "src/scenes/cup/end.js",
+  "src/scenes/kit.js",
+  "src/scenes/history/list.js",
+  "src/scenes/history/view.js",
+  "src/scenes/pause.js",
+  "src/scenes/practice.js"
+]
+entry    = "entry.js"
+
+[controls]
+gamepad = true
+vibration = true            # las chapas vibran al chocar
+
+# el nombre con que Controls (el launcher) ensena cada boton
+[controls.buttons]
+a     = "Shoot / OK"
+b     = "Fine aim / Back"
+x     = "Shot on goal"
+y     = "Cap card"
+start = "Pause"
+l1    = "Previous cap"
+r1    = "Next cap"
+l2    = "Whole pitch"
+r2    = "Whole pitch"
+
+# lo que pide PortMaster (make portmaster PORT=soccer-chapa): el juego va
+# dentro del port (game/), no hay que copiar nada
+[portmaster]
+script       = "Soccer Chapa.sh"
+porter       = ["lowlevel.1989"]
+inst         = "Ready to play: the game comes with the port."
+availability = "free"

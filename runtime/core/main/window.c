@@ -87,6 +87,20 @@ STEP int start_window(Run *r, Loop *l) {
   // la ventana: "quixjs | <juego>" ([game] title); document.title la cambia
   backend_set_title(backend, r->cfg.launcher.title);
   backend_init(backend, r->cfg.game.width, r->cfg.game.height);
+  // [game] fit = "screen": el juego ve la forma de la pantalla (innerWidth,
+  // innerHeight): el alto del toml se queda y el ancho crece o se encoge. Solo
+  // a pantalla completa (en una portatil, siempre): en una ventana, la del toml
+  int full = backend->fullscreen;
+#ifdef QUIX_HANDHELD
+  full = 1;
+#endif
+  int sw = 0, sh = 0;
+  if (r->cfg.game.fit_screen && full && backend_screen_size(backend, &sw, &sh) == 0 && sh > 0) {
+    int w = (int)((double)r->cfg.game.height * sw / sh + 0.5) & ~1;
+    printf("[screen] fit: %dx%d -> %dx%d (screen %dx%d)\n", r->cfg.game.width, r->cfg.game.height, w,
+           r->cfg.game.height, sw, sh);
+    r->cfg.game.width = w;
+  }
   // los programas de WebGL ya enlazados, en <cache_dir>/shaders
   if (r->cfg.game.cache_dir[0]) {
     char shaders[MAX_PATH_LEN + 16];

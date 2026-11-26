@@ -20,6 +20,7 @@
 // stat, listar una carpeta y mapear un archivo.
 
 
+#include <limits.h>
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -39,7 +40,9 @@
 
 int url_stat(const char *path, long long *size, long long *mtime, int *is_dir) {
   struct stat st;
-  if (sandbox_stat(path, &st, "file") == 0) {
+  char loose[PATH_MAX];
+  if (sandbox_stat(path, &st, "file") == 0 ||
+      (url_loose_path(path, loose, sizeof(loose)) && sandbox_stat(loose, &st, "file") == 0)) {   // mayusculas de Windows
     if (size) *size = (long long)st.st_size;
     if (mtime) *mtime = (long long)st.st_mtime;
     if (is_dir) *is_dir = S_ISDIR(st.st_mode);
@@ -69,6 +72,8 @@ int url_list_dir(const char *dir, void (*each)(void *user, const char *name, int
   if (!c.names) return -1;
   int found = 0;
   DIR *d = sandbox_opendir(dir, "file");
+  char loose[PATH_MAX];
+  if (!d && url_loose_path(dir, loose, sizeof(loose))) d = sandbox_opendir(loose, "file");   // mayusculas de Windows
   if (d) {
     found = 1;
     struct dirent *e;

@@ -69,6 +69,7 @@ typedef struct {
 extern Achievement ach_list[MAX_ACHIEVEMENTS];
 extern int         ach_total;
 extern int         ach_icon;            // [achievements_menu] icon
+extern char        ach_menu_name[64];   // [achievements_menu] name ("": Achievements)
 extern char        ach_store_path[1024];   // el archivo de los conseguidos, o ""
 extern char        ach_game_id[128];    // el juego: una firma de otro juego no vale
 

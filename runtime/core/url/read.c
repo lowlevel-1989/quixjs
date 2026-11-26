@@ -21,6 +21,7 @@
 // Maker), y abrirlos aunque el nombre no ASCII no coincida en una SD FAT.
 
 
+#include <limits.h>
 #include <errno.h>
 #include <ctype.h>
 #include <stdio.h>
@@ -73,7 +74,8 @@ int url_has_transform(const char *path) { return transform_of(path) != NULL; }
 // a "e_Cursed.png". Si el archivo no esta, se busca en su carpeta uno cuyo
 // nombre coincida tratando cada caracter no ASCII como "cualquier caracter".
 // Y sin distinguir mayusculas, como en Windows, donde se hacen los juegos
-// (Muffles' Life Sentence pide Leaf.rpgmvp y trae leaf.rpgmvp).
+// (Muffles' Life Sentence pide Leaf.rpgmvp y trae leaf.rpgmvp), tambien en
+// las carpetas (OMORI pide Languages/ y trae languages/): url_loose_path.
 
 // un caracter UTF-8 que empieza en s: cuantos bytes ocupa
 static int utf8_len(const unsigned char *s) {
@@ -97,24 +99,56 @@ static int loose_match(const char *want, const char *have) {
   return !*w && !*h;
 }
 
+// la entrada de dir que se parece a name (loose_match) en out; 0 si no hay
+static int loose_entry(const char *dir, const char *name, char *out, size_t n) {
+  DIR *d = sandbox_opendir(dir, "file");
+  if (!d) return 0;
+  struct dirent *e;
+  int ok = 0;
+  while (!ok && (e = readdir(d)) != NULL) {
+    if (strcmp(e->d_name, ".") == 0 || strcmp(e->d_name, "..") == 0 || !loose_match(name, e->d_name)) continue;
+    snprintf(out, n, "%s/%s", dir, e->d_name);
+    ok = 1;
+  }
+  closedir(d);
+  return ok;
+}
+
+int url_loose_path(const char *path, char *out, size_t n) {
+  struct stat st;
+  if (sandbox_stat(path, &st, "file") == 0) { snprintf(out, n, "%s", path); return 1; }
+  // la parte que existe tal cual (de la ruta entera hacia arriba) y el resto,
+  // parte a parte, buscando la que se le parece en cada carpeta
+  char head[PATH_MAX];
+  snprintf(head, sizeof(head), "%s", path);
+  char *cut;
+  while ((cut = strrchr(head, '/')) != NULL && cut != head) {
+    *cut = 0;
+    if (sandbox_stat(head, &st, "file") == 0) break;   // tambien esto, por el sandbox
+  }
+  if (!cut || cut == head) return 0;
+  const char *rest = path + strlen(head) + 1;
+  char cur[PATH_MAX], part[NAME_MAX + 1];
+  snprintf(cur, sizeof(cur), "%s", head);
+  while (*rest) {
+    const char *end = strchr(rest, '/');
+    size_t len = end ? (size_t)(end - rest) : strlen(rest);
+    if (len == 0 || len > NAME_MAX) { rest += len + (end ? 1 : 0); if (len) return 0; continue; }
+    memcpy(part, rest, len); part[len] = 0;
+    char next[PATH_MAX];
+    if (!loose_entry(cur, part, next, sizeof(next))) return 0;
+    snprintf(cur, sizeof(cur), "%s", next);
+    rest += len + (end ? 1 : 0);
+  }
+  snprintf(out, n, "%s", cur);
+  return 1;
+}
+
 FILE *url_fopen_loose(const char *path) {
   FILE *f = sandbox_fopen(path, "rb", "file");
   if (f || errno == EACCES) return f;
-  const char *slash = strrchr(path, '/');
-  const char *name = slash ? slash + 1 : path;
-  char dir[1024];
-  snprintf(dir, sizeof(dir), "%.*s", slash ? (int)(slash - path) : 1, slash ? path : ".");
-  DIR *d = sandbox_opendir(dir, "file");
-  if (!d) return NULL;
-  struct dirent *e;
-  while (!f && (e = readdir(d)) != NULL) {
-    if (!loose_match(name, e->d_name)) continue;
-    char found[2048];
-    snprintf(found, sizeof(found), "%s/%s", dir, e->d_name);
-    f = sandbox_fopen(found, "rb", "file");
-  }
-  closedir(d);
-  return f;
+  char found[PATH_MAX];
+  return url_loose_path(path, found, sizeof(found)) ? sandbox_fopen(found, "rb", "file") : NULL;
 }
 
 uint8_t *url_read_file_transformed(const char *path, size_t *len) {

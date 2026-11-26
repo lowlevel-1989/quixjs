@@ -1,4 +1,4 @@
-[English](README.md) | Español
+[English](https://github.com/lowlevel-1989/quixjs/blob/master/games/fearandhunger/README.md) | Español
 
 [![Buy Me A Coffee](https://raw.githubusercontent.com/lowlevel-1989/quixjs/master/docs/coffee.svg)](https://ko-fi.com/lowlevel1989)
 
@@ -25,21 +25,16 @@ Necesita Fear & Hunger **1.4.1** para Windows (itch.io o Steam).
 | (lo eliges en Controls) | Torch (antorcha) |
 | (lo eliges en Controls) | Phase |
 | Select + L1 | Lupa: un cuadro que amplía; la cruceta o las palancas lo mueven, R1 / L1 zoom, Y / X tamaño, A centra, Start la fija (el mando vuelve al juego) y la desfija, B la cierra |
+| Select + X / Y | Savestate: guardar / cargar (en el mapa; no en hardcore) |
+| Select + izquierda / derecha | Ranura del savestate (1 a 4) |
 | Select + R1 | Captura de pantalla (en `screenshots/`) |
 | Select + R2 | Volver al menú del port |
 | Select + Start | Salir |
 
 Mods (activos): [rumble](mods/rumble/README.es.md) (vibración), [party-bars](mods/party-bars/README.es.md) (Hunger, Body y Mind en el mapa; L1 / R1 cambian de personaje).
 
-## Compilar
-
-```
-git clone https://github.com/lowlevel-1989/quixjs.git
-cd quixjs
-make portmaster PORT=fearandhunger
-```
-
-Construye `build/fearandhunger.zip`.
+Los savestates (Select + X / Y) son experimentales, en fase temprana: sigue
+guardando también con el juego.
 
 ## Instalar
 

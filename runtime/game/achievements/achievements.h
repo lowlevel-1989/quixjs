@@ -86,6 +86,7 @@ int  achievements_hardcore_count(void);
 // [achievements_menu] icon = N: el icono (de IconSet) de la opcion de los
 // logros en el menu del juego (hook rpgmaker-mv/port/achievements-menu); 0 sin icono
 int  achievements_menu_icon(void);
+const char *achievements_menu_name(void);   // [achievements_menu] name ("" si no hay)
 
 // Una vez por imagen, despues del juego: lee los simbolos y mira los logros.
 // El aviso de un logro conseguido va en backend->toast unos segundos.

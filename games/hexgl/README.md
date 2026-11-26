@@ -1,4 +1,4 @@
-English | [Español](README.es.md)
+English | [Español](https://github.com/lowlevel-1989/quixjs/blob/master/games/hexgl/README.es.md)
 
 [![Buy Me A Coffee](https://raw.githubusercontent.com/lowlevel-1989/quixjs/master/docs/coffee.svg)](https://ko-fi.com/lowlevel1989)
 
@@ -35,16 +35,6 @@ option: No damage (crashes do not take shield).
 
 In the menu: D-Pad to choose, left and right to change an option, A to
 accept, B to go back.
-
-## Compile
-
-```
-git clone https://github.com/lowlevel-1989/quixjs.git
-cd quixjs
-make portmaster PORT=hexgl
-```
-
-It builds `build/hexgl.zip`.
 
 ## Install
 

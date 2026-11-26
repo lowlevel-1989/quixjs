@@ -23,8 +23,9 @@
 // canal save y dentro del sandbox. Los combos del mando (Select + X / Y)
 // llegan por runtime/core/main/state.c, entre dos frames.
 //
-// En modo hardcore no hay savestates; cargar uno quita el hardcore a la
-// partida (runtime/game/cheats/playthrough.c, cheats_state_loaded).
+// En modo hardcore se puede guardar, pero no cargar; cargar uno (fuera de
+// hardcore) quita el hardcore a la partida (runtime/game/cheats/playthrough.c,
+// cheats_state_loaded).
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -135,7 +136,7 @@ long long quix_state_time(JSContext *ctx, int slot) {
 // ---- el aviso (Select + X / Y): "Slot 2 saved", o por que no
 
 static const char *why(const char *r) {
-  if (!strcmp(r, "off")) return "Savestates are off in hardcore mode";
+  if (!strcmp(r, "off")) return "Loading is off in hardcore mode";
   if (!strcmp(r, "none")) return "Savestates are not supported in this game";
   if (!strcmp(r, "busy")) return "Not now: try again in a moment";
   if (!strcmp(r, "empty")) return "This slot is empty";
@@ -285,7 +286,6 @@ static JSValue on_failed(JSContext *ctx, JSValueConst this_val, int argc, JSValu
 // guarda en la ranura: "saved", o "saving" si el motor guarda en segundo
 // plano (una promesa: el aviso sale al terminar), o por que no
 const char *quix_state_save(JSContext *ctx, int slot) {
-  if (cheats_hardcore_mode()) return "off";
   if (!registered) return "none";
   char path[MAX_PATH_LEN * 2 + 2];
   if (!slot_path(ctx, slot, path, sizeof path)) return "error";
@@ -367,7 +367,7 @@ static void waiting_toast(int slot, int load, const char *note) {
 const char *quix_state_request(JSContext *ctx, int load, int slot) {
   const char *r;
   const char *cancelled = NULL;
-  if (cheats_hardcore_mode()) r = "off";
+  if (load && cheats_hardcore_mode()) r = "off";   // en hardcore solo se guarda
   else if (!registered) r = "none";
   else if (inflight) {
     // el motor aun guarda o carga en segundo plano: esta se descarta
@@ -401,7 +401,7 @@ const char *quix_state_request(JSContext *ctx, int load, int slot) {
 
 void quix_state_tick(JSContext *ctx) {
   if (!request.active || inflight) return;
-  if (cheats_hardcore_mode()) {   // paso a hardcore mientras esperaba
+  if (request.load && cheats_hardcore_mode()) {   // paso a hardcore mientras esperaba una carga
     request.active = 0;
     quix_state_notice(request.slot, request.load, "off");
     return;
@@ -491,10 +491,11 @@ static JSValue js_state_set_slot(JSContext *ctx, JSValueConst this_val, JSValueC
   return JS_UNDEFINED;
 }
 
-// quix.state.available: hay motor, no es hardcore y can() dice que si
+// quix.state.available: se puede guardar ahora (hay motor y can() dice que
+// si; tambien en hardcore, donde solo se guarda)
 static JSValue js_state_get_available(JSContext *ctx, JSValueConst this_val) {
   (void)this_val;
-  return JS_NewBool(ctx, !cheats_hardcore_mode() && quix_state_can(ctx, 0));
+  return JS_NewBool(ctx, quix_state_can(ctx, 0));
 }
 
 static const JSCFunctionListEntry js_quix_state[] = {

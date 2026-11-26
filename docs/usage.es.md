@@ -699,6 +699,7 @@ Solo existe en quixjs (`typeof quix !== 'undefined'`).
 | `quix.fonts.register(f, url o bytes)` | registra una fuente: un archivo o sus bytes (lo usan FontFace y @font-face) |
 | `quix.fonts.has(f)` | `true` si la familia esta registrada |
 | `quix.storage.read()` / `quix.storage.write(json)` | el `localStorage` en disco (`[saves] local_storage`) |
+| `quix.storage.sign(texto)` | la firma de un texto (16 cifras hex), la misma que la de los logros: el juego guarda el texto con ella y la comprueba al leerlo, asi editar el guardado a mano no basta |
 | `quix.achievements.list()` | los logros (id, title, description, type, color, unlocked, hardcore) |
 | `quix.achievements.unlocked(id)` | `true` si el logro del toml esta conseguido |
 | `quix.achievements.icon` | `[achievements_menu] icon` (0 si no hay) |

@@ -68,6 +68,12 @@ static JSValue js_quix_achievementsIcon(JSContext *ctx, JSValueConst this_val, i
   return JS_NewInt64(ctx, achievements_menu_icon());
 }
 
+// quix.achievements.menuName: [achievements_menu] name del toml ("" si no hay)
+static JSValue js_quix_achievements_get_menuName(JSContext *ctx, JSValueConst this_val) {
+  (void)this_val;
+  return JS_NewString(ctx, achievements_menu_name());
+}
+
 static JSValue js_quix_achievements_get_icon(JSContext *ctx, JSValueConst this_val) {
   return js_quix_achievementsIcon(ctx, this_val, 0, NULL);
 }
@@ -76,6 +82,7 @@ static const JSCFunctionListEntry js_quix_achievements_funcs[] = {
   JS_CFUNC_DEF("list", 0, js_quix_achievements_list),
   JS_CFUNC_DEF("unlocked", 1, js_quix_achievements_unlocked),
   JS_CGETSET_DEF("icon", js_quix_achievements_get_icon, NULL),
+  JS_CGETSET_DEF("menuName", js_quix_achievements_get_menuName, NULL),
 };
 
 void quix_add_achievements(JSContext *ctx, JSValueConst quix) {

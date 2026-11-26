@@ -156,6 +156,9 @@ static void read_game(toml_datum_t game, Config *out, const char *filename) {
   if (scale.type == TOML_INT64) out->game.image_scale = (double)scale.u.int64;
   // "auto": la del juego en la pantalla (core/main/start.c)
   if (scale.type == TOML_STRING && strcmp(scale.u.s, "auto") == 0) out->game.image_scale = -1;
+  // el ancho con la forma de la pantalla (core/main/window.c)
+  toml_datum_t fit = toml_get(game, "fit");
+  if (fit.type == TOML_STRING && strcmp(fit.u.s, "screen") == 0) out->game.fit_screen = 1;
   // dibujar a la resolucion de la pantalla (opcional; ver rpgmaker-mv/render/render-scale)
   toml_datum_t rscale = toml_get(game, "render_scale");
   if (rscale.type == TOML_FP64) out->game.render_scale = rscale.u.fp64;

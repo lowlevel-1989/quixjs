@@ -73,10 +73,14 @@ port_release() {   # port_release <port>
 
   # el port para el PC: quixjs del PC con el port.toml, los mods, los
   # scripts y los README del port, gamedata/ vacia (ahi guarda el juego), el
-  # aviso de la rom (que se copia junto a port.toml) y un script para abrirlo
+  # aviso de la rom (que se copia junto a port.toml; o la rom misma si viene
+  # con el port, como game/ en Soccer Chapa) y un script para abrirlo
   d="$OUT/$PORT"
   mkdir -p "$d/gamedata"
-  cp "$PM/COPY_THE_GAME_HERE.txt" "$d/"
+  ROM=$(python3 -I -c "import tomllib,sys; print(tomllib.load(open(sys.argv[1],'rb'))['game'].get('rom',''))" "$PM/port.toml")
+  STEP1="1. Copy the game next to port.toml, as COPY_THE_GAME_HERE.txt says."
+  if [ -n "$ROM" ] && [ -e "$PM/$ROM" ]; then cp -r "$PM/$ROM" "$d/"; STEP1="1. The game comes with the port: nothing to copy."; fi
+  if [ -f "$PM/COPY_THE_GAME_HERE.txt" ]; then cp "$PM/COPY_THE_GAME_HERE.txt" "$d/"; fi
   cp build/quixjs "$d/"
   cp "$PM/port.toml" "$PM"/README*.md "$d/"
   for f in "$PM"/*.js; do if [ -f "$f" ]; then cp "$f" "$d/"; fi; done
@@ -97,7 +101,7 @@ EOF
   cat > "$d/README.txt" <<EOF
 $TITLE for Linux x86_64 (PC), quixjs $V
 
-1. Copy the game next to port.toml, as COPY_THE_GAME_HERE.txt says.
+$STEP1
 2. Run ./$PORT.sh
 
 quixjs uses the libraries of the system: SDL2, SDL2_image, SDL2_ttf, ICU,

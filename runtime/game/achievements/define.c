@@ -134,10 +134,13 @@ int achievements_load(const char *config_path, const char *game_dir, const char 
 
   int bad = 0;
   ach_icon = 0;
+  ach_menu_name[0] = 0;
   toml_datum_t menu = toml_get(result.toptab, "achievements_menu");
   if (menu.type == TOML_TABLE) {
     toml_datum_t icon = toml_get(menu, "icon");
     if (icon.type == TOML_INT64 && icon.u.int64 > 0 && icon.u.int64 < 100000) ach_icon = (int)icon.u.int64;
+    toml_datum_t name = toml_get(menu, "name");
+    if (name.type == TOML_STRING) snprintf(ach_menu_name, sizeof ach_menu_name, "%s", name.u.s);
   }
   toml_datum_t arr = toml_get(result.toptab, "achievements");
   if (arr.type == TOML_ARRAY) {

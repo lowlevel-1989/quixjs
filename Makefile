@@ -10,6 +10,7 @@
 #   make test                    los tests (en el PC; sin el de Transfer Save, que pide UDP)
 #   make bench                   el benchmark h5bench (en el PC)
 #   make release                 los archivos de una release (release/)
+#   make portmaster-pr PORT=...  el port en el fork de PortMaster-New (tmp/PortMaster-New), para un PR
 #
 # Opciones: TRACE=1 (las medidas [trace]), VIDEO=0 (sin video),
 # ABI=x86_64 (Android para el emulador del PC).
@@ -29,7 +30,7 @@ build     = cmake --build --preset $(1) $(if $(2),--target $(2))
 
 .DEFAULT_GOAL := pc
 .PHONY: pc portmaster android pc-jsc portmaster-jsc android-jsc \
-        pc-clean portmaster-clean android-clean clean test bench release
+        pc-clean portmaster-clean android-clean clean test bench release portmaster-pr
 
 pc:
 	$(call configure,pc) && $(call build,pc)
@@ -68,3 +69,6 @@ bench: pc
 
 release:
 	tools/release.sh
+
+portmaster-pr: portmaster
+	tools/portmaster_pr.sh $(PORT)

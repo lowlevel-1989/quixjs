@@ -7,7 +7,10 @@
 // con su Scene_Boot.prototype.start tal cual). quixjs guarda las
 // ranuras, los combos del mando (Select + X / Y) y los avisos.
 //
-//   can   solo en el mapa, sin cambio de escena, dialogo ni evento en marcha,
+//   can   solo en el mapa ya empezado (isActive: al volver de una batalla
+//         el mapa existe antes de tener sus ventanas, y salir de el entonces
+//         lo rompe) y quieto (isBusy: sin fundido), sin cambio de escena ni
+//         de mapa, dialogo ni evento en marcha,
 //         y con el control del jugador ($gamePlayer.canMove: no en una escena
 //         de un evento paralelo, como la intro de Fear & Hunger, entre un
 //         texto y el siguiente). En una batalla o un menu, no: su estado no
@@ -59,8 +62,11 @@ function (original) {
   if (window.quix && quix.state) {
     quix.state.register({
       can: function () {
-        return SceneManager._scene instanceof Scene_Map &&
+        var scene = SceneManager._scene;
+        return scene instanceof Scene_Map &&
+               scene.isActive() && !scene.isBusy() &&
                !SceneManager.isSceneChanging() &&
+               !$gamePlayer.isTransferring() &&
                !$gameMessage.isBusy() && !$gameMap.isEventRunning() &&
                $gamePlayer.canMove();
       },

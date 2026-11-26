@@ -1,0 +1,16 @@
+Copy the game here, next to port.toml.
+
+You need OMORI 1.0.0 for Windows (Steam: the v1.0.0 branch, in Properties, Betas).
+In the folder of the game, compress its folder www into a zip named
+www.zip (on Windows: right click on www, Send to, Compressed (zipped)
+folder), and copy that zip here:
+
+omori/
+  port.toml
+  www.zip
+
+A zip without compression is best (with 7-Zip: Compression level, Store);
+a compressed one also works, but the first start takes longer.
+If your file has another name, write it in port.toml, in
+rom = "www.zip".
+See README.md for the full steps.

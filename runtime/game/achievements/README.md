@@ -122,11 +122,13 @@ arrived.
 
 In RPG Maker MV the hook `rpgmaker-mv/port/achievements-menu` (in the engine
 preset) adds an "Achievements" option to the game menu: the list, the date
-of the unlocked ones and the description. Its icon is an icon of the IconSet:
+of the unlocked ones and the description. Its icon is an icon of the IconSet,
+and its text can change to fit the menu of the game:
 
 ```
 [achievements_menu]
-icon = 87    # 0 or missing: no icon
+icon = 87             # 0 or missing: no icon
+name = "ACHIEVEMENTS"  # missing: Achievements
 ```
 
 ## To write them

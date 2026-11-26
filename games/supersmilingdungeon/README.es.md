@@ -1,4 +1,4 @@
-[English](README.md) | Español
+[English](https://github.com/lowlevel-1989/quixjs/blob/master/games/supersmilingdungeon/README.md) | Español
 
 [![Buy Me A Coffee](https://raw.githubusercontent.com/lowlevel-1989/quixjs/master/docs/coffee.svg)](https://ko-fi.com/lowlevel1989)
 
@@ -26,16 +26,6 @@ Mods (activos): [controller](mods/controller/README.es.md), [big-text](mods/big-
 | Select + R1 | Captura de pantalla (en `screenshots/`) |
 | Select + R2 | Volver al menú del port |
 | Select + Start | Salir |
-
-## Compilar
-
-```
-git clone https://github.com/lowlevel-1989/quixjs.git
-cd quixjs
-make portmaster PORT=supersmilingdungeon
-```
-
-Construye `build/supersmilingdungeon.zip`.
 
 ## Instalar
 

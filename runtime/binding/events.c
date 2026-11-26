@@ -293,6 +293,31 @@ static JSValue js_event_target_ctor(JSContext *ctx, JSValueConst new_target, int
   return obj;
 }
 
+// getModifierState("Shift"...): de los campos ctrlKey, shiftKey, altKey y
+// metaKey; los de bloqueo (CapsLock, NumLock...) siempre false. OMORI mira
+// CapsLock en cada tecla
+static JSValue js_event_getModifierState(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+  static const char *const names[][2] = {
+    { "Control", "ctrlKey" }, { "Shift", "shiftKey" }, { "Alt", "altKey" }, { "Meta", "metaKey" },
+  };
+  const char *key = argc > 0 ? JS_ToCString(ctx, argv[0]) : NULL;
+  if (!key) return JS_FALSE;
+  JSValue r = JS_FALSE;
+  for (int i = 0; i < 4; i++) {
+    if (strcmp(key, names[i][0]) == 0) {
+      JSValue v = JS_GetPropertyStr(ctx, this_val, names[i][1]);
+      r = JS_NewBool(ctx, JS_ToBool(ctx, v));
+      JS_FreeValue(ctx, v);
+    }
+  }
+  JS_FreeCString(ctx, key);
+  return r;
+}
+
+static const JSCFunctionListEntry js_event_input_funcs[] = {
+  JS_CFUNC_DEF("getModifierState", 1, js_event_getModifierState),
+};
+
 static const JSCFunctionListEntry js_event_proto_funcs[] = {
   JS_CFUNC_DEF("preventDefault",           0, js_event_preventDefault),
   JS_CFUNC_DEF("stopPropagation",          0, js_event_stopPropagation),
@@ -317,8 +342,15 @@ void js_api_add_events(JSContext *ctx) {
   JS_SetPropertyFunctionList(ctx, event_proto, js_event_proto_funcs, countof(js_event_proto_funcs));
 
   keyboard_ctor = define_event_class(ctx, global, "KeyboardEvent", event_proto);
+  JSValue kproto = JS_GetPropertyStr(ctx, keyboard_ctor, "prototype");
+  JS_SetPropertyFunctionList(ctx, kproto, js_event_input_funcs, countof(js_event_input_funcs));
+  JS_FreeValue(ctx, kproto);
   JSValue c;
-  c = define_event_class(ctx, global, "MouseEvent", event_proto);   JS_FreeValue(ctx, c);
+  c = define_event_class(ctx, global, "MouseEvent", event_proto);
+  JSValue mproto = JS_GetPropertyStr(ctx, c, "prototype");
+  JS_SetPropertyFunctionList(ctx, mproto, js_event_input_funcs, countof(js_event_input_funcs));
+  JS_FreeValue(ctx, mproto);
+  JS_FreeValue(ctx, c);
   c = define_event_class(ctx, global, "PointerEvent", event_proto); JS_FreeValue(ctx, c);
   c = define_event_class(ctx, global, "TouchEvent", event_proto);   JS_FreeValue(ctx, c);
   c = define_event_class(ctx, global, "CustomEvent", event_proto);  JS_FreeValue(ctx, c);

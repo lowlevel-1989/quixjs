@@ -37,7 +37,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#define LAN_MAX_PEERS   8
+#define LAN_MAX_PEERS   16
 #define LAN_MAX_MESSAGE 4096
 
 typedef struct {

@@ -186,9 +186,17 @@ void script_maybe_run(JSContext *ctx, JSValueConst el) {
   }
   JS_FreeValue(ctx, src);
 
-  // script en linea: se ejecuta ya
-  JSValue text = JS_GetPropertyStr(ctx, el, "textContent");
-  const char *code = JS_IsString(text) ? JS_ToCString(ctx, text) : NULL;
+  // script en linea: se ejecuta ya. El codigo en textContent, text o
+  // innerHTML (OMORI mete sus plugins descifrados con innerHTML)
+  static const char *const props[] = { "textContent", "text", "innerHTML" };
+  JSValue text = JS_UNDEFINED;
+  const char *code = NULL;
+  for (int i = 0; i < 3 && !(code && *code); i++) {
+    if (code) JS_FreeCString(ctx, code);
+    JS_FreeValue(ctx, text);
+    text = JS_GetPropertyStr(ctx, el, props[i]);
+    code = JS_IsString(text) ? JS_ToCString(ctx, text) : NULL;
+  }
   if (code && *code) {
     JSValue r = JS_Eval(ctx, code, strlen(code), "<inline script>", JS_EVAL_TYPE_GLOBAL);
     if (JS_IsException(r)) js_std_dump_error(ctx);

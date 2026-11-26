@@ -1,6 +1,6 @@
 // localStorage en disco ([saves] local_storage): lo que se escribe llega al
 // archivo poco despues, y localStorage.x / localStorage['x'] = v son getItem y
-// setItem, como en el navegador
+// setItem, como en el navegador. Y quix.storage.sign, la firma del guardado
 
 var stamp = String(Date.now());
 
@@ -16,6 +16,13 @@ T.test('getItem, setItem and named access', function () {
   delete localStorage.score;
   T.equal(localStorage.getItem('score'), null, 'delete is removeItem');
   T.equal(sessionStorage.getItem('stamp'), null, 'sessionStorage is apart');
+});
+
+T.test('quix.storage.sign', function () {
+  var a = quix.storage.sign('{"packs":2}'), b = quix.storage.sign('{"packs":9}');
+  T.ok(/^[0-9a-f]{16}$/.test(a), 'sixteen hex digits');
+  T.equal(quix.storage.sign('{"packs":2}'), a, 'the same text, the same signature');
+  T.ok(a !== b, 'another text, another signature');
 });
 
 setTimeout(function () {
