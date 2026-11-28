@@ -42,6 +42,7 @@ void gpu_driver_detect(const char *renderer, const char *version) {
   if (mesa && has(renderer, "panfrost")) current = &gpu_driver_panfrost;
   else if (!mesa && has(renderer, "mali-g31")) current = &gpu_driver_mali_g31;
   else if (!mesa && has(renderer, "mali")) current = &gpu_driver_mali;
+  else if (!mesa && has(renderer, "powervr")) current = &gpu_driver_powervr;
   else current = &gpu_driver_default;
   printf("[gpu] driver: %s\n", current->name);
 }
