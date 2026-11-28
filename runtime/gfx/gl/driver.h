@@ -67,4 +67,4 @@ const GpuDriver *gpu_driver_get(void);
 void gpu_driver_present(const Presenter *p, GpuFrame *f);   // backend/sdl: presentar sin thread
 
 // los de cada driver (gfx/gl/drivers/<driver>.c)
-extern const GpuDriver gpu_driver_panfrost, gpu_driver_mali, gpu_driver_mali_g31, gpu_driver_default;
+extern const GpuDriver gpu_driver_panfrost, gpu_driver_mali, gpu_driver_mali_g31, gpu_driver_powervr, gpu_driver_default;
